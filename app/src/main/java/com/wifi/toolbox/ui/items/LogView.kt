@@ -103,11 +103,6 @@ fun LogView(
                         lineHeightStyle = LineHeightStyle(
                             alignment = LineHeightStyle.Alignment.Center,
                             trim = LineHeightStyle.Trim.Both
-                        ),
-                        lineBreak = LineBreak(
-                            strategy = LineBreak.Strategy.Simple,
-                            strictness = LineBreak.Strictness.Loose,
-                            wordBreak = LineBreak.WordBreak.Default
                         )
                     ),
                     modifier = Modifier

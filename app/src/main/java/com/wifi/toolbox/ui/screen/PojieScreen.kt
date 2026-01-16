@@ -1,5 +1,6 @@
 package com.wifi.toolbox.ui.screen
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,16 +30,28 @@ fun PojieScreen(onMenuClick: () -> Unit) {
     var currentTargetSsid by rememberSaveable { mutableStateOf("") }
     val sheetState = rememberModalBottomSheetState()
 
+    var isEditingResource by rememberSaveable { mutableStateOf(false) }
+    var editingResourceId by rememberSaveable { mutableStateOf<String?>(null) }
+    var refreshTrigger by remember { mutableStateOf(0) }
+
     var pojieSettings by rememberPojieSettings(context)
     val pojieWifiController = rememberPojieWifiController(context, app, pojieSettings)
 
-    val pages = remember(pojieSettings, pojieWifiController) {
+    val pages = remember(pojieSettings, pojieWifiController, refreshTrigger) {
         listOf(
             object : NavPage {
                 override val name = "资源"
                 override val selectedIcon = Icons.Filled.Inbox
                 override val unselectedIcon = Icons.Outlined.Inbox
-                override val content = @Composable { ResourcesPage() }
+                override val content = @Composable {
+                    ResourcesPage(
+                        refreshTrigger = refreshTrigger,
+                        onStartEdit = { id ->
+                            editingResourceId = id
+                            isEditingResource = true
+                        }
+                    )
+                }
             },
             object : NavPage {
                 override val name = "历史"
@@ -84,6 +97,23 @@ fun PojieScreen(onMenuClick: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         NavContainer(pages, 2, "密码字典破解", onMenuClick)
+
+        AnimatedVisibility(
+            visible = isEditingResource,
+            enter = slideInHorizontally(initialOffsetX = { it }),
+            exit = slideOutHorizontally(targetOffsetX = { it })
+        ) {
+            Surface(Modifier.fillMaxSize()) {
+                ResourceEditPage(
+                    targetId = editingResourceId,
+                    onBack = {
+                        isEditingResource = false
+                        editingResourceId = null
+                        refreshTrigger++
+                    }
+                )
+            }
+        }
 
         if (showPasswordSheet) {
             val sheetScope = rememberCoroutineScope()

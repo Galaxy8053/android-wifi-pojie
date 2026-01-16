@@ -1,10 +1,7 @@
 [versions]
 agp = "8.13.2"
-coil = "2.6.0"
 coilCompose = "3.3.0"
-coilComposeVersion = "2.7.0"
-commonmarkExtGfmTables = "0.27.0"
-composeBomVersion = "2025.12.01"
+composeBomVersion = "2026.01.00"
 desugar_jdk_libs = "2.1.5"
 hiddenapibypass = "6.1"
 kotlin = "2.3.0"
@@ -14,17 +11,17 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.2"
-composeBom = "2025.12.01"
-material3Version = "1.5.0-alpha11"
+composeBom = "2026.01.00"
+material3Version = "1.5.0-alpha12"
 materialIconsExtended = "1.7.8"
 miuix = "0.7.2"
 navigationCompose = "2.9.6"
 playServicesLocation = "21.3.0"
-preference = "2.1.0"
-runtimeAnnotation = "1.10.0"
+preference = "2.1.1"
+runtimeAnnotation = "1.10.1"
 shizukuVersion = "13.1.5"
-foundationLayout = "1.10.0"
-ui = "1.10.0"
+foundationLayout = "1.10.1"
+ui = "1.10.1"
 
 [libraries]
 androidx-compose-bom-v20251200 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
@@ -34,14 +31,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 api = { module = "dev.rikka.shizuku:api", version.ref = "shizukuVersion" }
-coil = { module = "io.coil-kt:coil", version.ref = "coilComposeVersion" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
-coil-gif = { module = "io.coil-kt:coil-gif", version.ref = "coilComposeVersion" }
-coil-kt-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilComposeVersion" }
-coil-v260 = { module = "io.coil-kt:coil", version.ref = "coil" }
-commonmark = { module = "org.commonmark:commonmark", version.ref = "commonmarkExtGfmTables" }
-commonmark-ext-autolink = { module = "org.commonmark:commonmark-ext-autolink", version.ref = "commonmarkExtGfmTables" }
-commonmark-ext-gfm-tables = { module = "org.commonmark:commonmark-ext-gfm-tables", version.ref = "commonmarkExtGfmTables" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -61,7 +51,7 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 preference = { module = "me.zhanghai.compose.preference:preference", version.ref = "preference" }
 androidx-compose-runtime-annotation = { group = "androidx.compose.runtime", name = "runtime-annotation", version.ref = "runtimeAnnotation" }
 provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizukuVersion" }
-materialKolor = "com.materialkolor:material-kolor:4.0.5"
+materialKolor = "com.materialkolor:material-kolor:4.1.0"
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 

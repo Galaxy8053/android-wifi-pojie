@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.wifi.toolbox.services
 
 import android.content.BroadcastReceiver
@@ -7,7 +8,6 @@ import android.content.IntentFilter
 import android.net.NetworkInfo
 import android.net.wifi.SupplicantState
 import android.net.wifi.WifiManager
-import android.util.Log
 import com.wifi.toolbox.MyApplication
 import com.wifi.toolbox.structs.WifiLogData
 import kotlinx.coroutines.*
@@ -15,8 +15,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 class WifiBroadcastService(private val context: Context) : AutoCloseable {
-
-    private val MIN_INTERVAL = 200L
 
     private val app = context.applicationContext as MyApplication
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
