@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.os.*
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.snapshotFlow
 import androidx.core.app.NotificationCompat
 import com.wifi.toolbox.*
@@ -87,18 +88,20 @@ class PojieService : Service() {
                 val collectJob = launch {
 
                     if (connectMode == 3) {
-                        connectWifiApi29Callback =
-                            connectToWifiApi29(task.ssid, task.password) { success ->
-                                if (continuation.isActive) {
-                                    if (success) {
-                                        continuation.resume(SinglePojieTask.RESULT_SUCCESS)
-                                        cancel()
-                                    } else {
-                                        continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                        cancel()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            connectWifiApi29Callback =
+                                connectToWifiApi29(task.ssid, task.password) { success ->
+                                    if (continuation.isActive) {
+                                        if (success) {
+                                            continuation.resume(SinglePojieTask.RESULT_SUCCESS)
+                                            cancel()
+                                        } else {
+                                            continuation.resume(SinglePojieTask.RESULT_FAILED)
+                                            cancel()
+                                        }
                                     }
                                 }
-                            }
+                        }else throw Exception("系统版本过低，无法使用[连接到设备]连接wifi(sdk<29&connectMode=3)")
                     }
 
                     when (readLogMode) {
@@ -481,6 +484,7 @@ wifi密码暴力破解工具 v3 for Android
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private suspend fun connectToWifiApi29(
         ssid: String, pass: String, callback: (Boolean) -> Unit
     ): ConnectivityManager.NetworkCallback? {

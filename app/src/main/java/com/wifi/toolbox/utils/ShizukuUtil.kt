@@ -23,7 +23,6 @@ import org.lsposed.hiddenapibypass.*
 import java.util.BitSet
 import android.os.WorkSource
 import java.lang.reflect.Method
-import java.security.cert.Extension
 
 object ShizukuUtil {
 
@@ -177,9 +176,7 @@ object ShizukuUtil {
      * * **Android 12 - 16**: 传入 `(int netId, IActionListener listener)`，返回 `void` 。
      */
     @SuppressLint("PrivateApi")
-    fun getWifiMethod(methodName: String): Method {
-        val wifiManagerBinder = SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
-        val wifiService = asInterface("android.net.wifi.IWifiManager", wifiManagerBinder)
+    fun getWifiMethod(wifiService: Any, methodName: String): Method {
         val clazz = wifiService::class.java
         val sdk = Build.VERSION.SDK_INT
         val stringClass = String::class.java
@@ -310,7 +307,7 @@ object ShizukuUtil {
         val wifiManagerBinder = SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
         val wifiService = asInterface("android.net.wifi.IWifiManager", wifiManagerBinder)
 
-        val method = getWifiMethod("setWifiEnabled")
+        val method = getWifiMethod(wifiService, "setWifiEnabled")
 
         when (method.parameterTypes.size) {
             3 -> method.invoke(wifiService, PACKAGE_NAME, enabled, Bundle())
@@ -325,13 +322,13 @@ object ShizukuUtil {
 
         val sdk = Build.VERSION.SDK_INT
         if (sdk <= 29) {
-            val removeMethod = getWifiMethod("removeNetwork")
+            val removeMethod = getWifiMethod(wifiService, "removeNetwork")
             when (removeMethod.parameterTypes.size) {
                 2 -> removeMethod.invoke(wifiService, netId, PACKAGE_NAME)
                 1 -> removeMethod.invoke(wifiService, netId)
             }
         } else {
-            val forgetMethod = getWifiMethod("forget")
+            val forgetMethod = getWifiMethod(wifiService, "forget")
             when (forgetMethod.parameterTypes.size) {
                 4 -> forgetMethod.invoke(wifiService, netId, null, null, 0)
                 2 -> forgetMethod.invoke(wifiService, netId, null)
@@ -340,11 +337,10 @@ object ShizukuUtil {
     }
 
     fun connectToWifi(ssid: String, password: String): Int {
-        val addMethod = getWifiMethod("addOrUpdateNetwork")
-        val wifiService = asInterface(
-            "android.net.wifi.IWifiManager",
-            SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
-        )
+        val wifiManagerBinder = SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
+        val wifiService = asInterface("android.net.wifi.IWifiManager", wifiManagerBinder)
+
+        val addMethod = getWifiMethod(wifiService, "addOrUpdateNetwork")
 
         val wifiConfigurationClass = Class.forName("android.net.wifi.WifiConfiguration")
         val wifiConfig = wifiConfigurationClass.getDeclaredConstructor().newInstance()
@@ -368,7 +364,7 @@ object ShizukuUtil {
 
         if (netId == -1) throw RuntimeException("添加网络失败")
 
-        val enableMethod = getWifiMethod("enableNetwork")
+        val enableMethod = getWifiMethod(wifiService, "enableNetwork")
         when (enableMethod.parameterTypes.size) {
             3 -> enableMethod.invoke(wifiService, netId, true, PACKAGE_NAME)
             2 -> enableMethod.invoke(wifiService, netId, true)
@@ -386,7 +382,7 @@ object ShizukuUtil {
             SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
         )
 
-        val infoMethod = getWifiMethod("getConnectionInfo")
+        val infoMethod = getWifiMethod(wifiService, "getConnectionInfo")
         val wifiInfo = when (infoMethod.parameterTypes.size) {
             2 -> infoMethod.invoke(wifiService, PACKAGE_NAME, null)
             1 -> infoMethod.invoke(wifiService, PACKAGE_NAME)
@@ -396,10 +392,10 @@ object ShizukuUtil {
         val currentNetId = wifiInfo?.networkId ?: -1
         if (currentNetId != -1) {
             try {
-                val allowAutojoinMethod = getWifiMethod("allowAutojoin")
+                val allowAutojoinMethod = getWifiMethod(wifiService, "allowAutojoin")
                 allowAutojoinMethod.invoke(wifiService, currentNetId, false)
             } catch (_: NoSuchMethodException) {
-                val disableMethod = getWifiMethod("disableNetwork")
+                val disableMethod = getWifiMethod(wifiService, "disableNetwork")
                 if (disableMethod.parameterTypes.size == 2) {
                     disableMethod.invoke(wifiService, currentNetId, PACKAGE_NAME)
                 } else {
@@ -409,7 +405,7 @@ object ShizukuUtil {
             }
         }
 
-        val disconnectMethod = getWifiMethod("disconnect")
+        val disconnectMethod = getWifiMethod(wifiService, "disconnect")
         when (disconnectMethod.parameterTypes.size) {
             1 -> disconnectMethod.invoke(wifiService, PACKAGE_NAME)
             else -> disconnectMethod.invoke(wifiService)
@@ -422,7 +418,7 @@ object ShizukuUtil {
             SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
         )
 
-        val scanMethod = getWifiMethod("startScan")
+        val scanMethod = getWifiMethod(wifiService, "startScan")
         val sdk = Build.VERSION.SDK_INT
 
         val scanInitiated = try {
@@ -452,7 +448,7 @@ object ShizukuUtil {
         )
 
         val results = mutableListOf<WifiInfo>()
-        val getScanResultsMethod = getWifiMethod("getScanResults")
+        val getScanResultsMethod = getWifiMethod(wifiService, "getScanResults")
 
         val resultObject = when (getScanResultsMethod.parameterTypes.size) {
             2 -> getScanResultsMethod.invoke(wifiService, PACKAGE_NAME, null)
@@ -496,7 +492,7 @@ object ShizukuUtil {
 
         val results = mutableListOf<Pair<Int, String>>()
         val wifiConfigurationClass = Class.forName("android.net.wifi.WifiConfiguration")
-        val getMethod = getWifiMethod("getConfiguredNetworks")
+        val getMethod = getWifiMethod(wifiService, "getConfiguredNetworks")
 
         val rawResult = when (getMethod.parameterTypes.size) {
             3 -> getMethod.invoke(wifiService, PACKAGE_NAME, null, false)
@@ -506,7 +502,6 @@ object ShizukuUtil {
             else -> null
         } ?: return emptyList()
 
-        // 核心修复：判断返回值是 List 还是 ParceledListSlice
         @Suppress("UNCHECKED_CAST")
         val configuredNetworksList = if (rawResult is List<*>) {
             rawResult as List<Any>
@@ -517,7 +512,11 @@ object ShizukuUtil {
 
         if (configuredNetworksList.isEmpty()) return results
         val networkIdField = wifiConfigurationClass.getField("networkId")
-        val ssidFieldConfig = try { wifiConfigurationClass.getField("SSID") } catch (_: Exception) { null }
+        val ssidFieldConfig = try {
+            wifiConfigurationClass.getField("SSID")
+        } catch (_: Exception) {
+            null
+        }
 
         val seenIds = HashSet<Int>()
         configuredNetworksList.forEach { config ->
@@ -528,7 +527,9 @@ object ShizukuUtil {
             if (ssidFieldConfig != null) {
                 ssidValue = try {
                     ssidFieldConfig.get(config)?.toString() ?: ""
-                } catch (_: Exception) { "" }
+                } catch (_: Exception) {
+                    ""
+                }
             }
             if (ssidValue.length >= 2 && ssidValue.startsWith("\"") && ssidValue.endsWith("\"")) {
                 ssidValue = ssidValue.substring(1, ssidValue.length - 1)
