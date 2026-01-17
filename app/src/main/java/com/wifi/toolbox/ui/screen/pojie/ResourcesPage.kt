@@ -7,6 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.wifi.toolbox.ui.LocalEditorController
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -14,6 +16,9 @@ fun ResourcesPage(
     showFabDialog: Boolean,
     onShowFabDialogChange: (Boolean) -> Unit
 ) {
+    val editor = LocalEditorController.current
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { onShowFabDialogChange(true) }) {
@@ -39,7 +44,16 @@ fun ResourcesPage(
 
                 },
                 confirmButton = {
-                    TextButton(onClick = { onShowFabDialogChange(false) }) {
+                    TextButton(onClick = {
+
+                        editor.open("hello world"/*file.readText()*/) { newContent ->
+                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+
+                                //file.writeText(newContent)
+                            }
+                        }
+                        onShowFabDialogChange(false)
+                    }) {
                         Text("确定")
                     }
                 },
