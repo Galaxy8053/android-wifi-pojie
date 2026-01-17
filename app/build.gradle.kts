@@ -106,13 +106,13 @@ dependencies {
     implementation(libs.preference)
     implementation(libs.androidx.compose.runtime.annotation)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
-
     implementation(libs.materialKolor)
-
     implementation(libs.miuix)
     implementation(libs.coil.compose)
-
     implementation(libs.hiddenapibypass)
+
+    implementation(platform(libs.editor.bom))
+    implementation(libs.editor)
 
     implementation(libs.play.services.location) //注:依赖play服务，打开系统定位（也许有点臃肿，算了不管了）
     testImplementation(libs.junit)

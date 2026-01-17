@@ -37,20 +37,16 @@ fun PojieScreen(onMenuClick: () -> Unit) {
     var pojieSettings by rememberPojieSettings(context)
     val pojieWifiController = rememberPojieWifiController(context, app, pojieSettings)
 
-    val pages = remember(pojieSettings, pojieWifiController, refreshTrigger) {
+    var showResourcesFabDialog by rememberSaveable { mutableStateOf(false) } // New state for ResourcesPage FAB dialog
+
+    val pages = remember(pojieSettings, pojieWifiController, refreshTrigger, showResourcesFabDialog) { // Add showResourcesFabDialog to remember key
         listOf(
             object : NavPage {
                 override val name = "资源"
                 override val selectedIcon = Icons.Filled.Inbox
                 override val unselectedIcon = Icons.Outlined.Inbox
                 override val content = @Composable {
-                    ResourcesPage(
-                        refreshTrigger = refreshTrigger,
-                        onStartEdit = { id ->
-                            editingResourceId = id
-                            isEditingResource = true
-                        }
-                    )
+                    ResourcesPage(showFabDialog = showResourcesFabDialog) { showResourcesFabDialog = it } // Pass state and setter
                 }
             },
             object : NavPage {
@@ -97,23 +93,6 @@ fun PojieScreen(onMenuClick: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         NavContainer(pages, 2, "密码字典破解", onMenuClick)
-
-        AnimatedVisibility(
-            visible = isEditingResource,
-            enter = slideInHorizontally(initialOffsetX = { it }),
-            exit = slideOutHorizontally(targetOffsetX = { it })
-        ) {
-            Surface(Modifier.fillMaxSize()) {
-                ResourceEditPage(
-                    targetId = editingResourceId,
-                    onBack = {
-                        isEditingResource = false
-                        editingResourceId = null
-                        refreshTrigger++
-                    }
-                )
-            }
-        }
 
         if (showPasswordSheet) {
             val sheetScope = rememberCoroutineScope()

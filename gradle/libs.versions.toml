@@ -3,6 +3,7 @@ agp = "8.13.2"
 coilCompose = "3.3.0"
 composeBomVersion = "2026.01.00"
 desugar_jdk_libs = "2.1.5"
+editorBom = "0.24.3"
 hiddenapibypass = "6.1"
 kotlin = "2.3.0"
 coreKtx = "1.17.0"
@@ -33,6 +34,8 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 api = { module = "dev.rikka.shizuku:api", version.ref = "shizukuVersion" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
+editor = { module = "io.github.rosemoe:editor" }
+editor-bom = { module = "io.github.rosemoe:editor-bom", version.ref = "editorBom" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
