@@ -3,7 +3,7 @@ package com.wifi.toolbox.ui.screen.pojie
 /**
  * 警告：这里是屎山，有BUG也不要乱动！！
  * （看来用AI写代码不是个好主意）
- * 已知BUG：快速编辑一个脚本资源的id并重新点开查看，应用崩溃
+ * 已知BUG：快速编辑一个脚本资源并重新点开查看，应用崩溃
  */
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -158,7 +158,7 @@ fun ResourcesPage(
     fun openEditorForScript(res: PojieResource, isNew: Boolean) {
         currentEditingId = res.id
 
-        editor.open(res.content) { newContent ->
+        editor.open(res.content,"js") { newContent ->
             val newRes = PojieResource.parseScript(newContent)
 
             val oldId = currentEditingId ?: res.id

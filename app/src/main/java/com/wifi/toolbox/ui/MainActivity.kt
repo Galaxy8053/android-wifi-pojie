@@ -16,7 +16,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +43,16 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
+
+import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
+import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
+import io.github.rosemoe.sora.langs.textmate.registry.GrammarRegistry
+import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
+import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
+import io.github.rosemoe.sora.langs.textmate.registry.model.ThemeModel
+import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
+import org.eclipse.tm4e.core.registry.IThemeSource
+
 
 class EditorViewModel : ViewModel() {
     var editorInstance: CodeEditor? = null
@@ -309,9 +318,7 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier.fillMaxSize(),
                                             factory = { context ->
                                                 editorViewModel.editorInstance?.let { existingView ->
-                                                    (existingView.parent as? ViewGroup)?.removeView(
-                                                        existingView
-                                                    )
+                                                    (existingView.parent as? ViewGroup)?.removeView(existingView)
                                                     existingView
                                                 } ?: CodeEditor(context).apply {
                                                     layoutParams = ViewGroup.LayoutParams(-1, -1)
@@ -319,12 +326,72 @@ class MainActivity : ComponentActivity() {
                                                     nonPrintablePaintingFlags = 28
                                                     setText(editorViewModel.editorInitialContent)
 
-                                                    //TODO:这里设置语言高亮
+                                                    val fileProvider = FileProviderRegistry.getInstance()
+                                                    fileProvider.addFileProvider(AssetsFileResolver(context.assets))
+                                                    val grammarRegistry = GrammarRegistry.getInstance()
+                                                    grammarRegistry.loadGrammars("textmate/languages.json")
+
+                                                    val themeRegistry = ThemeRegistry.getInstance()
+                                                    val themeName = if (useDarkTheme) "darcula" else "quietlight"
+                                                    val themePath = "textmate/$themeName.json"
+
+                                                    try {
+                                                        if (themeRegistry.findThemeByFileName(themeName) == null) {
+                                                            themeRegistry.loadTheme(
+                                                                ThemeModel(
+                                                                    IThemeSource.fromInputStream(
+                                                                        fileProvider.tryGetInputStream(themePath)!!,
+                                                                        themePath,
+                                                                        null
+                                                                    ),
+                                                                    themeName
+                                                                ).apply { isDark = useDarkTheme }
+                                                            )
+                                                        }
+                                                        themeRegistry.setTheme(themeName)
+                                                        colorScheme = TextMateColorScheme.create(themeRegistry)
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
+                                                    }
+
+                                                    if (editorViewModel.editorLanguage == "js") {
+                                                        setEditorLanguage(TextMateLanguage.create("source.js", true))
+                                                    } else {
+                                                        setEditorLanguage(null)
+                                                    }
 
                                                     editorViewModel.editorInstance = this
                                                 }
                                             },
-                                            update = { view -> view.invalidate() }
+                                            update = { view ->
+                                                val themeRegistry = ThemeRegistry.getInstance()
+                                                val themeName = if (useDarkTheme) "darcula" else "quietlight"
+                                                val existingTheme = themeRegistry.findThemeByFileName(themeName)
+
+                                                if (existingTheme != null) {
+                                                    if (themeRegistry.currentThemeModel != existingTheme) {
+                                                        themeRegistry.setTheme(themeName)
+                                                        view.colorScheme = TextMateColorScheme.create(themeRegistry)
+                                                    }
+                                                } else {
+                                                    try {
+                                                        val fileProvider = FileProviderRegistry.getInstance()
+                                                        val themePath = "textmate/$themeName.json"
+                                                        themeRegistry.loadTheme(
+                                                            ThemeModel(
+                                                                IThemeSource.fromInputStream(
+                                                                    fileProvider.tryGetInputStream(themePath)!!,
+                                                                    themePath,
+                                                                    null
+                                                                ),
+                                                                themeName
+                                                            ).apply { isDark = useDarkTheme }
+                                                        )
+                                                        view.colorScheme = TextMateColorScheme.create(themeRegistry)
+                                                    } catch (e: Exception) { }
+                                                }
+                                                view.invalidate()
+                                            }
                                         )
                                     }
                                 }
