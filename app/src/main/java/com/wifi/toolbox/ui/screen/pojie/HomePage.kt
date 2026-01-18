@@ -6,23 +6,53 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.structs.PojieConfig
+import com.wifi.toolbox.structs.PojieRunInfo
+import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.wifi.toolbox.utils.LogState
+import com.wifi.toolbox.utils.PojieWifiController
+import com.wifi.toolbox.ui.items.ScanResult
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomePage(
     runListView: @Composable () -> Unit = {}
 ) {
-    val app = LocalContext.current.applicationContext as MyApplication
+    val context = LocalContext.current
+    val app = remember { context.applicationContext as? MyApplication }
 
+    if (app == null) {
+        HomePageContent(
+            pojieConfig = PojieConfig(),
+            logState = LogState(),
+            onConfigChange = {},
+            runListView = runListView
+        )
+    } else {
+        HomePageContent(
+            pojieConfig = app.pojieConfig,
+            logState = app.logState,
+            onConfigChange = { app.updatePojieConfig(it) },
+            runListView = runListView
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun HomePageContent(
+    pojieConfig: PojieConfig,
+    logState: LogState,
+    onConfigChange: (PojieConfig) -> Unit,
+    runListView: @Composable () -> Unit = {}
+) {
     var expandedParamsCard by rememberSaveable { mutableStateOf(true) }
     var expandedOutputCard by rememberSaveable { mutableStateOf(false) }
 
@@ -33,8 +63,6 @@ fun HomePage(
     val configScrollState = rememberSaveable(saver = scrollStateSaver) {
         ScrollState(0)
     }
-
-    val logState = app.logState
 
     Column(
         modifier = Modifier
@@ -53,7 +81,6 @@ fun HomePage(
                 }
             }
         ) {
-
             Column(
                 modifier = Modifier
                     .fillMaxHeight(0.4f)
@@ -61,11 +88,12 @@ fun HomePage(
                     .padding(16.dp, 0.dp, 16.dp, 16.dp),
             ) {
                 ConfigItems(
-                    config = app.pojieConfig,
-                    onConfigChange = { app.updatePojieConfig(it) },
+                    config = pojieConfig,
+                    onConfigChange = { onConfigChange(it) },
                 )
             }
         }
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -73,6 +101,7 @@ fun HomePage(
         ) {
             runListView()
         }
+
         FoldCard(
             title = "运行输出",
             expanded = expandedOutputCard,
@@ -96,5 +125,50 @@ fun HomePage(
 @Preview(showBackground = true)
 @Composable
 fun HomePagePreview() {
-    HomePage()
+    val mockController = object : PojieWifiController {
+        override val uiState: ScreenState = ScreenState.Success(true)
+        override val isScanning: Boolean = false
+        override val trigger: Int = 0
+        override val runningTasks: List<PojieRunInfo> = listOf(
+            PojieRunInfo(
+                ssid = "ChinaNet-Preview",
+                tryList = emptyList(),
+                tryIndex = 0,
+                lastTryTime = 0,
+                retryCount = 0,
+                textTip = "加载中",
+            )
+        )
+        override val finishedInfo: SnapshotStateMap<String, String> = SnapshotStateMap<String, String>().apply {
+            put("TP-LINK_5G", "已完成")
+        }
+        override fun reload() {}
+        override fun fetchResults(): ScanResult = ScanResult(
+            code = ScanResult.CODE_SUCCESS,
+            wifiList = listOf(
+                WifiInfo("ChinaNet-Preview", -40, "[WPA2-PSK-CCMP]"),
+                WifiInfo("TP-LINK_5G", -60, "[WPA2-PSK-CCMP]"),
+                WifiInfo("Xiaomi_Router", -75, "[WPA2-PSK-CCMP]")
+            )
+        )
+        override fun toggleWifiOn() {}
+        override fun applyLocation() {}
+        override fun enableLocation() {}
+        override fun disconnectWifi() {}
+    }
+
+    MaterialTheme {
+        HomePageContent(
+            pojieConfig = PojieConfig(),
+            logState = LogState(),
+            onConfigChange = {},
+            runListView = {
+                RunListView(
+                    controller = mockController,
+                    onStartClick = {},
+                    onStopClick = {}
+                )
+            }
+        )
+    }
 }

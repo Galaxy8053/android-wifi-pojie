@@ -74,15 +74,6 @@ android {
         includeInApk = false
         includeInBundle = false
     }
-
-//    applicationVariants.all {
-//        if (name == "release") {
-//            outputs.configureEach {
-//                (this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl)?.outputFileName =
-//                    "${defaultConfig.applicationId}-v${defaultConfig.versionName}.apk"
-//            }
-//        }
-//    }
 }
 
 dependencies {
@@ -111,6 +102,7 @@ dependencies {
     implementation(libs.miuix)
     implementation(libs.coil.compose)
     implementation(libs.hiddenapibypass)
+    implementation("io.github.taoweiji.quickjs:quickjs-android:1.4.6")
 
     implementation(platform(libs.editor.bom))
     implementation(libs.editor)

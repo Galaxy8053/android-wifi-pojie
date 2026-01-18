@@ -80,8 +80,8 @@ fun rememberPojieWifiController(
                                     delay(SCAN_INTERVAL.toLong())
                                 }
                             } else {
-                                showScanResult = false
                                 trigger++
+                                showScanResult = false
                                 delay(MIN_SCAN_TIME.toLong()) //心理作用？
                                 showScanResult = true
                                 trigger++

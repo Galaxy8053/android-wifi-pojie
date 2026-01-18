@@ -30,6 +30,7 @@ import com.wifi.toolbox.MyApplication
 import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieResource
 import com.wifi.toolbox.ui.LocalEditorController
+import com.wifi.toolbox.ui.items.PojieResourceItem
 import com.wifi.toolbox.utils.PojieStore
 import kotlinx.coroutines.*
 import java.util.Locale
@@ -158,7 +159,7 @@ fun ResourcesPage(
     fun openEditorForScript(res: PojieResource, isNew: Boolean) {
         currentEditingId = res.id
 
-        editor.open(res.content,"js") { newContent ->
+        editor.open(res.content, "js") { newContent ->
             val newRes = PojieResource.parseScript(newContent)
 
             val oldId = currentEditingId ?: res.id
@@ -216,27 +217,13 @@ fun ResourcesPage(
                     items = resources
                 ) { res ->
                     key(res.id) {
-                        ListItem(
-                            headlineContent = { Text(res.name ?: res.id) },
-                            supportingContent = {
-                                Text(
-                                    text = res.description ?: "无描述",
-                                    maxLines = 2,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            },
-                            leadingContent = {
-                                Icon(
-                                    if (res.type == 1) Icons.Default.Code else Icons.Default.Description,
-                                    contentDescription = null
-                                )
-                            },
+                        PojieResourceItem(
                             modifier = Modifier.clickable {
                                 selectedResource = res
                                 showDetailSheet = true
-                            }
+                            },
+                            res = res
                         )
-                        HorizontalDivider()
                     }
                 }
             }
