@@ -56,6 +56,7 @@ object ResourcesRunner {
 
         resources.forEachIndexed { index, res ->
             onProgress(index + 1, resources.size)
+            onLog("执行第[${index+1}]个：${res.name}(${res.id})")
             val items = when (res.type) {
                 0 -> res.content.split("\n")
                     .map { it.trim() }
@@ -63,7 +64,7 @@ object ResourcesRunner {
                 1 -> try {
                     runScript(res.content, wifiInfo, onLog = onLog)
                 } catch (e: Exception) {
-                    onLog("脚本执行失败: ${res.id}, ${e.message}")
+                    onLog(e.message.toString())
                     emptyList()
                 }
                 else -> emptyList()
@@ -71,6 +72,7 @@ object ResourcesRunner {
             if (items.isNotEmpty()) {
                 allLists.add(items)
             }
+            onLog("第[${index+1}]个执行完毕，共${items.size}条")
         }
 
         val combined = mutableListOf<String>()
@@ -87,10 +89,13 @@ object ResourcesRunner {
                 }
             }
         }
-
-        return combined.asSequence()
+        val result = combined.asSequence()
             .distinct()
             .filter { it.length >= 8 }
             .toList()
+
+        onLog("全部执行完毕，共${result.size}条")
+
+        return result
     }
 }

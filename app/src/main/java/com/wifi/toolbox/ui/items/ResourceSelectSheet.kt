@@ -1,10 +1,14 @@
 package com.wifi.toolbox.ui.items
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.WifiInfo
+import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.utils.PojieStore
 import com.wifi.toolbox.utils.ResourcesRunner
 
@@ -39,6 +44,9 @@ fun ResourceSelectSheet(
     if (!show) return
 
     val context = LocalContext.current
+
+    val logState = remember { LogState() }
+    var showLog by remember { mutableStateOf(false) }
 
     val allResources = remember { PojieStore.getAll(context) }
     var selectedIds by remember { mutableStateOf(listOf<String>()) }
@@ -61,6 +69,7 @@ fun ResourceSelectSheet(
             resultList = emptyList()
             return@LaunchedEffect
         }
+        logState.clear()
 
         isRunning = true
         val selectedResources = selectedIds.mapNotNull { id -> allResources.find { it.id == id } }
@@ -69,7 +78,7 @@ fun ResourceSelectSheet(
             resources = selectedResources,
             wifiInfo = wifiInfo,
             onProgress = { _, _ -> },
-            onLog = { android.util.Log.d("JS_LOG", it) }
+            onLog = { logState.addLog(it) }
         )
 
         resultList = results
@@ -81,7 +90,7 @@ fun ResourceSelectSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
 
-    ) {
+        ) {
         Text(
             text = "选择密码本",
             style = MaterialTheme.typography.headlineSmall,
@@ -90,7 +99,7 @@ fun ResourceSelectSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.6f) // 略微调高比例，方便操作
+                .fillMaxHeight(0.5f)
         ) {
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(sortedList, key = { it.id }) { res ->
@@ -111,21 +120,47 @@ fun ResourceSelectSheet(
                     )
                 }
             }
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterEnd
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    modifier = Modifier.padding(16.dp),
-                    enabled = !isRunning && resultList.isNotEmpty(),
-                    onClick = {
-                        onConfirm(resultList)
-                        onDismiss()
-                    }
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
+
+                androidx.compose.material3.TextButton(
+                    onClick = { showLog = !showLog }
                 ) {
-                    Text(if (isRunning) "运行中..." else "完成 (${resultList.size})")
+                    Text(if (showLog) "收起日志" else "展开日志")
+                }
+
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Button(
+                        enabled = !isRunning && resultList.isNotEmpty(),
+                        onClick = {
+                            onConfirm(resultList)
+                            onDismiss()
+                        }
+                    ) {
+                        Text(if (isRunning) "运行中..." else "完成 (${resultList.size})")
+                    }
                 }
             }
+        }
+        AnimatedVisibility(
+            visible = showLog,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            LogView(
+                logState = logState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+            )
         }
     }
 }
