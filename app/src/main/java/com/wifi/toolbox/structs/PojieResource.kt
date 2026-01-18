@@ -27,9 +27,7 @@ data class PojieResource(
 
             val id = properties["id"] ?: throw Exception("脚本声明中未找到id属性")
 
-            if (!ID_REGEX.matches(id)) {
-                throw Exception("id必须匹配/^[a-zA-Z][a-zA-Z0-9._-]+\$/")
-            }
+            testId(id)
 
             return PojieResource(
                 id = id,
@@ -46,9 +44,7 @@ data class PojieResource(
             val json = org.json.JSONObject(jsonString)
             val id = json.optString("id") ?: throw Exception("信息缺少id")
 
-            if (!ID_REGEX.matches(id)) {
-                throw Exception("id必须匹配/^[a-zA-Z][a-zA-Z0-9._-]+\$/")
-            }
+            testId(id)
 
             return PojieResource(
                 id = id,
@@ -59,6 +55,12 @@ data class PojieResource(
                 author = if (json.isNull("author")) null else json.optString("author"),
                 version = if (json.isNull("version")) null else json.optString("version")
             )
+        }
+
+        fun testId(id:String){
+            if (!ID_REGEX.matches(id)) {
+                throw Exception("id必须匹配/^[a-zA-Z][a-zA-Z0-9._-]+\$/")
+            }
         }
     }
 }

@@ -109,10 +109,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun handleCrashRecovery(intent: Intent?) {
+        val isRecovery = intent?.getBooleanExtra("CRASH_RECOVERY", false) ?: false
+        if (isRecovery) {
+            val msg = intent.getStringExtra("ERROR_MESSAGE") ?: "未知错误"
+            val stack = intent.getStringExtra("ERROR_STACK") ?: ""
+
+            val app = application as MyApplication
+
+            app.alert(
+                title = "崩溃啦",
+                text = "刚才发生了不可逆的错误，应用已自动重启\n$msg\n你可以将此截图发给开发者，以及描述刚才做了什么（但能不能修复就是另一回事了）"
+            )
+
+            if (BuildConfig.DEBUG) {
+                println("Crash Recovery StackTrace:\n$stack")
+            }
+            intent.removeExtra("CRASH_RECOVERY")
+        }
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleCrashRecovery(intent)
         handleIntent(intent)
         enableEdgeToEdge()
         ShizukuUtil.initialize(applicationContext)

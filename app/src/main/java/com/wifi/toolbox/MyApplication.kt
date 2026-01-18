@@ -25,6 +25,7 @@ import android.content.Intent
 import androidx.compose.runtime.mutableStateMapOf
 import com.wifi.toolbox.services.PojieService
 import com.wifi.toolbox.utils.ActivityStack
+import kotlin.system.exitProcess
 
 
 class MyApplication : Application() {
@@ -57,6 +58,23 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+            val errorMessage = throwable.localizedMessage ?: "未知错误"
+            val stackTrace = throwable.stackTraceToString()
+
+            val restartIntent = Intent(this, Class.forName("com.wifi.toolbox.ui.MainActivity")).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                putExtra("CRASH_RECOVERY", true)
+                putExtra("ERROR_MESSAGE", errorMessage)
+                putExtra("ERROR_STACK", stackTrace)
+            }
+
+            startActivity(restartIntent)
+            android.os.Process.killProcess(android.os.Process.myPid())
+            exitProcess(10)
+        }
+
         try {
             ShizukuProvider.enableMultiProcessSupport(true)
         } catch (_: Throwable) {

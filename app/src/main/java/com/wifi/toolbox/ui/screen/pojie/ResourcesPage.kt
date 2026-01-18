@@ -1,27 +1,29 @@
 package com.wifi.toolbox.ui.screen.pojie
 
+/**
+ * 警告：这里是屎山，有BUG也不要乱动！！
+ * （看来用AI写代码不是个好主意）
+ * 已知BUG：快速编辑一个脚本资源的id并重新点开查看，应用崩溃
+ */
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.mapSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.saveable.*
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.MyApplication
@@ -29,9 +31,8 @@ import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieResource
 import com.wifi.toolbox.ui.LocalEditorController
 import com.wifi.toolbox.utils.PojieStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import java.util.Locale
 
 data class ResourceDraft(
     val id: String,
@@ -93,16 +94,53 @@ fun ResourcesPage(
     var showDetailSheet by rememberSaveable { mutableStateOf(false) }
 
     var draftState by rememberSaveable(stateSaver = ResourceDraftSaver) {
-        mutableStateOf<ResourceDraft?>(null)
+        mutableStateOf(null)
     }
     var showEditDialog by rememberSaveable { mutableStateOf(false) }
 
     var selectedFabOption by rememberSaveable { mutableStateOf<Int?>(null) }
     val defaultScriptContent = stringResource(id = R.string.default_script_content)
 
+    var currentEditingId by rememberSaveable { mutableStateOf<String?>(null) }
+
     LaunchedEffect(refreshKey) {
         withContext(Dispatchers.IO) {
             resources = PojieStore.getAll(context)
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val content = context.contentResolver.openInputStream(it)?.use { stream ->
+                        stream.bufferedReader().readText()
+                    } ?: return@launch
+
+                    val fileName = it.path?.lowercase() ?: ""
+
+                    if (fileName.lowercase(Locale.ROOT).endsWith(".js")) {
+                        val newRes = PojieResource.parseScript(content)
+                        PojieStore.testExists(context, newRes, null)
+                        PojieStore.save(context, newRes)
+                    } else if (fileName.lowercase(Locale.ROOT).endsWith(".json")) {
+                        val newRes = PojieResource.parseJSON(content)
+                        PojieStore.testExists(context, newRes, null)
+                        PojieStore.save(context, newRes)
+                    }
+
+                    refreshKey++
+                    withContext(Dispatchers.Main) {
+                        onShowFabDialogChange(false)
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        app.alert("导入失败", e.message.toString())
+                    }
+                }
+            }
         }
     }
 
@@ -118,15 +156,27 @@ fun ResourcesPage(
     }
 
     fun openEditorForScript(res: PojieResource, isNew: Boolean) {
+        currentEditingId = res.id
+
         editor.open(res.content) { newContent ->
             val newRes = PojieResource.parseScript(newContent)
-            PojieStore.testExists(context, newRes, res.id)
+
+            val oldId = currentEditingId ?: res.id
+
+            PojieStore.testExists(context, newRes, oldId)
+
             scope.launch(Dispatchers.IO) {
-                if (!isNew && newRes.id != res.id) {
-                    PojieStore.update(context, res.id, newRes)
+                if (isNew && oldId == res.id) {
+                    PojieStore.save(context, newRes, oldId)
                 } else {
-                    PojieStore.save(context, newRes, res.id)
+                    if (oldId != newRes.id) {
+                        PojieStore.update(context, oldId, newRes)
+                    } else {
+                        PojieStore.save(context, newRes, oldId)
+                    }
                 }
+
+                currentEditingId = newRes.id
                 refreshKey++
             }
         }
@@ -162,96 +212,99 @@ fun ResourcesPage(
                     .padding(paddingValues),
                 contentPadding = PaddingValues(bottom = 88.dp)
             ) {
-                items(resources) { res ->
-                    ListItem(
-                        headlineContent = { Text(res.name ?: res.id) },
-                        supportingContent = {
-                            Text(
-                                text = res.description ?: "无描述",
-                                maxLines = 2,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        },
-                        leadingContent = {
-                            Icon(
-                                if (res.type == 1) Icons.Default.Code else Icons.Default.Description,
-                                contentDescription = null
-                            )
-                        },
-                        modifier = Modifier.clickable {
-                            selectedResource = res
-                            showDetailSheet = true
-                        }
-                    )
-                    HorizontalDivider()
+                items(
+                    items = resources
+                ) { res ->
+                    key(res.id) {
+                        ListItem(
+                            headlineContent = { Text(res.name ?: res.id) },
+                            supportingContent = {
+                                Text(
+                                    text = res.description ?: "无描述",
+                                    maxLines = 2,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    if (res.type == 1) Icons.Default.Code else Icons.Default.Description,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                selectedResource = res
+                                showDetailSheet = true
+                            }
+                        )
+                        HorizontalDivider()
+                    }
                 }
             }
         }
 
-        if (showDetailSheet && selectedResource != null) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    showDetailSheet = false
-                    selectedResource = null // 建议置空，防止重组时读取旧数据
-                },
-                sheetState = sheetState, // 显式绑定状态
-                contentWindowInsets = { WindowInsets(0) } // 消除可能的内边距计算干扰
-            ) {
-                ResourceDetailContent(
-                    resource = selectedResource!!,
-                    onEdit = {
-                        // 先关闭 Sheet 再打开 Dialog 或编辑器，避免窗口层级冲突
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showDetailSheet = false
-                                if (selectedResource!!.type == 1) {
-                                    openEditorForScript(selectedResource!!, false)
-                                } else {
-                                    draftState = ResourceDraft(
-                                        id = selectedResource!!.id,
-                                        name = selectedResource!!.name,
-                                        description = selectedResource!!.description,
-                                        type = 0,
-                                        content = selectedResource!!.content,
-                                        author = selectedResource!!.author,
-                                        version = selectedResource!!.version,
-                                        originalId = selectedResource!!.id
-                                    )
-                                    showEditDialog = true
+        if (showDetailSheet) {
+            val currentRes = selectedResource
+            if (currentRes != null) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showDetailSheet = false
+                        selectedResource = null
+                    },
+                    sheetState = sheetState,
+                    contentWindowInsets = { WindowInsets(0) }
+                ) {
+                    ResourceDetailContent(
+                        resource = currentRes,
+                        onEdit = {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showDetailSheet = false
+                                    if (currentRes.type == 1) {
+                                        openEditorForScript(currentRes, false)
+                                    } else {
+                                        draftState = ResourceDraft(
+                                            id = currentRes.id,
+                                            name = currentRes.name,
+                                            description = currentRes.description,
+                                            type = 0,
+                                            content = currentRes.content,
+                                            author = currentRes.author,
+                                            version = currentRes.version,
+                                            originalId = currentRes.id
+                                        )
+                                        showEditDialog = true
+                                    }
                                 }
                             }
-                        }
-                    },
-                    onDelete = { deleteResource(selectedResource!!.id) }
-                )
+                        },
+                        onDelete = { deleteResource(currentRes.id) }
+                    )
+                }
             }
         }
-
         if (showEditDialog && draftState != null && !editor.isEditorOpen) {
             EditResourceDialog(
                 draft = draftState!!,
                 onDismiss = { showEditDialog = false },
                 onContentEdit = { currentDraftFromUI ->
-                    // 1. 先把 Dialog 里的最新输入保存到 draftState
                     draftState = currentDraftFromUI
-                    // 2. 再打开编辑器
                     editor.open(currentDraftFromUI.content) { newContent ->
-                        // 3. 编辑器返回后更新 content，此时其他字段已经是刚才同步过的了
                         draftState = draftState?.copy(content = newContent)
                     }
                 },
                 onSave = { finalDraft ->
+                    val newRes = PojieResource(
+                        id = finalDraft.id,
+                        name = finalDraft.name,
+                        description = finalDraft.description,
+                        type = finalDraft.type,
+                        content = finalDraft.content,
+                        author = finalDraft.author,
+                        version = finalDraft.version
+                    )
+                    PojieStore.testExists(context, newRes, finalDraft.originalId)
                     scope.launch(Dispatchers.IO) {
                         try {
-                            val newRes = PojieResource(
-                                id = finalDraft.id,
-                                name = finalDraft.name,
-                                description = finalDraft.description,
-                                type = finalDraft.type,
-                                content = finalDraft.content,
-                                author = finalDraft.author,
-                                version = finalDraft.version
-                            )
                             if (finalDraft.originalId != null) {
                                 PojieStore.update(context, finalDraft.originalId, newRes)
                             } else {
@@ -293,41 +346,60 @@ fun ResourcesPage(
                     }
                 },
                 confirmButton = {
-                    Button(
-                        enabled = selectedFabOption != null,
-                        onClick = {
-                            onShowFabDialogChange(false)
-                            if (selectedFabOption == 0) {
-                                draftState = ResourceDraft(
-                                    id = PojieStore.randomID(),
-                                    name = "",
-                                    description = "",
-                                    type = 0,
-                                    content = "",
-                                    author = "",
-                                    version = "",
-                                    originalId = null
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                importLauncher.launch(
+                                    arrayOf(
+                                        "application/javascript",
+                                        "application/json"
+                                    )
                                 )
-                                showEditDialog = true
-                            } else {
-                                val tempId = PojieStore.randomID()
-                                val content = defaultScriptContent.replace("{ID}", tempId)
-                                editor.open(content) { newContent ->
-                                    val newRes = PojieResource.parseScript(newContent)
-                                    PojieStore.testExists(context, newRes, null)
-                                    scope.launch(Dispatchers.IO) {
-                                        PojieStore.save(context, newRes)
-                                        refreshKey++
+                            }
+                        ) {
+                            Text("导入js/json")
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { onShowFabDialogChange(false) }) {
+                                Text("取消")
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Button(
+                                enabled = selectedFabOption != null,
+                                onClick = {
+                                    onShowFabDialogChange(false)
+                                    currentEditingId = null
+                                    if (selectedFabOption == 0) {
+                                        draftState = ResourceDraft(
+                                            id = PojieStore.randomID(),
+                                            name = "",
+                                            description = "",
+                                            type = 0,
+                                            content = "",
+                                            author = "",
+                                            version = "",
+                                            originalId = null
+                                        )
+                                        showEditDialog = true
+                                    } else {
+                                        val tempId = PojieStore.randomID()
+                                        val content = defaultScriptContent.replace("{ID}", tempId)
+                                        openEditorForScript(
+                                            PojieResource.parseScript(content),
+                                            true
+                                        )
                                     }
                                 }
+                            ) {
+                                Text("继续")
                             }
                         }
-                    ) {
-                        Text("继续")
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { onShowFabDialogChange(false) }) { Text("取消") }
                 }
             )
         }
@@ -359,7 +431,7 @@ fun ResourceDetailContent(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = resource.name ?: "未命名",
+                        text = resource.name ?: "-",
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f, false)
                     )
@@ -402,11 +474,6 @@ fun ResourceDetailContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Default.Edit, null)
-                Spacer(Modifier.width(8.dp))
-                Text("编辑")
-            }
             OutlinedButton(
                 onClick = onDelete,
                 modifier = Modifier.weight(1f),
@@ -415,6 +482,11 @@ fun ResourceDetailContent(
                 Icon(Icons.Default.Delete, null)
                 Spacer(Modifier.width(8.dp))
                 Text("删除")
+            }
+            Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.Edit, null)
+                Spacer(Modifier.width(8.dp))
+                Text("编辑")
             }
         }
         Spacer(modifier = Modifier.height(32.dp))
@@ -440,11 +512,40 @@ fun EditResourceDialog(
     onContentEdit: (ResourceDraft) -> Unit,
     onSave: (ResourceDraft) -> Unit
 ) {
+    val app = LocalContext.current.applicationContext as MyApplication
+
     var id by rememberSaveable { mutableStateOf(draft.id) }
     var name by rememberSaveable { mutableStateOf(draft.name ?: "") }
     var description by rememberSaveable { mutableStateOf(draft.description ?: "") }
     var author by rememberSaveable { mutableStateOf(draft.author ?: "") }
     var version by rememberSaveable { mutableStateOf(draft.version ?: "") }
+
+    var contentState by rememberSaveable { mutableStateOf(draft.content) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val clipboardManager = LocalClipboard.current
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(it)?.use { stream ->
+                        val text = stream.bufferedReader().readText()
+                        contentState = text
+                    }
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    val lineCount = remember(contentState) {
+        if (contentState.isBlank()) 0
+        else contentState.split("\n").filter { it.isNotBlank() }.size
+    }
 
     fun emptyAsNull(s: String): String? = s.trim().ifEmpty { null }
 
@@ -453,7 +554,8 @@ fun EditResourceDialog(
         name = emptyAsNull(name),
         description = emptyAsNull(description),
         author = emptyAsNull(author),
-        version = emptyAsNull(version)
+        version = emptyAsNull(version),
+        content = contentState
     )
 
     AlertDialog(
@@ -482,33 +584,82 @@ fun EditResourceDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = author,
-                    onValueChange = { author = it },
-                    label = { Text("作者") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = version,
-                    onValueChange = { version = it },
-                    label = { Text("版本") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = author,
+                        onValueChange = { author = it },
+                        label = { Text("作者") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = version,
+                        onValueChange = { version = it },
+                        label = { Text("版本") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
                 Spacer(Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                clipboardManager.getClipEntry()?.clipData?.getItemAt(0)?.text?.let {
+                                    contentState = it.toString()
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.ContentPaste, null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("剪贴板")
+                    }
+                    OutlinedButton(
+                        onClick = { filePickerLauncher.launch(arrayOf("text/plain")) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.FileOpen, null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("导入文件")
+                    }
+                }
+
                 OutlinedButton(
                     onClick = { onContentEdit(getCurrentDraft()) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
                 ) {
                     Icon(Icons.Default.EditNote, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("编辑内容 (当前长度: ${draft.content.length})")
+                    Text("文本编辑器")
                 }
+
+                Text(
+                    text = "当前包含 $lineCount 条数据",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
             }
         },
         confirmButton = {
             Button(
-                onClick = { onSave(getCurrentDraft()) },
+                onClick = {
+                    try {
+                        onSave(getCurrentDraft())
+                    } catch (e: Exception) {
+                        app.alert("保存失败", e.message.toString())
+                    }
+                },
                 enabled = id.isNotBlank()
             ) {
                 Text("保存")

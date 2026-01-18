@@ -43,6 +43,8 @@ object PojieStore {
     }
 
     fun testExists(context: Context, res: PojieResource, excludeId: String?) {
+        PojieResource.testId(res.id)
+
         val dir = getDir(context)
         val jsonFile = File(dir, "${res.id}.json")
         val jsFile = File(dir, "${res.id}.js")
