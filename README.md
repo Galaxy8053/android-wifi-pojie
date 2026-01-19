@@ -2,14 +2,20 @@
 
 [![Stars](https://img.shields.io/github/stars/bszapp/android-wifi-pojie?style=flat-square&logo=github&color=blue)](https://github.com/bszapp/android-wifi-pojie/stargazers) [![Total Downloads](https://img.shields.io/github/downloads/bszapp/android-wifi-pojie/total?style=flat-square&logo=github&color=orange)](https://github.com/bszapp/android-wifi-pojie/releases)
 
-最新版本：
+最新版本点击下载：
 
 [![Latest Release](https://img.shields.io/github/v/release/bszapp/android-wifi-pojie?style=flat-square&logo=github&color=green)](https://github.com/bszapp/android-wifi-pojie/releases/latest) [![Latest Downloads](https://img.shields.io/github/downloads/bszapp/android-wifi-pojie/latest/total?style=flat-square&logo=github&color=green&label=downloads)](https://github.com/bszapp/android-wifi-pojie/releases/latest)
+
+应用截图：
+
+![screenshot.png](screenshot.png)
 
 ---
 
 v3.x版本，使用kotlin重构项目，包名改为com.wifi.toolbox
 
-目前只能用Shizuku或者普通模式运行，不支持纯root模式，部分功能尚未完善，详情查看源码
+目前只能用Shizuku或者普通模式运行，不支持纯root模式，部分功能尚未完善，有功能改进建议或者新功能建议欢迎来这里提议：[意见征集](https://github.com/bszapp/android-wifi-pojie/discussions/18)
 
-旧版本（支持纯root模式，更多工作模式、历史记录等额外功能）：[前往v2仓库](https://github.com/bszapp/android-wifi-pojie/tree/v1.x-v2.x)
+（AI太好用了你们知道吗）
+
+旧版本（支持纯root模式运行、历史记录等额外功能、界面更完善，不再维护）：[前往v2仓库](https://github.com/bszapp/android-wifi-pojie/tree/v1.x-v2.x)
