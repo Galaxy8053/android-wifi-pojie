@@ -101,7 +101,7 @@ class PojieService : Service() {
                                         }
                                     }
                                 }
-                        }else throw Exception("系统版本过低，无法使用[连接到设备]连接wifi(sdk<29&connectMode=3)")
+                        } else throw Exception("系统版本过低，无法使用[连接到设备]连接wifi(sdk<29&connectMode=3)")
                     }
 
                     when (readLogMode) {
@@ -368,7 +368,7 @@ wifi密码暴力破解工具 v3 for Android
                         )
                     } catch (e: Exception) {
                         if (e !is CancellationException) {
-                            log("E: 任务执行出错：${e.toString()}")
+                            log("E: 任务执行出错：${e.message.toString()}")
                         }
                         taskResult = SinglePojieTask.RESULT_ERROR
                     }
@@ -383,13 +383,20 @@ wifi密码暴力破解工具 v3 for Android
                 timeTag = getLogTime()
                 if (currentWorkerJob?.isCancelled == true) {
                     app.logState.setLine("$timeTag 尝试: (${task.ssid}, $currentPass) 结果: 任务中断")
-                    app.finishedPojieTasksTip[task.ssid]="任务中断(index=${task.tryIndex})"
+                    app.finishedPojieTasksTip[task.ssid] = "任务中断(index=${task.tryIndex})"
                     forgetLastNetwork()
                 } else {
                     if (taskResult != SinglePojieTask.RESULT_ERROR) {
-                        app.logState.setLine("$timeTag 尝试: (${task.ssid}, $currentPass) 结果: $taskResult")
-                    }else{
-                        app.finishedPojieTasksTip[task.ssid]="执行出错，请查看输出"
+                        val resultStr = when (taskResult) {
+                            SinglePojieTask.RESULT_SUCCESS -> "连接成功"
+                            SinglePojieTask.RESULT_FAILED -> "密码认证失败"
+                            SinglePojieTask.RESULT_TIMEOUT -> "执行超时"
+                            SinglePojieTask.RESULT_ERROR_TRANSIENT -> "路由器拒绝接入"
+                            else -> "未知错误"
+                        }
+                        app.logState.setLine("$timeTag 尝试: (${task.ssid}, $currentPass) 结果: $resultStr")
+                    } else {
+                        app.finishedPojieTasksTip[task.ssid] = "执行出错，请查看输出"
                     }
                 }
 

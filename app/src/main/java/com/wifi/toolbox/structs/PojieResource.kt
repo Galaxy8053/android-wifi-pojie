@@ -7,7 +7,8 @@ data class PojieResource(
     val type: Int,
     val content: String,
     val author: String?,
-    val version: String?
+    val version: String?,
+    var isBuiltin: Int = 0 // 0: 外部, 1: 内置, 2: 被覆写的内置
 ) {
     companion object {
         private val ID_REGEX = Regex("^[a-zA-Z][a-zA-Z0-9._-]+$")

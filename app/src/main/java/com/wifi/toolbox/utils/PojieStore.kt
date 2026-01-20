@@ -17,48 +17,91 @@ object PojieStore {
 
     fun getAll(context: Context): List<PojieResource> {
         val dir = getDir(context)
-        return dir.listFiles()?.filter { it.extension == "json" || it.extension == "js" }
-            ?.mapNotNull { file ->
-                get(context, file.nameWithoutExtension)
-            } ?: emptyList()
+        val files = dir.listFiles()?.filter { it.extension == "json" || it.extension == "js" } ?: emptyList()
+        val fileIds = files.map { it.nameWithoutExtension }.toSet()
+
+        val builtinNames = context.assets.list(DIR_NAME)
+            ?.filter { it.endsWith(".json") || it.endsWith(".js") } ?: emptyList()
+        val builtinIds = builtinNames.map { it.substringBeforeLast(".") }.toSet()
+
+        val list = mutableListOf<PojieResource>()
+
+        // 处理文件系统中的资源
+        fileIds.forEach { id ->
+            get(context, id)?.let { res ->
+                if (builtinIds.contains(id)) {
+                    res.isBuiltin = 2 // 被覆写的内置
+                }
+                list.add(res)
+            }
+        }
+
+        // 处理仅在 Assets 中的资源
+        builtinIds.forEach { id ->
+            if (!fileIds.contains(id)) {
+                get(context, id)?.let { res ->
+                    res.isBuiltin = 1 // 原始内置
+                    list.add(res)
+                }
+            }
+        }
+
+        return list.sortedByDescending { res ->
+            if (res.isBuiltin == 1) 0L else {
+                val ext = if (res.type == 0) "json" else "js"
+                File(dir, "${res.id}.$ext").lastModified()
+            }
+        }
     }
 
     fun get(context: Context, id: String): PojieResource? {
         val dir = getDir(context)
         val jsonFile = File(dir, "$id.json")
-        if (jsonFile.exists()) return try {
-            PojieResource.parseJSON(jsonFile.readText())
-        } catch (_: Exception) {
-            null
-        }
-
         val jsFile = File(dir, "$id.js")
-        if (jsFile.exists()) return try {
-            PojieResource.parseScript(jsFile.readText())
-        } catch (_: Exception) {
-            null
+
+        // 优先从 Files 加载
+        if (jsonFile.exists() || jsFile.exists()) {
+            val res = try {
+                if (jsonFile.exists()) PojieResource.parseJSON(jsonFile.readText())
+                else PojieResource.parseScript(jsFile.readText())
+            } catch (_: Exception) { null }
+
+            if (res != null) {
+                val assetsList = context.assets.list(DIR_NAME) ?: emptyArray()
+                res.isBuiltin = if (assetsList.any { it.startsWith("$id.") }) 2 else 0
+                return res
+            }
         }
 
-        return null
+        // 从 Assets 加载
+        return try {
+            val assetsList = context.assets.list(DIR_NAME) ?: emptyArray()
+            if (assetsList.contains("$id.json")) {
+                val content = context.assets.open("$DIR_NAME/$id.json").bufferedReader().use { it.readText() }
+                PojieResource.parseJSON(content).apply { isBuiltin = 1 }
+            } else if (assetsList.contains("$id.js")) {
+                val content = context.assets.open("$DIR_NAME/$id.js").bufferedReader().use { it.readText() }
+                PojieResource.parseScript(content).apply { isBuiltin = 1 }
+            } else null
+        } catch (_: Exception) { null }
     }
 
     fun testExists(context: Context, res: PojieResource, excludeId: String?) {
         PojieResource.testId(res.id)
+        if (res.id == excludeId) return
 
         val dir = getDir(context)
-        val jsonFile = File(dir, "${res.id}.json")
-        val jsFile = File(dir, "${res.id}.js")
+        val fileExists = File(dir, "${res.id}.json").exists() || File(dir, "${res.id}.js").exists()
 
-        if (res.id != excludeId) {
-            if (jsonFile.exists() || jsFile.exists()) {
-                throw Exception("ID“${res.id}”已经存在")
-            }
+        val assetExists = context.assets.list(DIR_NAME)?.any { it.startsWith("${res.id}.") } == true
+
+        if (fileExists || assetExists) {
+            throw Exception("ID“${res.id}”已经存在")
         }
     }
 
     fun save(context: Context, res: PojieResource, excludeId: String? = null) {
         val dir = getDir(context)
-
         testExists(context, res, excludeId)
 
         val ext = if (res.type == 0) "json" else "js"
