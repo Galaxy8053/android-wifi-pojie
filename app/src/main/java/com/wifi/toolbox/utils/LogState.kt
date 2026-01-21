@@ -9,20 +9,23 @@ class LogState {
     val logs = androidx.compose.runtime.mutableStateListOf<String>()
     var wordWrap by mutableStateOf(false)
     var autoScroll by mutableStateOf(true)
+    var lastAllowEditIndex by mutableStateOf(-1)
 
-    fun addLog(log: String) {
-        Log.d("Log","addLog:$log")
+    fun addLog(log: String, allowEdit: Boolean = false) {
+        Log.d("Log", "addLog:$log")
+        if (allowEdit) lastAllowEditIndex = logs.size
         logs.add(log)
     }
 
     fun clear() {
+        lastAllowEditIndex = -1
         logs.clear()
     }
 
     fun setLine(log: String) {
-        Log.d("Log","setLine:$log")
-        if (logs.isNotEmpty()) {
-            logs[logs.size - 1] = log
+        Log.d("Log", "setLine:$log")
+        if (lastAllowEditIndex != -1) {
+            logs[lastAllowEditIndex] = log
         } else {
             addLog(log)
         }

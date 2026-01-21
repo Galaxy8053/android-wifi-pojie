@@ -10,6 +10,7 @@ import android.net.*
 import android.net.wifi.*
 import android.os.Build
 import android.provider.Settings
+import android.text.BoringLayout
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
@@ -113,10 +114,11 @@ object ApiUtil {
             netId
         } else -1
     }
-    fun forgetNetwork(context: Context, netId: Int){
+
+    fun forgetNetwork(context: Context, netId: Int): Boolean {
         val wifiManager =
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        wifiManager.removeNetwork(netId)
+        return wifiManager.removeNetwork(netId)
     }
 
     fun enableLocation(context: Context): Boolean {
@@ -142,6 +144,25 @@ object ApiUtil {
             }
             false
         } else true
+    }
+
+
+    fun getSavedWifiList(context: Context): List<Pair<Int, String>> {
+        val wifiManager =
+            context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val configs = wifiManager.configuredNetworks ?: return emptyList()
+
+        return configs.mapNotNull { config ->
+            var ssid = config.SSID ?: return@mapNotNull null
+            if (ssid.startsWith("\"") && ssid.endsWith("\"") && ssid.length >= 2) {
+                ssid = ssid.substring(1, ssid.length - 1)
+            }
+            Pair(config.networkId, ssid)
+        }
+    }
+
+    fun getNetIdBySsid(context: Context, ssid: String): Int {
+        return getSavedWifiList(context).find { it.second == ssid }?.first ?: -1
     }
 
     fun startScan(context: Context): Boolean {

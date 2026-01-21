@@ -316,7 +316,7 @@ object ShizukuUtil {
         }
     }
 
-    fun forgetNetwork(netId: Int) {
+    fun forgetNetwork(netId: Int){
         val wifiManagerBinder = SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
         val wifiService = asInterface("android.net.wifi.IWifiManager", wifiManagerBinder)
 
@@ -334,6 +334,11 @@ object ShizukuUtil {
                 2 -> forgetMethod.invoke(wifiService, netId, null)
             }
         }
+    }
+
+    fun getNetIdBySsid(ssid: String): Int {
+        val savedNetworks = getSavedWifiList()
+        return savedNetworks.find { it.second == ssid }?.first ?: -1
     }
 
     fun connectToWifi(ssid: String, password: String): Int {
