@@ -45,7 +45,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.PojieResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -117,7 +117,7 @@ fun EditResourceDialog(
     onContentEdit: (PojieResource) -> Unit,
     onSave: (PojieResource) -> Unit
 ) {
-    val app = LocalContext.current.applicationContext as MyApplication
+    val app = LocalContext.current.applicationContext as ToolboxApp
     var id by rememberSaveable { mutableStateOf(draft.id) }
     var name by rememberSaveable { mutableStateOf(draft.name ?: "") }
     var description by rememberSaveable { mutableStateOf(draft.description ?: "") }

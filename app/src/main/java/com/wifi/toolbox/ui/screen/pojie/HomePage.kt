@@ -11,7 +11,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.ui.items.pojie.*
@@ -23,7 +23,7 @@ fun HomePage(
     runListView: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val app = remember { context.applicationContext as? MyApplication }
+    val app = remember { context.applicationContext as? ToolboxApp }
 
     if (app == null) {
         HomePageContent(
@@ -36,7 +36,7 @@ fun HomePage(
         HomePageContent(
             pojieConfig = app.pojieConfig,
             logState = app.logState,
-            onConfigChange = { app.updatePojieConfig(it) },
+            onConfigChange = { app.pojieTask.update(it) },
             runListView = runListView
         )
     }

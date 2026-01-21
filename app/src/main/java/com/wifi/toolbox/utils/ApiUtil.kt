@@ -121,7 +121,7 @@ object ApiUtil {
         return wifiManager.removeNetwork(netId)
     }
 
-    fun enableLocation(context: Context): Boolean {
+    fun enableLocation(context: Context, onEnabled: (() -> Unit)? = null): Boolean {
         return if (!isLocationEnabled(context)) {
             try {
                 val activity = context as Activity

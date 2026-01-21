@@ -195,8 +195,8 @@ fun LogViewPreview() {
     val logState = rememberLogState()
     LaunchedEffect(Unit) {
         logState.addLog("Log message 1")
+        logState.addLog("Another log message",true)
         logState.addLog("Log message 2")
-        logState.addLog("Another log message")
         logState.setLine("This is the last line, modified.")
     }
     LogView(logState = logState)

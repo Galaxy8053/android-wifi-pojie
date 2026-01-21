@@ -11,7 +11,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.wifi.toolbox.ui.screen.pojie.*
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.ui.items.pojie.ResourceSelectSheet
@@ -24,7 +24,7 @@ import com.wifi.toolbox.utils.*
 @Composable
 fun PojieScreen(onMenuClick: () -> Unit) {
     val context = LocalContext.current
-    val app = remember { context.applicationContext as? MyApplication }
+    val app = remember { context.applicationContext as? ToolboxApp }
 
     var pojieSettings by rememberPojieSettings(context)
 
@@ -61,7 +61,7 @@ fun PojieScreen(onMenuClick: () -> Unit) {
 @Composable
 fun PojieScreenContent(
     onMenuClick: () -> Unit,
-    app: MyApplication?,
+    app: ToolboxApp?,
     pojieSettings: PojieSettings,
     pojieWifiController: PojieWifiController,
     onSettingsUpdate: (PojieSettings) -> Unit
@@ -102,7 +102,7 @@ fun PojieScreenContent(
                                     currentTargetSsid = ssid
                                     showResourceSheet = true
                                 },
-                                onStopClick = { ssid -> app?.stopTaskByName(ssid) }
+                                onStopClick = { ssid -> app?.pojieTask?.stop(ssid) }
                             )
                         }
                     )
@@ -136,7 +136,7 @@ fun PojieScreenContent(
                 capabilities = ""
             ),
             onConfirm = { allPasswords ->
-                app?.startTask(
+                app?.pojieTask?.start(
                     PojieRunInfo(
                         ssid = currentTargetSsid,
                         tryList = allPasswords,

@@ -4,7 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.IBinder
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.pojie.*
 import com.wifi.toolbox.structs.PojieSettings
 import kotlinx.coroutines.*
@@ -38,14 +38,14 @@ class PojieService : Service() {
      * @param log 日志内容字符串
      */
     fun log(log: String,allowEdit: Boolean=false) {
-        (applicationContext as MyApplication).logState.addLog(log,allowEdit)
+        (applicationContext as ToolboxApp).logState.addLog(log,allowEdit)
     }
 
     /**
      * 停止所有正在运行的破解任务并取消当前的协程作业
      */
     fun stopAllTasks() {
-        val app = applicationContext as MyApplication
+        val app = applicationContext as ToolboxApp
         app.runningPojieTasks.clear()
         taskDispatcher.cancelCurrentJob()
     }
@@ -55,15 +55,15 @@ class PojieService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val app = applicationContext as MyApplication
+        val app = applicationContext as ToolboxApp
         try {
-            PojieNotificationHelper.createNotificationChannel(this)
-            val notification = PojieNotificationHelper.buildForegroundNotification(this)
+            PojieNotification.createChannel(this)
+            val notification = PojieNotification.buildForeground(this)
             startForeground(1, notification)
 
             if (!taskDispatcher.isWorking()) {
                 app.logState.clear()
-                log(PojieNotificationHelper.getAsciiArt())
+                log(getAsciiArt())
 
                 connectionWorker.initLogServices(pojieSettings)
                 taskDispatcher.startLoop(pojieSettings)
@@ -76,6 +76,22 @@ class PojieService : Service() {
             stop()
             return START_NOT_STICKY
         }
+    }
+
+    /**
+     * 获取启动时的ASCII艺术字
+     * @return 字符串
+     */
+    fun getAsciiArt(): String {
+        return """      _      __                 _        
+     | |___ / _|_ __ ___  _   _| |_ __ _ 
+  _  | / __| |_| '_ ` _ \| | | | __/ _` |
+ | |_| \__ \  _| | | | | | |_| | || (_| |
+  \___/|___/_| |_| |_| |_|\__, |\__\__, |
+                          |___/    |___/ 
+==========================================
+wifi密码暴力破解工具 v3 for Android
+"""
     }
 
     /**

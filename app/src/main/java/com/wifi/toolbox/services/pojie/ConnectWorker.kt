@@ -3,7 +3,7 @@ package com.wifi.toolbox.services.pojie
 import android.net.ConnectivityManager
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.*
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.utils.*
@@ -12,6 +12,9 @@ import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+/**
+ * 负责管理单次连接并获取结果
+ */
 class ConnectWorker(
     private val service: PojieService,
     private val scope: CoroutineScope
@@ -57,7 +60,7 @@ class ConnectWorker(
      * @return 任务执行结果状态码
      */
     suspend fun performTaskLogic(
-        app: MyApplication,
+        app: ToolboxApp,
         task: SinglePojieTask,
         settings: PojieSettings
     ): Int {
@@ -92,7 +95,7 @@ class ConnectWorker(
     }
 
     suspend fun CoroutineScope.waitForTaskResult(
-        app: MyApplication,
+        app: ToolboxApp,
         connectMode: Int,
         task: SinglePojieTask,
         continuation: CancellableContinuation<Int>,
@@ -135,7 +138,7 @@ class ConnectWorker(
      * @param continuation 协程挂起回调
      */
     private suspend fun CoroutineScope.waitWifiStatus(
-        app: MyApplication,
+        app: ToolboxApp,
         task: SinglePojieTask,
         startTime: Long,
         connectMode: Int,
@@ -171,7 +174,7 @@ class ConnectWorker(
      */
     private fun CoroutineScope.checkLogData(
         data: WifiLogData,
-        app: MyApplication,
+        app: ToolboxApp,
         task: SinglePojieTask,
         startTime: Long,
         connectMode: Int,

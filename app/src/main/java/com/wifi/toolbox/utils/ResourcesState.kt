@@ -12,7 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieResource
 import com.wifi.toolbox.ui.EditorController
@@ -27,7 +27,7 @@ class ResourcesState(
     val context: Context,
     val scope: CoroutineScope,
     val editor: EditorController,
-    val app: MyApplication,
+    val app: ToolboxApp,
     val defaultScriptContent: String,
     val onShowFabDialogChange: (Boolean) -> Unit
 ) {
@@ -47,7 +47,7 @@ class ResourcesState(
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val editor = LocalEditorController.current
-            val app = context.applicationContext as MyApplication
+            val app = context.applicationContext as ToolboxApp
             val defaultScriptContent = stringResource(id = R.string.default_script_content)
 
             return remember {

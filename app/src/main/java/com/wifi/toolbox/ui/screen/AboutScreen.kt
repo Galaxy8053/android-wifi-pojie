@@ -37,14 +37,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onMenuClick: () -> Unit) {
     val context = LocalContext.current
-    val app = context.applicationContext as MyApplication
+    val app = context.applicationContext as ToolboxApp
 
     var showDialog by remember { mutableStateOf(false) }
     var changelogText by remember { mutableStateOf("") }

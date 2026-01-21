@@ -1,7 +1,7 @@
 package com.wifi.toolbox.services.pojie
 
 import androidx.compose.runtime.snapshotFlow
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.PojieService
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.utils.ShizukuUtil
@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.scan
 import kotlin.math.pow
 
+/**
+ * 负责管理全部任务排队运行
+ */
 class PojieTaskManager(
     private val service: PojieService,
     private val scope: CoroutineScope,
@@ -44,7 +47,7 @@ class PojieTaskManager(
      * @param settings 当前的破解设置
      */
     fun startLoop(settings: PojieSettings) {
-        val app = service.applicationContext as MyApplication
+        val app = service.applicationContext as ToolboxApp
 
         scope.launch {
             while (isActive) {
@@ -99,7 +102,7 @@ class PojieTaskManager(
      * @param app 全局 Application 实例
      * @return 是否成功完成冷却等待
      */
-    private suspend fun handleCooldown(app: MyApplication): Boolean {
+    private suspend fun handleCooldown(app: ToolboxApp): Boolean {
         val now = System.currentTimeMillis()
         val tasks = app.runningPojieTasks
         if (tasks.isEmpty()) return false
@@ -115,6 +118,7 @@ class PojieTaskManager(
         if (waitMs > 0) {
             val cooldownJob = scope.launch {
                 service.log("冷却中，等待${waitMs}ms")
+                PojieNotification.update(service,"冷却中")
                 delay(waitMs)
             }
             currentWorkerJob = cooldownJob
@@ -134,7 +138,7 @@ class PojieTaskManager(
      * @param app 全局 Application 实例
      * @return 匹配的任务信息
      */
-    private fun findNextReadyTask(app: MyApplication): PojieRunInfo? {
+    private fun findNextReadyTask(app: ToolboxApp): PojieRunInfo? {
         val now = System.currentTimeMillis()
         val config = app.pojieConfig
         return app.runningPojieTasks.filter {
@@ -163,12 +167,12 @@ class PojieTaskManager(
      * @param settings 设置信息
      */
     private suspend fun executeTaskAttempt(
-        app: MyApplication,
+        app: ToolboxApp,
         task: PojieRunInfo,
         settings: PojieSettings
     ) {
         app.runningPojieTasks.forEach {
-            app.updateTaskState(it.ssid) { state ->
+            app.pojieTask.edit(it.ssid) { state ->
                 state.copy(textTip = if (it.ssid == task.ssid) "正在尝试..." else "排队中")
             }
         }
@@ -176,12 +180,13 @@ class PojieTaskManager(
         currentWorkingSsid = task.ssid
         val currentPass = task.tryList.getOrNull(task.tryIndex) ?: "未知"
 
-        app.updateTaskState(task.ssid) {
+        app.pojieTask.edit(task.ssid) {
             it.copy(textTip = "正在尝试：$currentPass", lastTryTime = System.currentTimeMillis())
         }
 
         var taskResult = -1
         service.log("${worker.getLogTime()} 尝试: (${task.ssid}, $currentPass) ...", true)
+        PojieNotification.update(service,"尝试: (${task.ssid}, $currentPass)")
 
         val workerSubJob = scope.launch {
             try {
@@ -211,7 +216,7 @@ class PojieTaskManager(
      * @param settings 设置信息
      */
     private fun handleAttemptResult(
-        app: MyApplication, task: PojieRunInfo, pass: String, result: Int, settings: PojieSettings
+        app: ToolboxApp, task: PojieRunInfo, pass: String, result: Int, settings: PojieSettings
     ) {
         val timeTag = worker.getLogTime()
         val isCancelled = currentWorkerJob?.isCancelled == true
@@ -239,23 +244,23 @@ class PojieTaskManager(
                 service.log("连接成功: (${task.ssid}, $pass)")
                 app.finishedPojieTasksTip[task.ssid] = "连接成功：$pass"
                 handledSsids.add(task.ssid)
-                app.stopTaskByName(task.ssid)
+                app.pojieTask.stop(task.ssid)
             }
 
             SinglePojieTask.RESULT_FAILED -> {
                 processTaskCompletion(app, task.ssid)
-                app.updateTaskState(task.ssid) { it.copy(retryCount = 0) }
+                app.pojieTask.edit(task.ssid) { it.copy(retryCount = 0) }
             }
 
             SinglePojieTask.RESULT_ERROR -> {
-                app.stopTaskByName(task.ssid)
+                app.pojieTask.stop(task.ssid)
             }
 
             SinglePojieTask.RESULT_TIMEOUT, SinglePojieTask.RESULT_ERROR_TRANSIENT -> {
-                app.updateTaskState(task.ssid) { it.copy(retryCount = it.retryCount + 1) }
+                app.pojieTask.edit(task.ssid) { it.copy(retryCount = it.retryCount + 1) }
                 getTask(app, task.ssid)?.let { updated ->
                     if (app.pojieConfig.retryCountType <= 5 && updated.retryCount > app.pojieConfig.retryCountType) {
-                        app.updateTaskState(task.ssid) { it.copy(retryCount = 0) }
+                        app.pojieTask.edit(task.ssid) { it.copy(retryCount = 0) }
                         processTaskCompletion(app, task.ssid)
                     }
                 }
@@ -268,15 +273,15 @@ class PojieTaskManager(
      * @param app 全局 Application 实例
      * @param ssid WiFi 名称
      */
-    private fun processTaskCompletion(app: MyApplication, ssid: String) {
+    private fun processTaskCompletion(app: ToolboxApp, ssid: String) {
         val task = getTask(app, ssid) ?: return
         val nextIndex = task.tryIndex + 1
 
         if (nextIndex >= task.tryList.size) {
             app.finishedPojieTasksTip[ssid] = "全部尝试失败(size=${task.tryList.size})"
-            app.stopTaskByName(ssid)
+            app.pojieTask.stop(ssid)
         } else {
-            app.updateTaskState(ssid) {
+            app.pojieTask.edit(ssid) {
                 it.copy(tryIndex = nextIndex)
             }
         }
@@ -288,7 +293,7 @@ class PojieTaskManager(
      * @param ssid WiFi 名称
      * @return 匹配的任务信息
      */
-    private fun getTask(app: MyApplication, ssid: String): PojieRunInfo? {
+    private fun getTask(app: ToolboxApp, ssid: String): PojieRunInfo? {
         return app.runningPojieTasks.find { it.ssid == ssid }
     }
 }

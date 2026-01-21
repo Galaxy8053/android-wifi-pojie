@@ -8,7 +8,7 @@ import android.content.IntentFilter
 import android.net.NetworkInfo
 import android.net.wifi.SupplicantState
 import android.net.wifi.WifiManager
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.WifiLogData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 
 class WifiBroadcastService(private val context: Context) : AutoCloseable {
 
-    private val app = context.applicationContext as MyApplication
+    private val app = context.applicationContext as ToolboxApp
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private val _logFlow = MutableSharedFlow<WifiLogData>(extraBufferCapacity = 64)

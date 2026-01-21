@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.ui.items.pojie.ScanResult
@@ -30,7 +30,7 @@ interface PojieWifiController {
 @Composable
 fun rememberPojieWifiController(
     context: Context,
-    app: MyApplication,
+    app: ToolboxApp,
     settings: PojieSettings
 ): PojieWifiController {
     val scope = rememberCoroutineScope()
@@ -133,7 +133,9 @@ fun rememberPojieWifiController(
                     when (settings.scanMode) {
                         1 -> {
                             //系统隐藏API (Shizuku)
-                            if (checkShizukuUI(app)) {
+                            if (checkShizukuUI(app, onGranted = {
+                                    reload()
+                                })) {
                                 if (ShizukuUtil.startWifiScan(settings.allowScanUseCommand))
                                     StartScanResult(
                                         code = StartScanResult.CODE_SUCCESS

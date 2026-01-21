@@ -27,18 +27,17 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModel
 import com.wifi.toolbox.BuildConfig
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.ui.items.AppNav
 import com.wifi.toolbox.ui.theme.AppTheme
 import com.wifi.toolbox.ui.theme.defaultColorSeed
+import com.wifi.toolbox.utils.ApiUtil
 import com.wifi.toolbox.utils.ShizukuUtil
 import io.github.rosemoe.sora.widget.CodeEditor
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -127,7 +126,7 @@ class MainActivity : ComponentActivity() {
             val msg = intent.getStringExtra("ERROR_MESSAGE") ?: "未知错误"
             val stack = intent.getStringExtra("ERROR_STACK") ?: ""
 
-            val app = application as MyApplication
+            val app = application as ToolboxApp
 
             app.alert(
                 title = "崩溃啦",
@@ -155,7 +154,7 @@ class MainActivity : ComponentActivity() {
         val sharedPreferences = getSharedPreferences("settings_global", MODE_PRIVATE)
 
         setContent {
-            val app = LocalContext.current.applicationContext as MyApplication
+            val app = LocalContext.current.applicationContext as ToolboxApp
             val snackbarHostState = remember { SnackbarHostState() }
             val editorController = remember { EditorController(editorViewModel) }
             val keyboardController = LocalSoftwareKeyboardController.current
@@ -259,7 +258,7 @@ class MainActivity : ComponentActivity() {
                                             it
                                         )
                                     }
-                                        app.snackbar("重启应用生效", "重启") {
+                                        app.ui.snackbar("重启应用生效", "重启") {
                                             val restartIntent =
                                                 packageManager.getLaunchIntentForPackage(packageName)
                                             startActivity(
@@ -315,7 +314,7 @@ class MainActivity : ComponentActivity() {
                                                     val text =
                                                         editorViewModel.editorInstance?.text.toString()
                                                     handleSave(text) {
-                                                        app.snackbar("已保存", null) {}
+                                                        app.ui.snackbar("已保存", null) {}
                                                     }
                                                 }) { Text("保存") }
                                             }
@@ -432,10 +431,10 @@ class MainActivity : ComponentActivity() {
                                     title = alertDialogData?.title ?: "",
                                     summary = alertDialogData?.text ?: "",
                                     show = showDialog,
-                                    onDismissRequest = { app.dismissAlert() }) {
+                                    onDismissRequest = { app.ui.dismissAlert() }) {
                                     TextButton(
                                         text = "确定",
-                                        onClick = { app.dismissAlert() },
+                                        onClick = { app.ui.dismissAlert() },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }

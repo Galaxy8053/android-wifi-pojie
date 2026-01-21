@@ -1,10 +1,14 @@
 package com.wifi.toolbox.ui.items
 
 import android.content.pm.PackageManager
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import rikka.shizuku.Shizuku
 
-fun checkShizukuUI(app: MyApplication, onSuccess: () -> Unit = {}) : Boolean {
+fun checkShizukuUI(
+    app: ToolboxApp,
+    onSuccess: () -> Unit = {},
+    onGranted: () -> Unit = {}
+): Boolean {
     try {
         if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
             onSuccess()
@@ -12,7 +16,10 @@ fun checkShizukuUI(app: MyApplication, onSuccess: () -> Unit = {}) : Boolean {
         } else if (Shizuku.shouldShowRequestPermissionRationale()) {
             app.alert("Shizuku", "当前已被始终拒绝，请手动授予")
         } else {
-            app.requestShizukuPermission(onSuccess)
+            app.shizuku.request{
+                onGranted()
+                onSuccess()
+            }
         }
     } catch (_: IllegalStateException) {
         try {

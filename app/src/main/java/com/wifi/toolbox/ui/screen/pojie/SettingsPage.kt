@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import com.wifi.toolbox.MyApplication
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.PojieSettings
 import com.wifi.toolbox.ui.items.BannerTip
 import me.zhanghai.compose.preference.*
@@ -25,7 +25,7 @@ fun SettingsPage(
     onPojieSettingsChange: (PojieSettings) -> Unit
 ) {
 
-    val app = LocalContext.current.applicationContext as MyApplication
+    val app = LocalContext.current.applicationContext as ToolboxApp
 
     val readLogValues = listOf(
         "--请选择--",
@@ -233,7 +233,7 @@ fun SettingsPage(
 //                                showRunningNotification = newValue
 //                            )
 //                        )
-                        app.snackbar("前面的区域，以后再来探索吧")
+                        app.ui.snackbar("前面的区域，以后再来探索吧")
                     },
                     title = { Text("显示通知") },
                     icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
