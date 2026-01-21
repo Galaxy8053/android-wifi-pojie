@@ -95,9 +95,11 @@
         });
     });
 
-    const finalP1 = Array.from(p1).filter(p => p.length >= 8).sort();
-    const finalP2 = Array.from(p2).filter(p => p.length >= 8).sort();
-    const finalP3 = Array.from(p3).filter(p => p.length >= 8).sort();
+    const comparePasswords = (a, b) => a.length - b.length || a.localeCompare(b);
+
+    const finalP1 = Array.from(p1).filter(p => p.length >= 8).sort(comparePasswords);
+    const finalP2 = Array.from(p2).filter(p => p.length >= 8).sort(comparePasswords);
+    const finalP3 = Array.from(p3).filter(p => p.length >= 8).sort(comparePasswords);
 
     const allPasswords = [...finalP1, ...finalP2, ...finalP3];
 

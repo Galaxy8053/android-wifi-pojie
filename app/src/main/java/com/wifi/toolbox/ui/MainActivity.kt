@@ -71,15 +71,14 @@ class MainActivity : ComponentActivity() {
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleCrashRecovery(intent)
         handleIntent(intent)
 
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced =
-            false //小米设备导航栏修复
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            window.isNavigationBarContrastEnforced = false //小米设备导航栏修复
 
         ShizukuUtil.initialize(applicationContext)
 
@@ -102,24 +101,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val useDarkTheme = when (settings.darkTheme) {
-                1 -> true
-                2 -> false
-                else -> isSystemInDarkTheme()
-            }
-
-            appContent(app, useDarkTheme, editorController, settings, snackbarHostState)
+            appContent(app, editorController, settings, snackbarHostState)
         }
     }
 
     @Composable
     fun appContent(
         app: ToolboxApp,
-        useDarkTheme: Boolean,
         editorController: EditorController,
         settings: GlobalSettings,
         snackbarHostState: SnackbarHostState
     ) {
+        val useDarkTheme = when (settings.darkTheme) {
+            1 -> true
+            2 -> false
+            else -> isSystemInDarkTheme()
+        }
+
         MiuixTheme(ThemeController(isDark = useDarkTheme)) {
             CompositionLocalProvider(LocalEditorController provides editorController) {
                 AppTheme(
