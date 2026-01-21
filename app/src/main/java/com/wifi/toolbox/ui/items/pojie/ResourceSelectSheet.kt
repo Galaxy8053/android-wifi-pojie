@@ -1,9 +1,11 @@
 package com.wifi.toolbox.ui.items.pojie
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,8 +17,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -30,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.WifiInfo
@@ -37,6 +45,7 @@ import com.wifi.toolbox.ui.items.LogView
 import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.utils.PojieStore
 import com.wifi.toolbox.utils.ResourcesRunner
+import kotlinx.coroutines.isActive
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -49,53 +58,56 @@ fun ResourceSelectSheet(
     if (!show) return
 
     val context = LocalContext.current
-
     val logState = remember { LogState() }
     var showLog by remember { mutableStateOf(false) }
-
     val allResources = remember { PojieStore.getAll(context) }
     var selectedIds by remember { mutableStateOf(listOf<String>()) }
-
     var isRunning by remember { mutableStateOf(false) }
     var resultList by remember { mutableStateOf(listOf<String>()) }
 
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true // 强制跳过半展开状态，直接全屏显示
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val sortedList = remember(selectedIds) {
         val selected = selectedIds.mapNotNull { id -> allResources.find { it.id == id } }
         val unselected = allResources.filter { it.id !in selectedIds }
         selected + unselected
     }
 
-    // 监听选中项变化并自动执行
     LaunchedEffect(selectedIds) {
         if (selectedIds.isEmpty()) {
             resultList = emptyList()
+            isRunning = false
             return@LaunchedEffect
         }
-        logState.clear()
 
         isRunning = true
-        val selectedResources = selectedIds.mapNotNull { id -> allResources.find { it.id == id } }
+        resultList = emptyList()
+        logState.clear()
+        logState.addLog("配置变更，重新计算中...")
 
-        val results = ResourcesRunner.run(
-            context = context,
-            resources = selectedResources,
-            wifiInfo = wifiInfo,
-            onProgress = { _, _ -> },
-            onLog = { logState.addLog(it) }
-        )
-        resultList = results
-        isRunning = false
+        try {
+            val selectedResources =
+                selectedIds.mapNotNull { id -> allResources.find { it.id == id } }
+            val results = ResourcesRunner.run(
+                context = context,
+                resources = selectedResources,
+                wifiInfo = wifiInfo,
+                onProgress = { _, _ -> },
+                onLog = { if (isActive) logState.addLog(it) }
+            )
+            if (isActive) {
+                resultList = results
+            }
+        } finally {
+            if (isActive) {
+                isRunning = false
+            }
+        }
     }
-
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-
-        ) {
+    ) {
         Text(
             text = "选择密码本",
             style = MaterialTheme.typography.headlineSmall,
@@ -113,7 +125,7 @@ fun ResourceSelectSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItem()
-                            .clickable(enabled = !isRunning) {
+                            .clickable {
                                 selectedIds = if (isSelected) {
                                     selectedIds - res.id
                                 } else {
@@ -133,10 +145,29 @@ fun ResourceSelectSheet(
             ) {
                 Spacer(modifier = Modifier.weight(1f))
 
-                TextButton(
-                    onClick = { showLog = !showLog }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showLog = !showLog }
+                        .padding(horizontal = 10.dp, vertical = 8.dp)
                 ) {
-                    Text(if (showLog) "收起日志" else "展开日志")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (showLog) "收起日志" else "展开日志",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                        val angle by animateFloatAsState(if (showLog) 180f else 0f)
+                        Icon(
+                            imageVector = Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.rotate(angle)
+                        )
+                    }
                 }
 
                 Box(
@@ -150,7 +181,11 @@ fun ResourceSelectSheet(
                             onDismiss()
                         }
                     ) {
-                        Text(if (isRunning) "运行中..." else "完成 (${resultList.size})")
+                        Text(
+                            if (isRunning) "运行中..."
+                            else if (selectedIds.isEmpty()) "请选择"
+                            else "完成 (${resultList.size})"
+                        )
                     }
                 }
             }

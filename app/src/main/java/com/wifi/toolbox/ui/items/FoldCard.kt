@@ -64,14 +64,7 @@ fun FoldCard(
                 )
             }
 
-//            Column(
-//                Modifier
-//                    .height(if (expanded) Dp.Unspecified else 0.dp)
-//                    .alpha(if (expanded) 1f else 0f)
-//            ) {
-//                content()
-//            }
-            if (expanded) content() //注:buttongroup实验性有bug，高度设为0时被创建按钮没圆角
+            if (expanded) content()
         }
     }
 }

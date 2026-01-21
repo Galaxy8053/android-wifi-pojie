@@ -6,6 +6,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import com.wifi.toolbox.structs.WifiInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -44,8 +45,6 @@ object ResourcesRunner {
         val webView = WebView(context)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
-        webView.settings.allowUniversalAccessFromFileURLs = true
-        webView.settings.allowFileAccessFromFileURLs = true
         webView.settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         webView.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(cm: android.webkit.ConsoleMessage?): Boolean {
@@ -107,7 +106,7 @@ object ResourcesRunner {
         wifiInfo: WifiInfo,
         onProgress: (Int, Int) -> Unit,
         onLog: (String) -> Unit
-    ): List<String> {
+    ): List<String> = coroutineScope {
         val allLists = mutableListOf<List<String>>()
         resources.forEachIndexed { index, res ->
             onProgress(index + 1, resources.size)
@@ -118,8 +117,8 @@ object ResourcesRunner {
                     .filter { it.isNotEmpty() }
                 1 -> runScript(context, res.content, wifiInfo, onLog = onLog)
                 else -> emptyList()
-            }
-            if (items.isNotEmpty()) allLists.add(items)
+            }.distinct()
+            allLists.add(items)
             onLog("第[${index + 1}]个执行完毕，共${items.size}条")
         }
         val combined = mutableListOf<String>()
@@ -133,6 +132,6 @@ object ResourcesRunner {
         }
         val result = combined.asSequence().distinct().filter { it.length >= 8 }.toList()
         onLog("全部执行完毕，共${result.size}条")
-        return result
+        result
     }
 }
