@@ -25,7 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.PojieResource
+import com.wifi.toolbox.ui.items.pojie.AddResourceDialog
+import com.wifi.toolbox.ui.items.pojie.EditResourceDialog
 import com.wifi.toolbox.ui.items.pojie.PojieResourceItem
+import com.wifi.toolbox.ui.items.pojie.ResourceDetailSheet
 import com.wifi.toolbox.utils.PojieStore
 import com.wifi.toolbox.utils.ResourcesState
 import kotlinx.coroutines.Dispatchers

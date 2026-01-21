@@ -1,4 +1,4 @@
-package com.wifi.toolbox.ui.screen.pojie
+package com.wifi.toolbox.ui.items.pojie
 
 import androidx.compose.animation.*
 import androidx.compose.animation.expandVertically
@@ -15,11 +15,10 @@ import androidx.compose.ui.window.PopupPositionProvider
 import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieConfig
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConfigItems(
+fun ConfigView(
     config: PojieConfig,
     onConfigChange: (PojieConfig) -> Unit
 ) {

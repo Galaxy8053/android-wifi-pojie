@@ -102,7 +102,6 @@ dependencies {
     implementation(libs.miuix)
     implementation(libs.coil.compose)
     implementation(libs.hiddenapibypass)
-    implementation("io.github.taoweiji.quickjs:quickjs-android:1.4.6")
 
     implementation(platform(libs.editor.bom))
     implementation(libs.editor)

@@ -12,15 +12,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.MyApplication
-import com.wifi.toolbox.structs.PojieConfig
-import com.wifi.toolbox.structs.PojieRunInfo
-import com.wifi.toolbox.structs.WifiInfo
+import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.*
-import com.wifi.toolbox.ui.items.pojie.RunListView
-import com.wifi.toolbox.utils.LogState
-import com.wifi.toolbox.utils.PojieWifiController
-import com.wifi.toolbox.ui.items.pojie.ScanResult
-import com.wifi.toolbox.ui.items.pojie.ScreenState
+import com.wifi.toolbox.ui.items.pojie.*
+import com.wifi.toolbox.utils.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -89,7 +84,7 @@ fun HomePageContent(
                     .verticalScroll(configScrollState)
                     .padding(16.dp, 0.dp, 16.dp, 16.dp),
             ) {
-                ConfigItems(
+                ConfigView(
                     config = pojieConfig,
                     onConfigChange = { onConfigChange(it) },
                 )

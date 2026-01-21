@@ -1,4 +1,4 @@
-package com.wifi.toolbox.ui.screen.pojie
+package com.wifi.toolbox.ui.items.pojie
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

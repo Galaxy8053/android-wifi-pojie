@@ -1,4 +1,4 @@
-package com.wifi.toolbox.ui.screen.pojie
+package com.wifi.toolbox.ui.items.pojie
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

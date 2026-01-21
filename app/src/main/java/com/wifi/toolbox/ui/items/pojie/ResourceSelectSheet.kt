@@ -80,12 +80,12 @@ fun ResourceSelectSheet(
         val selectedResources = selectedIds.mapNotNull { id -> allResources.find { it.id == id } }
 
         val results = ResourcesRunner.run(
+            context = context,
             resources = selectedResources,
             wifiInfo = wifiInfo,
             onProgress = { _, _ -> },
             onLog = { logState.addLog(it) }
         )
-
         resultList = results
         isRunning = false
     }
