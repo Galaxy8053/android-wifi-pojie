@@ -18,4 +18,6 @@ v3.x版本，使用kotlin重构项目，包名改为com.wifi.toolbox
 
 （AI太好用了你们知道吗）
 
+![run_lc.svg](run_lc.svg)
+
 旧版本（支持纯root模式运行、历史记录等额外功能、界面更完善，不再维护）：[前往v2仓库](https://github.com/bszapp/android-wifi-pojie/tree/v1.x-v2.x)

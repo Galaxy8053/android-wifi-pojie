@@ -1,15 +1,9 @@
 package com.wifi.toolbox.utils
 
 import android.content.Context
-import android.webkit.JavascriptInterface
-import android.webkit.WebChromeClient
-import android.webkit.WebView
+import android.webkit.*
 import com.wifi.toolbox.structs.WifiInfo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 import kotlin.coroutines.resume
 
 object ResourcesRunner {
