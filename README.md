@@ -10,13 +10,20 @@
 
 ![screenshot.png](screenshot.png)
 
+~~屎山评级：~~
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bszapp_android-wifi-pojie&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bszapp_android-wifi-pojie)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bszapp_android-wifi-pojie&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=bszapp_android-wifi-pojie)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bszapp_android-wifi-pojie&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bszapp_android-wifi-pojie)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=bszapp_android-wifi-pojie&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=bszapp_android-wifi-pojie)
+
+（AI太好用了你们知道吗）
+
 ---
 
 v3.x版本，使用kotlin重构项目，包名改为com.wifi.toolbox
 
 目前只能用Shizuku或者普通模式运行，不支持纯root模式，部分功能尚未完善，有功能改进建议或者新功能建议欢迎来这里提议：[意见征集](https://github.com/bszapp/android-wifi-pojie/discussions/18)
 
-（AI太好用了你们知道吗）
 
 旧版本（支持纯root模式运行、历史记录等额外功能、界面更完善，不再维护）：[前往v2仓库](https://github.com/bszapp/android-wifi-pojie/tree/v1.x-v2.x)
 
