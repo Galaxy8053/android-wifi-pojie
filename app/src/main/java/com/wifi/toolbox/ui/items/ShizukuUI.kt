@@ -6,8 +6,8 @@ import rikka.shizuku.Shizuku
 
 fun checkShizukuUI(
     app: ToolboxApp,
-    onSuccess: () -> Unit = {},
-    onGranted: () -> Unit = {}
+    onGranted: () -> Unit = {},
+    onSuccess: () -> Unit = {}
 ): Boolean {
     try {
         if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {

@@ -280,7 +280,7 @@ fun RunListView(
                 when (s.type) {
                     StartScanResult.CODE_WIFI_NOT_ENABLED -> {
                         Button(onClick = {
-                            controller.toggleWifiOn()
+                            controller.enableWifi()
                         }) {
                             Text("开启wifi")
                         }

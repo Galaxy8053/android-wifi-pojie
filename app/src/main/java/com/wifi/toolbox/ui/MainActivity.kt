@@ -6,10 +6,12 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.*
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.foundation.Canvas
@@ -493,6 +495,36 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    var pendingLocationCallback: (() -> Unit)? = null
+
+    val locationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        Log.d("MainActivity", "返回")
+        if (result.resultCode == RESULT_OK) {
+            if (ApiUtil.isLocationEnabled(this)) {
+                pendingLocationCallback?.invoke()
+                pendingLocationCallback = null
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("MainActivity", "返回页面")
+        if (pendingLocationCallback != null && ApiUtil.isLocationEnabled(this)) {
+            pendingLocationCallback?.invoke()
+            pendingLocationCallback = null
+        }
+    }
+
+    var pendingPermissionCallback: (() -> Unit)? = null
+
+    val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            pendingPermissionCallback?.invoke()
+            pendingPermissionCallback = null
         }
     }
 }

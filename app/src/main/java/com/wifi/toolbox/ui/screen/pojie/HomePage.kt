@@ -148,7 +148,7 @@ fun HomePagePreview() {
                 WifiInfo("Xiaomi_Router", -75, "[WPA2-PSK-CCMP]")
             )
         )
-        override fun toggleWifiOn() {}
+        override fun enableWifi() {}
         override fun applyLocation() {}
         override fun enableLocation() {}
         override fun disconnectWifi() {}

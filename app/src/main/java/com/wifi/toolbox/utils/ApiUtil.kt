@@ -10,13 +10,12 @@ import android.net.*
 import android.net.wifi.*
 import android.os.Build
 import android.provider.Settings
-import android.text.BoringLayout
-import android.util.Log
+import androidx.activity.result.IntentSenderRequest
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
-import com.google.android.gms.tasks.Task
+import com.wifi.toolbox.ui.MainActivity
 
 @Suppress("DEPRECATION") //targetSdk = 28 不用理会警告
 object ApiUtil {
@@ -120,30 +119,28 @@ object ApiUtil {
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         return wifiManager.removeNetwork(netId)
     }
-
     fun enableLocation(context: Context, onEnabled: (() -> Unit)? = null): Boolean {
-        return if (!isLocationEnabled(context)) {
-            try {
-                val activity = context as Activity
-                val locationRequest =
-                    LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000).build()
-                val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-                    .setAlwaysShow(true)
-                val client = LocationServices.getSettingsClient(activity)
-                val task: Task<LocationSettingsResponse> =
-                    client.checkLocationSettings(builder.build())
+        val activity = context as? MainActivity ?: return false
+        if (!isLocationEnabled(context)) {
+            activity.pendingLocationCallback = onEnabled
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000).build()
+            val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest).setAlwaysShow(true)
+            val client = LocationServices.getSettingsClient(activity)
 
-                task.addOnFailureListener { exception ->
-                    if (exception is ResolvableApiException) {
-                        exception.startResolutionForResult(activity, 0x1)
+            client.checkLocationSettings(builder.build()).addOnFailureListener { exception ->
+                if (exception is ResolvableApiException) {
+                    try {
+                        val intentSenderRequest = IntentSenderRequest.Builder(exception.resolution.intentSender).build()
+                        activity.locationLauncher.launch(intentSenderRequest)
+                    } catch (_: Exception) {
+                        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                        activity.startActivity(intent)
                     }
                 }
-            } catch (_: Exception) {
-                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                context.startActivity(intent)
             }
-            false
-        } else true
+            return false
+        }
+        return true
     }
 
 
@@ -209,15 +206,14 @@ object ApiUtil {
                 capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
-    const val REQUEST_LOCATION_CODE = 1001
-    fun requestLocationPermission(activity: Activity): Boolean {
+    fun requestLocationPermission(activity: Activity, onGranted: (() -> Unit)? = null): Boolean {
+        val activity = activity as? MainActivity ?: return false
         return if (!hasLocationPermission(activity)) {
-            androidx.core.app.ActivityCompat.requestPermissions(
-                activity,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                REQUEST_LOCATION_CODE
-            )
+            activity.pendingPermissionCallback = onGranted
+            activity.permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             false
-        } else true
+        } else {
+            true
+        }
     }
 }

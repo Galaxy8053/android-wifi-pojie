@@ -1,7 +1,11 @@
 package com.wifi.toolbox.utils
 
 import android.app.Activity
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.wifi.WifiManager
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -21,7 +25,7 @@ interface PojieWifiController {
     val finishedInfo: SnapshotStateMap<String, String>
     fun reload()
     fun fetchResults(): ScanResult
-    fun toggleWifiOn()
+    fun enableWifi()
     fun applyLocation()
     fun enableLocation()
     fun disconnectWifi()
@@ -42,6 +46,28 @@ fun rememberPojieWifiController(
     val currentRunningTasks = app.runningPojieTasks
     val currentFinishedTasks = app.finishedPojieTasksTip
 
+    var onWifiEnabledAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    DisposableEffect(context) {
+        val wifiReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (WifiManager.WIFI_STATE_CHANGED_ACTION == intent.action) {
+                    val state = intent.getIntExtra(
+                        WifiManager.EXTRA_WIFI_STATE,
+                        WifiManager.WIFI_STATE_UNKNOWN
+                    )
+                    if (state == WifiManager.WIFI_STATE_ENABLED) {
+                        onWifiEnabledAction?.invoke()
+                        onWifiEnabledAction = null
+                    }
+                }
+            }
+        }
+        context.registerReceiver(wifiReceiver, IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION))
+        onDispose {
+            context.unregisterReceiver(wifiReceiver)
+        }
+    }
 
     return remember(
         settings,
@@ -49,7 +75,8 @@ fun rememberPojieWifiController(
         refreshJob,
         trigger,
         showScanResult,
-        currentRunningTasks.size
+        currentRunningTasks.size,
+        onWifiEnabledAction
     ) {
         object : PojieWifiController {
             override val uiState = uiState
@@ -62,7 +89,6 @@ fun rememberPojieWifiController(
             val MAX_SCAN_TIME = 3000
             val SCAN_INTERVAL = 100
 
-
             override fun reload() {
                 refreshJob?.cancel()
                 refreshJob = scope.launch {
@@ -73,7 +99,7 @@ fun rememberPojieWifiController(
                             uiState = ScreenState.Success(sendSucceed)
                             if (sendSucceed) {
                                 showScanResult = false
-                                repeat(MIN_SCAN_TIME / SCAN_INTERVAL) { //心理作用？
+                                repeat(MIN_SCAN_TIME / SCAN_INTERVAL) {
                                     trigger++
                                     delay(SCAN_INTERVAL.toLong())
                                 }
@@ -85,7 +111,7 @@ fun rememberPojieWifiController(
                             } else {
                                 trigger++
                                 showScanResult = false
-                                delay(MIN_SCAN_TIME.toLong()) //心理作用？
+                                delay(MIN_SCAN_TIME.toLong())
                                 showScanResult = true
                                 trigger++
                             }
@@ -132,7 +158,6 @@ fun rememberPojieWifiController(
                 return try {
                     when (settings.scanMode) {
                         1 -> {
-                            //系统隐藏API (Shizuku)
                             if (checkShizukuUI(app, onGranted = {
                                     reload()
                                 })) {
@@ -223,17 +248,20 @@ fun rememberPojieWifiController(
                 }
             }
 
-            override fun toggleWifiOn() {
+            override fun enableWifi() {
+                if (ApiUtil.isWifiEnabled(context)) {
+                    reload()
+                    return
+                }
+                onWifiEnabledAction = { reload() }
                 when (settings.enableMode) {
                     0 -> app.alert("缺失参数", "开关wifi实现为空")
                     1 -> checkShizukuUI(app) {
                         ShizukuUtil.setWifiEnabled(true)
-                        reload()
                     }
 
                     2 -> {
                         ApiUtil.setWifiEnabled(context, true)
-                        reload()
                     }
 
                     else -> app.alert(
@@ -244,11 +272,15 @@ fun rememberPojieWifiController(
             }
 
             override fun applyLocation() {
-                if (ApiUtil.requestLocationPermission(context as Activity)) reload()
+                if (ApiUtil.requestLocationPermission(context as Activity) {
+                        reload()
+                    }) reload()
             }
 
             override fun enableLocation() {
-                if (ApiUtil.enableLocation(context)) reload()
+                if (ApiUtil.enableLocation(context) {
+                        reload()
+                    }) reload()
             }
 
             override fun disconnectWifi() {

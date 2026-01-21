@@ -40,7 +40,7 @@ fun PojieScreen(onMenuClick: () -> Unit) {
                 override val finishedInfo = SnapshotStateMap<String, String>()
                 override fun reload() {}
                 override fun fetchResults() = ScanResult(ScanResult.CODE_SUCCESS, null, emptyList())
-                override fun toggleWifiOn() {}
+                override fun enableWifi() {}
                 override fun applyLocation() {}
                 override fun enableLocation() {}
                 override fun disconnectWifi() {}
