@@ -55,17 +55,7 @@ private val NavItemHeight = 48.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNav(
-    dynamicColor: Boolean,
-    onDynamicColorChange: (Boolean) -> Unit,
-    dynamicColorSeed: Int,
-    onDynamicColorSeedChange: (Int) -> Unit,
-    darkThemeSetting: Int,
-    onDarkThemeSettingChange: (Int) -> Unit,
-    hiddenApiBypass: Int,
-    onHiddenApiBypassChange: (Int) -> Unit,
-    pendingNavigation: MutableState<String?>
-) {
+fun AppNav(pendingNavigation: MutableState<String?>) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
@@ -128,7 +118,11 @@ fun AppNav(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    Text("工具箱", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "工具箱",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.titleMedium
+                    )
 
                     val tools = listOf(
                         Triple("密码字典破解", "Pojie", Icons.Outlined.LockOpen),
@@ -160,7 +154,11 @@ fun AppNav(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    Text("选项", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "选项",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.titleMedium
+                    )
 
                     val options = listOf(
                         Triple("设置", "Settings", Icons.Outlined.Settings),
@@ -200,19 +198,7 @@ fun AppNav(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable("Home") { HomeScreen { scope.launch { drawerState.open() } } }
-                composable("Settings") {
-                    SettingsScreen(
-                        dynamicColor = dynamicColor,
-                        onDynamicColorChange = onDynamicColorChange,
-                        dynamicColorSeed = dynamicColorSeed,
-                        onDynamicColorSeedChange = onDynamicColorSeedChange,
-                        darkTheme = darkThemeSetting,
-                        onDarkThemeChange = onDarkThemeSettingChange,
-                        hiddenApiBypass = hiddenApiBypass,
-                        onHiddenApiBypassChange = onHiddenApiBypassChange,
-                        onMenuClick = { scope.launch { drawerState.open() } }
-                    )
-                }
+                composable("Settings") { SettingsScreen { scope.launch { drawerState.open() } } }
                 composable("Pojie") { PojieScreen { scope.launch { drawerState.open() } } }
                 composable("Viewer") { ManageScreen { scope.launch { drawerState.open() } } }
                 composable("Test") { TestScreen { scope.launch { drawerState.open() } } }
