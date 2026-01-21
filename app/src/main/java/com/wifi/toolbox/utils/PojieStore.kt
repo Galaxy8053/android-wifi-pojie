@@ -17,7 +17,8 @@ object PojieStore {
 
     fun getAll(context: Context): List<PojieResource> {
         val dir = getDir(context)
-        val files = dir.listFiles()?.filter { it.extension == "json" || it.extension == "js" } ?: emptyList()
+        val files = dir.listFiles()?.filter { it.extension == "json" || it.extension == "js" }
+            ?: emptyList()
         val fileIds = files.map { it.nameWithoutExtension }.toSet()
 
         val builtinNames = context.assets.list(DIR_NAME)
@@ -64,7 +65,9 @@ object PojieStore {
             val res = try {
                 if (jsonFile.exists()) PojieResource.parseJSON(jsonFile.readText())
                 else PojieResource.parseScript(jsFile.readText())
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                null
+            }
 
             if (res != null) {
                 val assetsList = context.assets.list(DIR_NAME) ?: emptyArray()
@@ -77,13 +80,17 @@ object PojieStore {
         return try {
             val assetsList = context.assets.list(DIR_NAME) ?: emptyArray()
             if (assetsList.contains("$id.json")) {
-                val content = context.assets.open("$DIR_NAME/$id.json").bufferedReader().use { it.readText() }
+                val content =
+                    context.assets.open("$DIR_NAME/$id.json").bufferedReader().use { it.readText() }
                 PojieResource.parseJSON(content).apply { isBuiltin = 1 }
             } else if (assetsList.contains("$id.js")) {
-                val content = context.assets.open("$DIR_NAME/$id.js").bufferedReader().use { it.readText() }
+                val content =
+                    context.assets.open("$DIR_NAME/$id.js").bufferedReader().use { it.readText() }
                 PojieResource.parseScript(content).apply { isBuiltin = 1 }
             } else null
-        } catch (_: Exception) { null }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun testExists(context: Context, res: PojieResource, excludeId: String?) {
@@ -129,10 +136,9 @@ object PojieStore {
         }
     }
 
-    fun delete(context: Context, id: String) {
+    fun delete(context: Context, id: String): Boolean {
         val dir = getDir(context)
-        File(dir, "$id.json").delete()
-        File(dir, "$id.js").delete()
+        return File(dir, "$id.json").delete() || File(dir, "$id.js").delete()
     }
 
     fun randomID(): String {
