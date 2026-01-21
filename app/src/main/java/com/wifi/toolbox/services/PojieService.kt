@@ -31,13 +31,6 @@ class PojieService : Service() {
     private var connectWifiApi29Callback: ConnectivityManager.NetworkCallback? = null
     private var lastConnectNetId: Int? = null
 
-    /**
-     * 打印日志到全局状态中
-     * @param log 日志内容字符串
-     */
-    fun log(log: String) {
-        (applicationContext as MyApplication).logState.addLog(log)
-    }
 
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -54,6 +47,14 @@ class PojieService : Service() {
         super.onCreate()
         sharedPreferences = getSharedPreferences("settings_pojie", MODE_PRIVATE)
         sharedPreferences.registerOnSharedPreferenceChangeListener(prefsListener)
+    }
+
+    /**
+     * 打印日志到全局状态中
+     * @param log 日志内容字符串
+     */
+    fun log(log: String) {
+        (applicationContext as MyApplication).logState.addLog(log)
     }
 
     /**
@@ -79,7 +80,7 @@ class PojieService : Service() {
     }
 
     /**
-     * 处理网络日志收集，根据不同的读取模式判定连接结果
+     * 处理网络日志收集，根据不同的读取模式分发日志处理
      * @param app 全局 Application 实例
      * @param task 当前执行的子任务
      * @param startTime 任务开始时间戳
@@ -96,82 +97,83 @@ class PojieService : Service() {
         when (readLogMode) {
             1 -> {
                 logcatService?.logFlow?.collect { data ->
-                    if (continuation.isActive) {
-                        if (connectMode == 3 || (data.ssid == task.ssid && data.eventStartTime >= startTime)) {
-                            when (data.event) {
-                                WifiLogData.EVENT_WIFI_CONNECTED -> {
-                                    if (connectMode != 3) {
-                                        continuation.resume(SinglePojieTask.RESULT_SUCCESS)
-                                        cancel()
-                                    }
-                                }
-
-                                WifiLogData.EVENT_CONNECT_FAILED -> {
-                                    if (System.currentTimeMillis() - data.eventStartTime > 2000) {
-                                        continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                        cancel()
-                                    }
-                                }
-
-                                WifiLogData.EVENT_HANDSHAKE -> {
-                                    when (app.pojieConfig.failureFlag) {
-                                        1 -> if (data.handshakeUseTime > app.pojieConfig.timeout) {
-                                            continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                            cancel()
-                                        }
-
-                                        2 -> {
-                                            if (data.handshakeCount > app.pojieConfig.maxHandshakeCount) {
-                                                continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                                cancel()
-                                            }
-                                        }
-                                    }
-                                }
-
-                                WifiLogData.EVENT_CONNECT_ERROR -> {
-                                    continuation.resume(SinglePojieTask.RESULT_ERROR_TRANSIENT)
-                                    cancel()
-                                }
-                            }
-                        } else {
-                            log("W: 信息不匹配，实际${data.ssid}，应为${task.ssid}，请不要同时连接其他网络")
-                        }
-                    }
+                    processLogData(data, app, task, startTime, connectMode, continuation)
                 }
             }
-
             2 -> {
                 if (app.pojieConfig.failureFlag == 2) {
                     throw Exception("广播监听模式不支持按握手次数判定，请在改为“握手超时”或切换为Logcat模式")
                 }
-
                 broadcastService?.setTargetSsid(task.ssid)
                 broadcastService?.logFlow?.collect { data ->
-                    if (continuation.isActive && data.ssid == task.ssid) {
-                        when (data.event) {
-                            WifiLogData.EVENT_WIFI_CONNECTED -> {
-                                if (connectMode != 3) {
-                                    continuation.resume(SinglePojieTask.RESULT_SUCCESS)
-                                    cancel()
-                                }
-                            }
-
-                            WifiLogData.EVENT_CONNECT_FAILED -> {
-                                continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                cancel()
-                            }
-
-                            WifiLogData.EVENT_HANDSHAKE -> {
-                                if (data.handshakeUseTime > app.pojieConfig.timeout) {
-                                    continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                    cancel()
-                                }
-                            }
-                        }
-                    }
+                    processLogData(data, app, task, startTime, connectMode, continuation)
                 }
             }
+        }
+    }
+
+    /**
+     * 校验并处理单条日志数据，判定连接结果
+     * @param data 捕获的 WiFi 日志数据
+     * @param app 全局 Application 实例
+     * @param task 当前子任务信息
+     * @param startTime 任务启动时间
+     * @param connectMode 连接模式
+     * @param continuation 协程回调
+     */
+    private fun CoroutineScope.processLogData(
+        data: WifiLogData,
+        app: MyApplication,
+        task: SinglePojieTask,
+        startTime: Long,
+        connectMode: Int,
+        continuation: CancellableContinuation<Int>
+    ) {
+        if (!continuation.isActive) return
+
+        val isMatch = connectMode == 3 || (data.ssid == task.ssid && data.eventStartTime >= startTime)
+        if (!isMatch) {
+            if (readLogMode == 1) log("W: 信息不匹配，实际${data.ssid}，应为${task.ssid}")
+            return
+        }
+
+        when (data.event) {
+            WifiLogData.EVENT_WIFI_CONNECTED -> {
+                if (connectMode != 3) {
+                    continuation.resume(SinglePojieTask.RESULT_SUCCESS)
+                    cancel()
+                }
+            }
+            WifiLogData.EVENT_CONNECT_FAILED -> {
+                if (readLogMode == 2 || System.currentTimeMillis() - data.eventStartTime > 2000) {
+                    continuation.resume(SinglePojieTask.RESULT_FAILED)
+                    cancel()
+                }
+            }
+            WifiLogData.EVENT_HANDSHAKE -> {
+                if (checkHandshakeFailure(data, app.pojieConfig)) {
+                    continuation.resume(SinglePojieTask.RESULT_FAILED)
+                    cancel()
+                }
+            }
+            WifiLogData.EVENT_CONNECT_ERROR -> {
+                continuation.resume(SinglePojieTask.RESULT_ERROR_TRANSIENT)
+                cancel()
+            }
+        }
+    }
+
+    /**
+     * 根据配置校验握手过程是否已触发失败条件
+     * @param data 捕获的日志数据
+     * @param config 破解配置项
+     * @return 是否判定为失败
+     */
+    private fun checkHandshakeFailure(data: WifiLogData, config: PojieConfig): Boolean {
+        return when (config.failureFlag) {
+            1 -> data.handshakeUseTime > config.timeout
+            2 -> data.handshakeCount > config.maxHandshakeCount
+            else -> false
         }
     }
 
