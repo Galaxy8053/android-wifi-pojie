@@ -1,4 +1,4 @@
-package com.wifi.toolbox.ui.items
+package com.wifi.toolbox.ui.items.pojie
 
 import android.net.wifi.WifiManager
 import androidx.compose.animation.*
@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.*
+import com.wifi.toolbox.ui.items.WifiIcon
 
 @Composable
 fun WifiPojieItem(

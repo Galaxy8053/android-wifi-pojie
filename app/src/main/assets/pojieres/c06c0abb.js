@@ -1,19 +1,13 @@
 // ==ToolboxScript==
 // @id c06c0abb
-// @name WiFi密码动态猜测器
-// @description 针对SSID结构生成高概率密码组合
+// @name ssid猜密码
+// @description 为不同名称的wifi生成更可能的密码，不适合中文ssid，建议配合常用密码使用
 // @author jsfmytg
 // @version 1.0.0
 // ==/ToolboxScript==
 
 (function() {
-    const ssid = task.ssid;
-    if (!ssid) {
-        task.log("未获取到SSID");
-        return;
-    }
-
-    task.log(">>> 开始处理 SSID: [" + ssid + "]");
+    task.log("开始处理: " + task.ssid + "]");
 
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -29,7 +23,7 @@
         "66666666", "88888888", "qwer", "asdf", "abc"
     ];
 
-    let l1Parts = ssid.split(/[-_.\s]+|@|wifi|net|5g|2\.4g/i).filter(p => p);
+    let l1Parts = task.ssid.split(/[-_.\s]+|@|wifi|net|5g|2\.4g/i).filter(p => p);
     task.log("一级拆分: " + JSON.stringify(l1Parts));
 
     let keys = new Set();
@@ -40,6 +34,7 @@
             keys.add(low.charAt(0).toUpperCase() + low.slice(1));
         }
         let l2Parts = low.match(/[a-z]+|[0-9]+/gi);
+        task.log("  二级拆分 (" + low + "): " + JSON.stringify(l2Parts));
         if (l2Parts && l2Parts.length > 1) {
             l2Parts.forEach(sp => {
                 keys.add(sp);
@@ -110,5 +105,5 @@
         task.addItem(pwd);
     });
 
-    task.log("处理完成，共生成密码: " + allPasswords.length + " 个");
+    task.log("处理完成，共生成密码" + allPasswords.length + "个");
 })();

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -25,13 +24,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.PojieResource
+import com.wifi.toolbox.ui.items.TagItem
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,17 +48,30 @@ fun ResourceDetailSheet(
     onEdit: (PojieResource) -> Unit,
     onDelete: (String) -> Unit
 ) {
-    if (isVisible && resource != null) {
+    var lastResource by remember { mutableStateOf<PojieResource?>(null) }
+    if (resource != null) lastResource = resource
+    val scope = rememberCoroutineScope()
+
+    if (isVisible || sheetState.isVisible) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = sheetState,
             contentWindowInsets = { WindowInsets(0) }
         ) {
-            ResourceDetailContent(
-                resource = resource,
-                onEdit = { onEdit(resource) },
-                onDelete = { onDelete(resource.id) }
-            )
+            lastResource?.let { res ->
+                ResourceDetailContent(
+                    resource = res,
+                    onEdit = { onEdit(res) },
+                    onDelete = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                onDismiss()
+                                onDelete(res.id)
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -73,8 +91,13 @@ fun ResourceDetailContent(
         Text(text = "资源详情", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(Modifier.fillMaxWidth()) {
-            Column(Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Column(Modifier
+                .weight(1f)
+                .padding(vertical = 4.dp)) {
                 Text(
                     text = "名称",
                     style = MaterialTheme.typography.labelSmall,
@@ -87,18 +110,7 @@ fun ResourceDetailContent(
                         modifier = Modifier.weight(1f, false)
                     )
                     if (resource.type == 1) {
-                        Spacer(Modifier.width(4.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = "脚本",
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
+                        TagItem(text = "脚本", modifier = Modifier.padding(4.dp))
                     }
                 }
             }
@@ -109,7 +121,10 @@ fun ResourceDetailContent(
 
         Spacer(Modifier.height(12.dp))
 
-        Row(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             Column(Modifier.weight(1f)) {
                 DetailItem("作者", resource.author)
             }
@@ -142,6 +157,7 @@ fun ResourceDetailContent(
                         Text("覆写资源")
                     }
                 }
+
                 2 -> {
                     OutlinedButton(
                         onClick = onDelete,
@@ -157,6 +173,7 @@ fun ResourceDetailContent(
                         Text("编辑覆写")
                     }
                 }
+
                 else -> {
                     OutlinedButton(
                         onClick = onDelete,

@@ -89,7 +89,7 @@ fun AddResourceDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onImport) {
-                        Text("导入")
+                        Text("导入外部")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = onDismiss) {

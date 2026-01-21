@@ -55,7 +55,7 @@ private val NavItemHeight = 48.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppDetailedDrawer(
+fun AppNav(
     dynamicColor: Boolean,
     onDynamicColorChange: (Boolean) -> Unit,
     dynamicColorSeed: Int,

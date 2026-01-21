@@ -38,9 +38,6 @@ fun AppTheme(
         val window = (view.context as Activity).window
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false //注:去除导航栏白色半透明背景（找了半天才找到）
-        }
     }
 
     val context = LocalContext.current

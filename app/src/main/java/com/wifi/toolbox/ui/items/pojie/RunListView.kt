@@ -1,4 +1,4 @@
-package com.wifi.toolbox.ui.items
+package com.wifi.toolbox.ui.items.pojie
 
 import android.os.Parcelable
 import androidx.compose.animation.*
@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.WifiInfo
+import com.wifi.toolbox.ui.items.BannerTip
 import com.wifi.toolbox.utils.ApiUtil
 import com.wifi.toolbox.utils.PojieWifiController
 import kotlinx.parcelize.Parcelize

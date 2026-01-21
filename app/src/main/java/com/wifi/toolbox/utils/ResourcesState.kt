@@ -2,6 +2,7 @@ package com.wifi.toolbox.utils
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -86,16 +87,34 @@ class ResourcesState(
                     val content = context.contentResolver.openInputStream(it)?.use { stream ->
                         stream.bufferedReader().readText()
                     } ?: return@launch
-                    val fileName = it.path?.lowercase(Locale.ROOT) ?: ""
-                    if (fileName.endsWith(".js")) {
-                        val newRes = PojieResource.parseScript(content)
-                        PojieStore.testExists(context, newRes, null)
-                        PojieStore.save(context, newRes)
-                    } else if (fileName.endsWith(".json")) {
-                        val newRes = PojieResource.parseJSON(content)
-                        PojieStore.testExists(context, newRes, null)
-                        PojieStore.save(context, newRes)
+
+                    var fileName = ""
+                    context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        if (cursor.moveToFirst()) fileName = cursor.getString(nameIndex)
                     }
+                    val lowerName = fileName.lowercase(Locale.ROOT)
+
+                    val newRes = when {
+                        lowerName.endsWith(".js") -> PojieResource.parseScript(content)
+                        lowerName.endsWith(".json") -> PojieResource.parseJSON(content)
+                        lowerName.endsWith(".txt") -> {
+                            PojieResource(
+                                id = PojieStore.randomID(),
+                                name = fileName.removeSuffix(".txt"),
+                                description = null,
+                                type = 0,
+                                content = content,
+                                author = null,
+                                version = null
+                            )
+                        }
+                        else -> throw Exception("不支持的文件格式")
+                    }
+
+                    PojieStore.testExists(context, newRes, null)
+                    PojieStore.save(context, newRes)
+
                     refreshKey++
                     withContext(Dispatchers.Main) { onShowFabDialogChange(false) }
                 } catch (e: Exception) {
@@ -108,21 +127,25 @@ class ResourcesState(
     fun openEditorForScript(res: PojieResource, isNew: Boolean) {
         currentEditingId = res.id
         editor.open(res.content, "js") { newContent ->
-            val newRes = PojieResource.parseScript(newContent)
-            val oldId = currentEditingId ?: res.id
-            PojieStore.testExists(context, newRes, oldId)
-            scope.launch(Dispatchers.IO) {
-                if (isNew && oldId == res.id) {
-                    PojieStore.save(context, newRes, oldId)
-                } else {
-                    if (oldId != newRes.id) {
-                        PojieStore.update(context, oldId, newRes)
-                    } else {
+            try {
+                val newRes = PojieResource.parseScript(newContent)
+                val oldId = currentEditingId ?: res.id
+                PojieStore.testExists(context, newRes, oldId)
+                scope.launch(Dispatchers.IO) {
+                    if (isNew && oldId == res.id) {
                         PojieStore.save(context, newRes, oldId)
+                    } else {
+                        if (oldId != newRes.id) {
+                            PojieStore.update(context, oldId, newRes)
+                        } else {
+                            PojieStore.save(context, newRes, oldId)
+                        }
                     }
+                    currentEditingId = newRes.id
+                    refreshKey++
                 }
-                currentEditingId = newRes.id
-                refreshKey++
+            } catch (e: Exception) {
+                app.alert("解析失败", e.message.toString())
             }
         }
     }

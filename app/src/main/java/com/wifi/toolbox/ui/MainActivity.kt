@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.content.Intent
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
@@ -26,14 +27,16 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModel
 import com.wifi.toolbox.BuildConfig
 import com.wifi.toolbox.MyApplication
-import com.wifi.toolbox.ui.items.AppDetailedDrawer
+import com.wifi.toolbox.ui.items.AppNav
 import com.wifi.toolbox.ui.theme.AppTheme
 import com.wifi.toolbox.ui.theme.defaultColorSeed
 import com.wifi.toolbox.utils.ShizukuUtil
@@ -114,7 +117,7 @@ class MainActivity : ComponentActivity() {
             editorViewModel.originalContent = text
             onSuccess()
         } catch (e: Exception) {
-            editorViewModel.errorMessage = e.message ?: "Unknown Error"
+            editorViewModel.errorMessage = e.message ?: e.toString()
         }
     }
 
@@ -144,7 +147,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         handleCrashRecovery(intent)
         handleIntent(intent)
+
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false //小米设备导航栏修复
+
         ShizukuUtil.initialize(applicationContext)
         val sharedPreferences = getSharedPreferences("settings_global", MODE_PRIVATE)
 
@@ -221,7 +227,7 @@ class MainActivity : ComponentActivity() {
 
                         Box(modifier = Modifier.fillMaxSize()) {
                             Scaffold(modifier = Modifier.fillMaxSize()) {
-                                AppDetailedDrawer(
+                                AppNav(
                                     dynamicColor = dynamicColor,
                                     onDynamicColorChange = {
                                         dynamicColor = it; sharedPreferences.edit {

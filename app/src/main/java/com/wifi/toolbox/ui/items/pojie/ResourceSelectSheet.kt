@@ -1,4 +1,4 @@
-package com.wifi.toolbox.ui.items
+package com.wifi.toolbox.ui.items.pojie
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -7,6 +7,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,8 +20,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.WifiInfo
+import com.wifi.toolbox.ui.items.LogView
 import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.utils.PojieStore
 import com.wifi.toolbox.utils.ResourcesRunner
@@ -64,7 +69,7 @@ fun ResourceSelectSheet(
     }
 
     // 监听选中项变化并自动执行
-    androidx.compose.runtime.LaunchedEffect(selectedIds) {
+    LaunchedEffect(selectedIds) {
         if (selectedIds.isEmpty()) {
             resultList = emptyList()
             return@LaunchedEffect
@@ -120,21 +125,21 @@ fun ResourceSelectSheet(
                     )
                 }
             }
-            androidx.compose.foundation.layout.Row(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = { showLog = !showLog }
                 ) {
                     Text(if (showLog) "收起日志" else "展开日志")
                 }
 
-                androidx.compose.foundation.layout.Box(
+                Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.CenterEnd
                 ) {

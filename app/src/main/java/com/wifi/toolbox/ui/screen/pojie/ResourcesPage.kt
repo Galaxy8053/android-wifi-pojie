@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.structs.PojieResource
-import com.wifi.toolbox.ui.items.PojieResourceItem
+import com.wifi.toolbox.ui.items.pojie.PojieResourceItem
 import com.wifi.toolbox.utils.PojieStore
 import com.wifi.toolbox.utils.ResourcesState
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +62,9 @@ fun ResourcesPage(
     ) { paddingValues ->
         if (state.resources.isEmpty()) {
             Box(
-                Modifier.fillMaxSize().padding(paddingValues),
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -72,7 +74,9 @@ fun ResourcesPage(
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 contentPadding = PaddingValues(bottom = 88.dp)
             ) {
                 items(
@@ -80,10 +84,12 @@ fun ResourcesPage(
                     key = { it.id }
                 ) { res ->
                     PojieResourceItem(
-                        modifier = Modifier.clickable {
-                            state.selectedResource = res
-                            state.showDetailSheet = true
-                        },
+                        modifier = Modifier
+                            .animateItem()
+                            .clickable {
+                                state.selectedResource = res
+                                state.showDetailSheet = true
+                            },
                         res = res
                     )
                 }
@@ -115,23 +121,29 @@ fun ResourcesPage(
             onDelete = { state.deleteResource(it) }
         )
 
-        if (state.showEditDialog && state.draftState != null && !state.editor.isEditorOpen) {
+        val currentDraft = state.draftState
+        if (state.showEditDialog && currentDraft != null && !state.editor.isEditorOpen) {
             EditResourceDialog(
-                draft = state.draftState!!,
+                draft = currentDraft,
                 isNew = state.originalIdForEdit == null,
                 onDismiss = { state.showEditDialog = false },
-                onContentEdit = { currentDraft ->
-                    state.draftState = currentDraft
-                    state.editor.open(currentDraft.content) { newContent ->
+                onContentEdit = { updatedDraft ->
+                    state.draftState = updatedDraft
+                    state.editor.open(updatedDraft.content) { newContent ->
                         state.draftState = state.draftState?.copy(content = newContent)
                     }
                 },
                 onSave = { finalDraft ->
-                    PojieStore.testExists(state.context, finalDraft, state.originalIdForEdit)
+                    val originalId = state.originalIdForEdit
+                    PojieStore.testExists(state.context, finalDraft, originalId)
                     state.scope.launch(Dispatchers.IO) {
                         try {
-                            if (state.originalIdForEdit != null) {
-                                PojieStore.update(state.context, state.originalIdForEdit!!, finalDraft)
+                            if (originalId != null) {
+                                PojieStore.update(
+                                    state.context,
+                                    originalId,
+                                    finalDraft
+                                )
                             } else {
                                 PojieStore.save(state.context, finalDraft)
                             }
@@ -153,7 +165,13 @@ fun ResourcesPage(
             onOptionSelect = { state.selectedFabOption = it },
             onDismiss = { onShowFabDialogChange(false) },
             onImport = {
-                importLauncher.launch(arrayOf("application/javascript", "application/json"))
+                importLauncher.launch(
+                    arrayOf(
+                        "application/javascript",
+                        "application/json",
+                        "text/plain"
+                    )
+                )
             },
             onContinue = {
                 onShowFabDialogChange(false)

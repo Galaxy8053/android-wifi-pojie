@@ -8,6 +8,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import com.wifi.toolbox.MyApplication
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.ui.items.pojie.ScanResult
+import com.wifi.toolbox.ui.items.pojie.ScreenState
+import com.wifi.toolbox.ui.items.pojie.StartScanResult
 import kotlinx.coroutines.*
 
 interface PojieWifiController {

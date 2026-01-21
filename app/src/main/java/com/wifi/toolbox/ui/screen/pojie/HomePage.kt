@@ -16,9 +16,11 @@ import com.wifi.toolbox.structs.PojieConfig
 import com.wifi.toolbox.structs.PojieRunInfo
 import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.ui.items.pojie.RunListView
 import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.utils.PojieWifiController
-import com.wifi.toolbox.ui.items.ScanResult
+import com.wifi.toolbox.ui.items.pojie.ScanResult
+import com.wifi.toolbox.ui.items.pojie.ScreenState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
