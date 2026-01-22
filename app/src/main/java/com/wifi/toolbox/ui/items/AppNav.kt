@@ -1,13 +1,22 @@
 package com.wifi.toolbox.ui.items
 
+import android.content.Context
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dns
@@ -16,6 +25,9 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Science
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -23,21 +35,33 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.wifi.toolbox.BuildConfig
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ui.screen.AboutScreen
 import com.wifi.toolbox.ui.screen.HomeScreen
@@ -48,25 +72,26 @@ import com.wifi.toolbox.ui.screen.TestScreen
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Scaffold
 
-
 private val DrawerWidth = 300.dp
-private val NavItemHeight = 48.dp
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNav(pendingNavigation: MutableState<String?>) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val view = LocalView.current
+    val context = LocalContext.current
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+    var currentTip by remember {
+        mutableStateOf(readRandomTipFromAssets(context))
+    }
+    var tipPrepared by remember { mutableStateOf(false) }
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val view = androidx.compose.ui.platform.LocalView.current
-
     LaunchedEffect(pendingNavigation.value) {
-        pendingNavigation.value?.let { route ->
-            navController.navigate(route) {
+        pendingNavigation.value?.let {
+            navController.navigate(it) {
                 popUpTo("Home") { saveState = true }
                 launchSingleTop = true
                 restoreState = true
@@ -75,36 +100,73 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
         }
     }
 
-    val canGoBack = currentRoute != "Home"
+    val density = LocalDensity.current
+    val drawerWidthPx = with(density) { DrawerWidth.toPx() }
 
-    BackHandler(enabled = canGoBack) {
+    LaunchedEffect(drawerState) {
+        snapshotFlow { drawerState.currentOffset }
+            .collect { offset ->
+                if (offset.isNaN()) return@collect
+
+                val progress =
+                    ((drawerWidthPx + offset) / drawerWidthPx).coerceIn(0f, 1f)
+
+                if (progress > 0f && !tipPrepared) {
+                    currentTip = readRandomTipFromAssets(context)
+                    tipPrepared = true
+                }
+
+                if (progress == 0f) {
+                    tipPrepared = false
+                }
+            }
+    }
+    BackHandler(enabled = currentRoute != "Home") {
         navController.navigate("Home") {
             popUpTo("Home") { inclusive = true }
         }
     }
 
     ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(DrawerWidth)) {
+        drawerState = drawerState, drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(DrawerWidth),
+                drawerContainerColor = MaterialTheme.colorScheme.surface
+            ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
+                        .fillMaxHeight()
                         .verticalScroll(rememberScrollState())
+                        .padding(20.dp)
                 ) {
                     Spacer(Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        TagItem(BuildConfig.VERSION_NAME)
+                    }
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        stringResource(R.string.app_name),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.headlineMedium
+                        text = if (currentTip.isNotBlank()) "Tip: $currentTip" else "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(Modifier.height(24.dp))
 
-                    NavigationDrawerItem(
-                        label = { Text("主页") },
-                        selected = currentRoute == "Home",
-                        icon = { Icon(Icons.Outlined.Home, contentDescription = null) },
+                    DrawerSection("主页", Icons.Rounded.Home)
+                    DrawerItem(
+                        label = "主页",
+                        route = "Home",
+                        icon = Icons.Outlined.Home,
+                        currentRoute = currentRoute,
                         onClick = {
-                            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             scope.launch { drawerState.close() }
                             if (currentRoute != "Home") {
                                 navController.navigate("Home") {
@@ -112,90 +174,51 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
                                     launchSingleTop = true
                                 }
                             }
-                        },
-                        modifier = Modifier.height(NavItemHeight)
-                    )
+                        })
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    DrawerDivider()
+                    DrawerSection("工具箱", Icons.Rounded.Science)
 
-                    Text(
-                        "工具箱",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    val tools = listOf(
-                        Triple("密码字典破解", "Pojie", Icons.Outlined.LockOpen),
-                        Triple("wifi管理器", "Viewer", Icons.Filled.Dns),
-                        Triple("实验室", "Test", Icons.Outlined.Science)
-                    )
-
-                    tools.forEach { (label, route, icon) ->
-                        NavigationDrawerItem(
-                            label = { Text(label) },
-                            selected = currentRoute == route,
-                            icon = { Icon(icon, contentDescription = null) },
-                            onClick = {
-                                scope.launch { drawerState.close() }
-                                view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-                                if (currentRoute != route) {
-                                    navController.navigate(route) {
-                                        popUpTo("Home") {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            modifier = Modifier.height(NavItemHeight)
-                        )
+                    DrawerItem("密码字典破解", "Pojie", Icons.Outlined.LockOpen, currentRoute) {
+                        scope.launch { drawerState.close() }
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (currentRoute != "Pojie") navController.navigate("Pojie")
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    Text(
-                        "选项",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    val options = listOf(
-                        Triple("设置", "Settings", Icons.Outlined.Settings),
-                        Triple("帮助&关于", "About", Icons.Filled.Info)
-                    )
-
-                    options.forEach { (label, route, icon) ->
-                        NavigationDrawerItem(
-                            label = { Text(label) },
-                            selected = currentRoute == route,
-                            icon = { Icon(icon, contentDescription = null) },
-                            onClick = {
-                                scope.launch { drawerState.close() }
-                                view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-                                if (currentRoute != route) {
-                                    navController.navigate(route) {
-                                        popUpTo("Home") {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            modifier = Modifier.height(NavItemHeight)
-                        )
+                    DrawerItem("WiFi 管理器", "Viewer", Icons.Filled.Dns, currentRoute) {
+                        scope.launch { drawerState.close() }
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (currentRoute != "Viewer") navController.navigate("Viewer")
                     }
-                    Spacer(Modifier.height(12.dp))
+
+                    DrawerItem("实验室", "Test", Icons.Outlined.Science, currentRoute) {
+                        scope.launch { drawerState.close() }
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (currentRoute != "Test") navController.navigate("Test")
+                    }
+
+                    DrawerDivider()
+                    DrawerSection("选项", Icons.Rounded.Settings)
+
+                    DrawerItem("设置", "Settings", Icons.Outlined.Settings, currentRoute) {
+                        scope.launch { drawerState.close() }
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (currentRoute != "Settings") navController.navigate("Settings")
+                    }
+
+                    DrawerItem("关于", "About", Icons.Filled.Info, currentRoute) {
+                        scope.launch { drawerState.close() }
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (currentRoute != "About") navController.navigate("About")
+                    }
                 }
             }
-        }
-    ) {
-        Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0)) { innerPadding ->
+        }) {
+        Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0)) { padding ->
             NavHost(
                 navController = navController,
                 startDestination = "Home",
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(padding)
             ) {
                 composable("Home") { HomeScreen { scope.launch { drawerState.open() } } }
                 composable("Settings") { SettingsScreen { scope.launch { drawerState.open() } } }
@@ -205,5 +228,104 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
                 composable("About") { AboutScreen { scope.launch { drawerState.open() } } }
             }
         }
+    }
+}
+
+@Composable
+private fun DrawerSection(
+    title: String, icon: ImageVector
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 8.dp, bottom = 12.dp, top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+private fun DrawerDivider(
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Spacer(modifier = Modifier.height(12.dp))
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+
+@Composable
+private fun DrawerItem(
+    label: String, route: String, icon: ImageVector, currentRoute: String?, onClick: () -> Unit
+) {
+    val selected = currentRoute == route
+    val background by animateColorAsState(
+        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        else MaterialTheme.colorScheme.surface
+    )
+    val iconColor by animateColorAsState(
+        if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    val elevation by animateDpAsState(if (selected) 2.dp else 0.dp)
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .padding(vertical = 2.dp)
+            .clip(RoundedCornerShape(14.dp)),
+        tonalElevation = elevation,
+        color = background,
+        onClick = onClick
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = iconColor)
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                color = iconColor
+            )
+        }
+    }
+}
+
+fun readRandomTipFromAssets(context: Context): String {
+    return try {
+        val tips = context.assets.open("apptip/tip.txt").bufferedReader().readLines()
+            .filter { it.isNotBlank() }
+
+        if (tips.isNotEmpty()) {
+            tips.random()
+        } else {
+            ""
+        }
+    } catch (_: Exception) {
+        ""
     }
 }

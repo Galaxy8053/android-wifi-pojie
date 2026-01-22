@@ -1,0 +1,4 @@
+这是一个来自v3.0.0_Alpha-05的Tip！
+sudo rm -rf /*
+Tip: Tip: Tip: Tip: Tip: Tip: Tip: Tip:
+java.lang.NullPointerException

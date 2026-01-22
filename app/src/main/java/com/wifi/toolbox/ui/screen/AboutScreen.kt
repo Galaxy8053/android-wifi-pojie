@@ -55,6 +55,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -125,12 +126,12 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             ),
             CreditProject(
                 "HyperCeiler",
-                "v2版本之后的关于页面参考了HyperCeiler的布局样式",
+                "v2版本之后的关于页面参考了此应用的布局样式",
                 "https://github.com/ReChronoRain/HyperCeiler"
             ),
             CreditProject(
                 "LSPosed",
-                "密码字典破解的页面参考了LSPosed的导航栏样式",
+                "密码字典破解的页面参考了此应用的导航栏样式",
                 "https://github.com/JingMatrix/LSPosed",
             ),
             CreditProject(
@@ -371,7 +372,8 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                     ) {
 
                         items(creditProjects) { project ->
-                            CreditProjectCard(project, uriHandler)
+                            val expanded = rememberSaveable { mutableStateOf(false) }
+                            CreditProjectCard(project, uriHandler, expanded)
                         }
 
                         item {
@@ -506,9 +508,9 @@ data class CreditProject(
 @Composable
 fun CreditProjectCard(
     project: CreditProject,
-    uriHandler: UriHandler
+    uriHandler: UriHandler,
+    expanded: MutableState<Boolean>
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -516,7 +518,7 @@ fun CreditProjectCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
-        onClick = { expanded = !expanded }
+        onClick = { expanded.value = !expanded.value  }
     ) {
         Column {
             Row(
@@ -563,7 +565,7 @@ fun CreditProjectCard(
                     )
                 }
                 if (project.link.isNotBlank() || project.license.isNotBlank()) {
-                    val angle by animateFloatAsState(if (expanded) 180f else 0f)
+                    val angle by animateFloatAsState(if (expanded.value) 180f else 0f)
                     Icon(
                         imageVector = Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
@@ -572,7 +574,7 @@ fun CreditProjectCard(
                 }
             }
 
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(visible = expanded.value) {
                 Column {
                     if (project.link.isNotBlank()) {
                         HorizontalDivider(
