@@ -2,6 +2,7 @@ package com.wifi.toolbox.ui.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -52,6 +54,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -283,7 +286,10 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             enter = slideInHorizontally(initialOffsetX = { it }), // 从右往左滑入
             exit = slideOutHorizontally(targetOffsetX = { it })  // 从左往右滑出
         ) {
-            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
                 LicenseList(libs = libs, onBack = { showLicenseDialog = false })
             }
         }
@@ -332,11 +338,11 @@ fun LicenseList(
     onBack: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     var isSearching by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    // 1. 数据分组逻辑
     val groupedLibraries = remember(searchQuery, libs) {
         val filtered = if (searchQuery.isEmpty()) libs.libraries
         else libs.libraries.filter {
@@ -344,7 +350,7 @@ fun LicenseList(
                     it.uniqueId.contains(searchQuery, ignoreCase = true)
         }
 
-        filtered.groupBy { library ->
+        val groups = filtered.groupBy { library ->
             val developerNames = library.developers
                 .mapNotNull { it.name }
                 .filter { it.isNotBlank() }
@@ -355,16 +361,20 @@ fun LicenseList(
                 library.organization?.name?.isNotBlank() == true -> library.organization!!.name
                 else -> "其他"
             }
-        }.toSortedMap(
-            compareBy<String?> { it == "其他" }.thenBy { it?.lowercase() }
+        }
+
+        groups.toSortedMap(
+            compareByDescending<String> { groups[it]?.size ?: 0 }
+                .thenBy { it.lowercase() }
         )
     }
 
-    // 2. 状态维护：记录哪些分组被展开了
     var expandedGroups by remember { mutableStateOf(setOf<String>()) }
 
     BackHandler(enabled = isSearching || searchQuery.isNotEmpty()) {
-        if (isSearching) { isSearching = false; searchQuery = "" }
+        if (isSearching) {
+            isSearching = false; searchQuery = ""
+        }
     }
 
     Scaffold(
@@ -380,7 +390,10 @@ fun LicenseList(
                             textStyle = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             decorationBox = { innerTextField ->
-                                if (searchQuery.isEmpty()) Text("搜索库名称...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (searchQuery.isEmpty()) Text(
+                                    "搜索库名称...",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 innerTextField()
                             }
                         )
@@ -389,8 +402,15 @@ fun LicenseList(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { if (isSearching) { isSearching = false; searchQuery = "" } else onBack() }) {
-                        Icon(imageVector = if (isSearching) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    IconButton(onClick = {
+                        if (isSearching) {
+                            isSearching = false; searchQuery = ""
+                        } else onBack()
+                    }) {
+                        Icon(
+                            imageVector = if (isSearching) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
                     }
                 },
                 actions = {
@@ -404,51 +424,88 @@ fun LicenseList(
             )
         }
     ) { innerPadding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            groupedLibraries.forEach { (author, libsInGroup) ->
-                // 分组标题
-                stickyHeader {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.background
-                    ) {
-                        Text(
-                            text = author ?: "未知作者",
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+        val listState = rememberLazyListState()
+        if (groupedLibraries.isEmpty() && searchQuery.isNotEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "¯\\_(ツ)_/¯\n空列表，换个关键词试试吧",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                groupedLibraries.forEach { (author, libsInGroup) ->
+                    stickyHeader(key = author) {
+                        val isAtTop by remember(listState) {
+                            derivedStateOf {
+                                val layoutInfo = listState.layoutInfo
+                                val visibleItem =
+                                    layoutInfo.visibleItemsInfo.find { it.key == author }
+                                visibleItem != null && visibleItem.offset <= 0
+                            }
+                        }
 
-                // 计算当前需要展示的数量
-                val isExpanded = expandedGroups.contains(author)
-                val displayList = if (isExpanded) libsInGroup else libsInGroup.take(5)
-
-                itemsIndexed(displayList, key = { _, it -> it.uniqueId }) { index, library ->
-                    LicenseItem(library) { library.website?.let { uriHandler.openUri(it) } }
-
-                    if (index < displayList.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 24.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
-                }
-
-                if (libsInGroup.size > 5) {
-                    item {
-                        TextButton(
-                            onClick = {
-                                expandedGroups = if (isExpanded) expandedGroups - author!! else expandedGroups + author!!
+                        val containerColor by animateColorAsState(
+                            targetValue = if (isAtTop && scrollBehavior.state.collapsedFraction > 0.5f) {
+                                MaterialTheme.colorScheme.surfaceContainer
+                            } else {
+                                MaterialTheme.colorScheme.background
                             },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                            label = "headerColor"
+                        )
+
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = containerColor
                         ) {
-                            Text(if (isExpanded) "收起" else "查看全部 ${libsInGroup.size} 项")
+                            Text(
+                                text = author ?: "其他",
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    val isExpanded = expandedGroups.contains(author)
+                    val displayList = if (isExpanded) libsInGroup else libsInGroup.take(5)
+
+                    itemsIndexed(displayList, key = { _, it -> it.uniqueId }) { index, library ->
+                        LicenseItem(library) { library.website?.let { uriHandler.openUri(it) } }
+
+                        if (index < displayList.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 24.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
+                    }
+
+                    if (libsInGroup.size > 5) {
+                        item {
+                            TextButton(
+                                onClick = {
+                                    expandedGroups =
+                                        if (isExpanded) expandedGroups - author!! else expandedGroups + author!!
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp)
+                            ) {
+                                Text(if (isExpanded) "收起" else "查看全部 ${libsInGroup.size} 项")
+                            }
                         }
                     }
                 }
+                item { Spacer(modifier = Modifier.height(32.dp)) }
             }
         }
     }
@@ -463,10 +520,18 @@ fun LicenseItem(library: Library, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
-        Text(text = library.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            text = library.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
 
         library.artifactVersion?.let {
-            Text(text = "版本: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = "版本: $it",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
