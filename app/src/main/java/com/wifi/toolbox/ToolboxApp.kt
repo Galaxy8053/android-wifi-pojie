@@ -52,15 +52,20 @@ class ToolboxApp : Application() {
             ) {
             }
 
-            override fun onActivityStarted(activity: Activity) {}
-            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivityStarted(activity: Activity) {/*不覆写接口*/
+            }
+
+            override fun onActivityStopped(activity: Activity) {/*不覆写接口*/
+            }
+
             override fun onActivitySaveInstanceState(
                 activity: Activity,
                 outState: android.os.Bundle
             ) {
             }
 
-            override fun onActivityDestroyed(activity: Activity) {}
+            override fun onActivityDestroyed(activity: Activity) {/*不覆写接口*/
+            }
         })
     }
 
