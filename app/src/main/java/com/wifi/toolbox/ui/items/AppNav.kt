@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,7 +52,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -76,6 +79,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Scaffold
 
+
 private val DrawerWidth = 310.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,7 +95,11 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
         mutableStateOf(readRandomTipFromAssets(context))
     }
     var tipPrepared by remember { mutableStateOf(false) }
+    var blurProgress by remember { mutableFloatStateOf(0f) }
     val currentRoute = navBackStackEntry?.destination?.route
+
+    val density = LocalDensity.current
+    val drawerWidthPx = with(density) { DrawerWidth.toPx() }
 
     LaunchedEffect(pendingNavigation.value) {
         pendingNavigation.value?.let {
@@ -104,15 +112,13 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
         }
     }
 
-    val density = LocalDensity.current
-    val drawerWidthPx = with(density) { DrawerWidth.toPx() }
-
     LaunchedEffect(drawerState) {
         snapshotFlow { drawerState.currentOffset }
             .collect { offset ->
                 if (offset.isNaN()) return@collect
 
                 val progress = ((drawerWidthPx + offset) / drawerWidthPx).coerceIn(0f, 1f)
+                blurProgress = progress
 
                 if (progress < 0.01f) {
                     if (tipPrepared) {
@@ -126,6 +132,7 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
                 }
             }
     }
+
     BackHandler(enabled = currentRoute != "Home") {
         navController.navigate("Home") {
             popUpTo("Home") { inclusive = true }
@@ -133,17 +140,25 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
     }
 
     ModalNavigationDrawer(
-        drawerState = drawerState, drawerContent = {
+        drawerState = drawerState,
+        scrimColor = Color.Black.copy(alpha = 0.32f * blurProgress),
+        drawerContent = {
+            val isBlurSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+            val drawerAlpha = if (isBlurSupported) 0.8f else 1f
+
             ModalDrawerSheet(
                 modifier = Modifier
                     .width(DrawerWidth)
                     .clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)),
-                drawerContainerColor = MaterialTheme.colorScheme.surface
+                drawerContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = drawerAlpha)
             ) {
                 NavContent(currentTip, currentRoute, view, scope, drawerState, navController)
             }
         }) {
-        Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0)) { padding ->
+        Scaffold(
+            modifier = Modifier.blur(if (blurProgress > 0f) (8 * blurProgress).dp else 0.dp),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        ) { padding ->
             NavHost(
                 navController = navController,
                 startDestination = "Home",
@@ -210,7 +225,7 @@ private fun DrawerItem(
     val selected = currentRoute == route
     val background by animateColorAsState(
         if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-        else MaterialTheme.colorScheme.surface
+        else Color.Transparent
     )
     val iconColor by animateColorAsState(
         if (selected) MaterialTheme.colorScheme.primary
