@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent) {
         intent.getStringExtra("target")?.let { pendingNavigation.value = it }
+        intent.removeExtra("target")
     }
 
     val handleSave: (String, () -> Unit) -> Unit = { text, onSuccess ->

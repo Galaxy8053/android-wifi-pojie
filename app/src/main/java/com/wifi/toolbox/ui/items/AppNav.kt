@@ -20,15 +20,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.outlined.Science
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Science
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.automirrored.rounded.MenuOpen
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -135,7 +130,8 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
 
     BackHandler(enabled = currentRoute != "Home") {
         navController.navigate("Home") {
-            popUpTo("Home") { inclusive = true }
+            popUpTo("Home") { inclusive = false }
+            launchSingleTop = true
         }
     }
 
@@ -274,6 +270,12 @@ fun readRandomTipFromAssets(context: Context): String {
     }
 }
 
+data class NavMenuItem(
+    val label: String,
+    val route: String,
+    val icon: ImageVector,
+    val section: String
+)
 @Composable
 fun NavContent(
     currentTip: String,
@@ -283,6 +285,17 @@ fun NavContent(
     drawerState: DrawerState,
     navController: NavHostController
 ) {
+    val menuItems = remember {
+        listOf(
+            NavMenuItem("主页", "Home", Icons.Outlined.Home, "导航"),
+            NavMenuItem("密码字典破解", "Pojie", Icons.Outlined.LockOpen, "工具箱"),
+            NavMenuItem("WiFi 管理器", "Viewer", Icons.Filled.Dns, "工具箱"),
+            NavMenuItem("实验室", "Test", Icons.Outlined.Science, "工具箱"),
+            NavMenuItem("设置", "Settings", Icons.Outlined.Settings, "选项"),
+            NavMenuItem("关于", "About", Icons.Filled.Info, "选项")
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -290,9 +303,7 @@ fun NavContent(
             .padding(20.dp)
     ) {
         Spacer(Modifier.height(12.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
@@ -301,65 +312,44 @@ fun NavContent(
             Spacer(Modifier.width(2.dp))
             TagItem(BuildConfig.VERSION_NAME)
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = if (currentTip.isNotBlank()) "Tip: $currentTip" else "",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (currentTip.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Tip: $currentTip",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Spacer(Modifier.height(24.dp))
 
-        DrawerSection("主页", Icons.Rounded.Home)
-        DrawerItem(
-            label = "主页",
-            route = "Home",
-            icon = Icons.Outlined.Home,
-            currentRoute = currentRoute,
-            onClick = {
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                scope.launch { drawerState.close() }
-                if (currentRoute != "Home") {
-                    navController.navigate("Home") {
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
+        val sections = listOf(
+            "导航" to Icons.AutoMirrored.Rounded.MenuOpen,
+            "工具箱" to Icons.Rounded.Science,
+            "选项" to Icons.Rounded.Settings
+        )
+
+        sections.forEachIndexed { index, (title, icon) ->
+            if (index > 0) DrawerDivider()
+            DrawerSection(title, icon)
+
+            menuItems.filter { it.section == title }.forEach { item ->
+                DrawerItem(
+                    label = item.label,
+                    route = item.route,
+                    icon = item.icon,
+                    currentRoute = currentRoute
+                ) {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    scope.launch { drawerState.close() }
+                    if (currentRoute != item.route) {
+                        navController.navigate(item.route) {
+                            popUpTo("Home") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
-            })
-
-        DrawerDivider()
-        DrawerSection("工具箱", Icons.Rounded.Science)
-
-        DrawerItem("密码字典破解", "Pojie", Icons.Outlined.LockOpen, currentRoute) {
-            scope.launch { drawerState.close() }
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            if (currentRoute != "Pojie") navController.navigate("Pojie")
-        }
-
-        DrawerItem("WiFi 管理器", "Viewer", Icons.Filled.Dns, currentRoute) {
-            scope.launch { drawerState.close() }
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            if (currentRoute != "Viewer") navController.navigate("Viewer")
-        }
-
-        DrawerItem("实验室", "Test", Icons.Outlined.Science, currentRoute) {
-            scope.launch { drawerState.close() }
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            if (currentRoute != "Test") navController.navigate("Test")
-        }
-
-        DrawerDivider()
-        DrawerSection("选项", Icons.Rounded.Settings)
-
-        DrawerItem("设置", "Settings", Icons.Outlined.Settings, currentRoute) {
-            scope.launch { drawerState.close() }
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            if (currentRoute != "Settings") navController.navigate("Settings")
-        }
-
-        DrawerItem("关于", "About", Icons.Filled.Info, currentRoute) {
-            scope.launch { drawerState.close() }
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            if (currentRoute != "About") navController.navigate("About")
+            }
         }
     }
 }
