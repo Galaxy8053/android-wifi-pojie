@@ -1,4 +1,5 @@
 [versions]
+aboutlibrariesCore = "11.2.3"
 agp = "8.13.2"
 coilCompose = "3.3.0"
 composeBomVersion = "2026.01.00"
@@ -26,6 +27,7 @@ foundationLayout = "1.10.1"
 ui = "1.10.1"
 
 [libraries]
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutlibrariesCore" }
 androidx-compose-bom-v20251200 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3Version" }
 androidx-compose-material3-adaptive-navigation-suite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite", version.ref = "material3Version" }

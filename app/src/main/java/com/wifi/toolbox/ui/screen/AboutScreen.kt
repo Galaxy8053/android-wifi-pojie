@@ -1,12 +1,19 @@
 package com.wifi.toolbox.ui.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,12 +22,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,12 +42,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +60,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -55,6 +72,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
+import com.mikepenz.aboutlibraries.Libs
+import com.mikepenz.aboutlibraries.entity.Library
+import com.mikepenz.aboutlibraries.util.withContext
 import com.wifi.toolbox.BuildConfig
 import com.wifi.toolbox.R
 
@@ -78,6 +98,12 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                 "此版本未包含CHANGELOG.md"
             }
         }
+    }
+
+    val libs = remember {
+        Libs.Builder()
+            .withContext(context)
+            .build()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -248,8 +274,18 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             )
         }
 
-        if (showLicenseDialog) {
+        BackHandler(enabled = showLicenseDialog) {
+            showLicenseDialog = false
+        }
 
+        AnimatedVisibility(
+            visible = showLicenseDialog,
+            enter = slideInHorizontally(initialOffsetX = { it }), // 从右往左滑入
+            exit = slideOutHorizontally(targetOffsetX = { it })  // 从左往右滑出
+        ) {
+            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                LicenseList(libs = libs, onBack = { showLicenseDialog = false })
+            }
         }
     }
 }
@@ -286,5 +322,173 @@ fun ClickableInfoItem(
             modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun LicenseList(
+    libs: Libs,
+    onBack: () -> Unit
+) {
+    val uriHandler = LocalUriHandler.current
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    var isSearching by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // 1. 数据分组逻辑
+    val groupedLibraries = remember(searchQuery, libs) {
+        val filtered = if (searchQuery.isEmpty()) libs.libraries
+        else libs.libraries.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+                    it.uniqueId.contains(searchQuery, ignoreCase = true)
+        }
+
+        filtered.groupBy { library ->
+            val developerNames = library.developers
+                .mapNotNull { it.name }
+                .filter { it.isNotBlank() }
+                .joinToString()
+
+            when {
+                developerNames.isNotBlank() -> developerNames
+                library.organization?.name?.isNotBlank() == true -> library.organization!!.name
+                else -> "其他"
+            }
+        }.toSortedMap(
+            compareBy<String?> { it == "其他" }.thenBy { it?.lowercase() }
+        )
+    }
+
+    // 2. 状态维护：记录哪些分组被展开了
+    var expandedGroups by remember { mutableStateOf(setOf<String>()) }
+
+    BackHandler(enabled = isSearching || searchQuery.isNotEmpty()) {
+        if (isSearching) { isSearching = false; searchQuery = "" }
+    }
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            MediumTopAppBar(
+                title = {
+                    if (isSearching) {
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            decorationBox = { innerTextField ->
+                                if (searchQuery.isEmpty()) Text("搜索库名称...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                innerTextField()
+                            }
+                        )
+                    } else {
+                        Text("开源许可", fontWeight = FontWeight.SemiBold)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { if (isSearching) { isSearching = false; searchQuery = "" } else onBack() }) {
+                        Icon(imageVector = if (isSearching) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                },
+                actions = {
+                    if (!isSearching) {
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { innerPadding ->
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            groupedLibraries.forEach { (author, libsInGroup) ->
+                // 分组标题
+                stickyHeader {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        Text(
+                            text = author ?: "未知作者",
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // 计算当前需要展示的数量
+                val isExpanded = expandedGroups.contains(author)
+                val displayList = if (isExpanded) libsInGroup else libsInGroup.take(5)
+
+                itemsIndexed(displayList, key = { _, it -> it.uniqueId }) { index, library ->
+                    LicenseItem(library) { library.website?.let { uriHandler.openUri(it) } }
+
+                    if (index < displayList.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 24.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                }
+
+                if (libsInGroup.size > 5) {
+                    item {
+                        TextButton(
+                            onClick = {
+                                expandedGroups = if (isExpanded) expandedGroups - author!! else expandedGroups + author!!
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                        ) {
+                            Text(if (isExpanded) "收起" else "查看全部 ${libsInGroup.size} 项")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun LicenseItem(library: Library, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
+    ) {
+        Text(text = library.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+        library.artifactVersion?.let {
+            Text(text = "版本: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            library.licenses.forEach { license ->
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Text(
+                        text = license.name,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
     }
 }
