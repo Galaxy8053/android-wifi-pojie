@@ -4,6 +4,7 @@ coilCompose = "3.3.0"
 composeBomVersion = "2026.01.00"
 desugar_jdk_libs = "2.1.5"
 editorBom = "0.24.3"
+fragmentKtx = "1.8.9"
 hiddenapibypass = "6.1"
 kotlin = "2.3.0"
 coreKtx = "1.17.0"
@@ -28,6 +29,7 @@ ui = "1.10.1"
 androidx-compose-bom-v20251200 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3Version" }
 androidx-compose-material3-adaptive-navigation-suite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite", version.ref = "material3Version" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

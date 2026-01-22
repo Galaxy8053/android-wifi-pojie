@@ -203,11 +203,13 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                                 val result = ShizukuUtil.getSavedWifiList()
                                 logState.addLog("=== 已保存的wifi列表 ===")
                                 result.forEach {
+                                    @Suppress("DEPRECATION")
                                     logState.addLog(
                                         String.format(
-                                            "ID: %-4s 名称: %s",
-                                            it.first,
-                                            it.second
+                                            "ID: %-4s 名称: %-16s 密码: %s",
+                                            it.networkId,
+                                            it.SSID.removeSurrounding("\""),
+                                            it.preSharedKey?.removeSurrounding("\"") ?: ""
                                         )
                                     )
                                 }

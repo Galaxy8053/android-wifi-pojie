@@ -106,6 +106,7 @@ dependencies {
     implementation(platform(libs.editor.bom))
     implementation(libs.editor)
     implementation(libs.languageTextmate)
+    implementation(libs.androidx.fragment.ktx)
 
     implementation(libs.play.services.location) //注:依赖play服务，打开系统定位（也许有点臃肿，算了不管了）
     testImplementation(libs.junit)

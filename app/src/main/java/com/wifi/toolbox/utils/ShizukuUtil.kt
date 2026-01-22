@@ -1,27 +1,27 @@
+@file:Suppress("DEPRECATION")
+
 package com.wifi.toolbox.utils
 
 import android.annotation.SuppressLint
+import android.content.AttributionSource
 import android.content.Context
 import android.media.AudioManager
+import android.net.wifi.WifiConfiguration
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.SystemClock
-import android.view.InputEvent
-import android.view.KeyEvent
-import com.wifi.toolbox.structs.WifiInfo
-import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuBinderWrapper
-import rikka.shizuku.SystemServiceHelper
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
+import android.view.*
+import com.wifi.toolbox.structs.*
+import rikka.shizuku.*
+import java.io.*
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import org.lsposed.hiddenapibypass.*
 import java.util.BitSet
 import android.os.WorkSource
+import android.util.Log
 import java.lang.reflect.Method
 
 object ShizukuUtil {
@@ -171,7 +171,7 @@ object ShizukuUtil {
      *
      * ### forget
      *
-     * * **Android 7 - 10**: 未定义（通常由 `removeNetwork` 处理类似逻辑 ）。
+     * * **Android 7 - 10**: 未定义。
      * * **Android 11**: 传入 `(int netId, IBinder binder, IActionListener listener, int callbackIdentifier)`，返回 `void` 。
      * * **Android 12 - 16**: 传入 `(int netId, IActionListener listener)`，返回 `void` 。
      */
@@ -316,7 +316,7 @@ object ShizukuUtil {
         }
     }
 
-    fun forgetNetwork(netId: Int){
+    fun forgetNetwork(netId: Int) {
         val wifiManagerBinder = SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
         val wifiService = asInterface("android.net.wifi.IWifiManager", wifiManagerBinder)
 
@@ -337,8 +337,8 @@ object ShizukuUtil {
     }
 
     fun getNetIdBySsid(ssid: String): Int {
-        val savedNetworks = getSavedWifiList()
-        return savedNetworks.find { it.second == ssid }?.first ?: -1
+        val savedNetworks: List<WifiConfiguration> = getSavedWifiList()
+        return savedNetworks.find { it.SSID.removeSurrounding("\"") == ssid }?.networkId ?: -1
     }
 
     fun connectToWifi(ssid: String, password: String): Int {
@@ -489,13 +489,14 @@ object ShizukuUtil {
         return results
     }
 
-    fun getSavedWifiList(): List<Pair<Int, String>> {
+
+    fun getSavedWifiListOld(): List<WifiConfiguration> {
         val wifiService = asInterface(
             "android.net.wifi.IWifiManager",
             SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
         )
 
-        val results = mutableListOf<Pair<Int, String>>()
+        val results = mutableListOf<WifiConfiguration>()
         val wifiConfigurationClass = Class.forName("android.net.wifi.WifiConfiguration")
         val getMethod = getWifiMethod(wifiService, "getConfiguredNetworks")
 
@@ -539,9 +540,119 @@ object ShizukuUtil {
             if (ssidValue.length >= 2 && ssidValue.startsWith("\"") && ssidValue.endsWith("\"")) {
                 ssidValue = ssidValue.substring(1, ssidValue.length - 1)
             }
-            results.add(Pair(networkId, ssidValue))
+            results.add(config as WifiConfiguration)
         }
         return results
+    }
+
+    /**
+     * 获取已保存的Wifi列表
+     * 此代码借鉴（ctrlCV）自zacharee/WiFiList项目
+     * @return 获取到的wifi列表List<WifiConfiguration>
+     * */
+    @SuppressLint("PrivateApi")
+    @Suppress("DEPRECATION", "UNCHECKED_CAST")
+    fun getSavedWifiList(): List<WifiConfiguration> {
+        try {
+            val base = Class.forName("android.net.wifi.IWifiManager")
+            val iwm = asInterface(
+                "android.net.wifi.IWifiManager",
+                SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
+            )
+
+            val user = when (Shizuku.getUid()) {
+                0 -> "root"
+                1000 -> "system"
+                else -> "shell"
+            }
+
+            //这个API咋这么乱啊！！
+            val privilegedConfigs = when {
+                Build.VERSION.SDK_INT >= 33 -> {
+                    val method = base.getMethod(
+                        "getPrivilegedConfiguredNetworks",
+                        String::class.java,
+                        String::class.java,
+                        Bundle::class.java
+                    )
+                    method.invoke(iwm, user, PACKAGE_NAME, Bundle().apply {
+                        putParcelable(
+                            "EXTRA_PARAM_KEY_ATTRIBUTION_SOURCE",
+                            AttributionSource::class.java.getConstructor(
+                                Int::class.java,
+                                String::class.java,
+                                String::class.java,
+                                Set::class.java,
+                                AttributionSource::class.java
+                            ).newInstance(
+                                Shizuku.getUid(),
+                                PACKAGE_NAME,
+                                PACKAGE_NAME,
+                                null as Set<String>?,
+                                null
+                            )
+                        )
+                    })
+                }
+
+                Build.VERSION.SDK_INT >= 29 -> {
+                    //注：这里测试android10模拟器获取不到（也许这就是为什么WifiList的minsdk是30吧…）
+                    try {
+                        try {
+                            base.getMethod("getPrivilegedConfiguredNetworks", String::class.java)
+                                .invoke(iwm, PACKAGE_NAME)
+                        } catch (_: NoSuchMethodException) {
+                            base.getMethod(
+                                "getPrivilegedConfiguredNetworks",
+                                String::class.java,
+                                String::class.java
+                            )
+                                .invoke(iwm, user, PACKAGE_NAME)
+                        }
+                    } catch (_: NoSuchMethodException) {
+                        base.getMethod(
+                            "getPrivilegedConfiguredNetworks",
+                            String::class.java,
+                            String::class.java,
+                            Bundle::class.java
+                        )
+                            .invoke(iwm, user, PACKAGE_NAME, null)
+                    }
+                }
+
+                else -> {
+                    try {
+                        base.getMethod("getPrivilegedConfiguredNetworks", String::class.java)
+                            .invoke(iwm, PACKAGE_NAME)
+                    } catch (_: NoSuchMethodException) {
+                        try {
+                            base.getMethod("getPrivilegedConfiguredNetworks").invoke(iwm)
+                        } catch (_: NoSuchMethodException) {
+                            base.getMethod("getConfiguredNetworks").invoke(iwm)
+                        }
+                    }
+                }
+            }
+
+            val resultList = when (privilegedConfigs) {
+                is List<*> -> privilegedConfigs as List<WifiConfiguration>
+                null -> listOf()
+                else -> {
+                    try {
+                        privilegedConfigs::class.java.getMethod("getList")
+                            .invoke(privilegedConfigs) as List<WifiConfiguration>
+                    } catch (_: Exception) {
+                        listOf()
+                    }
+                }
+            }
+            if (resultList.isEmpty()) throw Exception("获取到的wifi列表为空")
+            return resultList.distinctBy { it.networkId }
+        } catch (e: Exception) {
+            //这里兜个底，密码不要了其实也可以的
+            Log.w("ShizukuUtil", e.stackTraceToString())
+            return getSavedWifiListOld()
+        }
     }
 
 
