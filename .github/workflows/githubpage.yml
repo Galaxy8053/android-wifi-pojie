@@ -22,7 +22,7 @@ jobs:
 
       - run: |
           mkdir public
-          cp CHANGELOG.md public/index.md
+          cp CHANGELOG.md public/CHANGELOG.md
 
       - uses: actions/configure-pages@v4
 
