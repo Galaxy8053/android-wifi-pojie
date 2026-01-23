@@ -3,6 +3,7 @@ package com.wifi.toolbox
 import android.app.*
 import com.wifi.toolbox.app.*
 import com.wifi.toolbox.utils.ActivityStack
+import com.wifi.toolbox.utils.PojieHistoryManager
 import com.wifi.toolbox.utils.SettingsManager
 import kotlinx.coroutines.*
 
@@ -23,6 +24,7 @@ class ToolboxApp : Application() {
     lateinit var ui: AppUI
     lateinit var pojieTask: AppPojieTask
     lateinit var settings: SettingsManager
+    lateinit var pojieHistory: PojieHistoryManager
 
     val pojieConfig get() = pojieTask.pojieConfig
     val logState get() = pojieTask.logState
@@ -39,6 +41,7 @@ class ToolboxApp : Application() {
         ui = AppUI(appScope)
         pojieTask = AppPojieTask(this)
         settings = SettingsManager(this)
+        pojieHistory = PojieHistoryManager(this)
 
         appCrash.StartCatch()
         shizuku.init()

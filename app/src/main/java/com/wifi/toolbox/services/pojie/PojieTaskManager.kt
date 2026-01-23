@@ -237,12 +237,23 @@ class PojieTaskManager(
             app.finishedPojieTasksTip[task.ssid] = "执行出错，请查看输出"
         }
 
+        updateHistory(app, task.ssid)
         worker.cleanConnection(settings)
 
         when (result) {
             SinglePojieTask.RESULT_SUCCESS -> {
                 service.log("连接成功: (${task.ssid}, $pass)")
                 app.finishedPojieTasksTip[task.ssid] = "连接成功：$pass"
+
+                app.pojieHistory.addOrUpdateHistory(
+                    com.wifi.toolbox.utils.PojieHistoryItem(
+                        ssid = task.ssid,
+                        passwords = task.tryList,
+                        progress = task.tryIndex,
+                        successfulPassword = pass
+                    )
+                )
+
                 handledSsids.add(task.ssid)
                 app.pojieTask.stop(task.ssid)
             }
@@ -295,5 +306,20 @@ class PojieTaskManager(
      */
     private fun getTask(app: ToolboxApp, ssid: String): PojieRunInfo? {
         return app.runningPojieTasks.find { it.ssid == ssid }
+    }
+
+    /**
+     * 更新历史记录
+     */
+    private fun updateHistory(app: ToolboxApp, ssid: String) {
+        getTask(app, ssid)?.let { task ->
+            app.pojieHistory.addOrUpdateHistory(
+                com.wifi.toolbox.utils.PojieHistoryItem(
+                    ssid = task.ssid,
+                    passwords = task.tryList,
+                    progress = task.tryIndex
+                )
+            )
+        }
     }
 }
