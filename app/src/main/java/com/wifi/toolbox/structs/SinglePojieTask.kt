@@ -14,6 +14,9 @@ data class SinglePojieTask(
         /** 执行超时（路由器无响应） */
         const val RESULT_TIMEOUT = 2
 
+        /** 用户手动取消任务 */
+        const val RESULT_CANCEL = 3
+
         /** 路由器拒绝接入等 */
         const val RESULT_ERROR_TRANSIENT = -1
 

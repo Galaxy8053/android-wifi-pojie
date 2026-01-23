@@ -5,7 +5,6 @@ import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -48,7 +47,6 @@ fun HyperOSBackground(modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
 
-        // 基础参数注入 (1:1 抄自你提供的反编译代码)
         shader.setFloatUniform("uResolution", w, h)
         shader.setFloatUniform("uAnimTime", time)
         shader.setFloatUniform("uBound", 0.0f, 0.4489f, 1.0f, 0.5511f)
@@ -59,13 +57,11 @@ fun HyperOSBackground(modifier: Modifier = Modifier) {
         shader.setFloatUniform("uAlphaOffset", 0.5f)
         shader.setFloatUniform("uTranslateY", 0.0f)
 
-        // 阴影参数 (1:1 抄自反编译代码)
         shader.setFloatUniform("uShadowColorMulti", 0.3f)
         shader.setFloatUniform("uShadowColorOffset", 0.3f)
         shader.setFloatUniform("uShadowNoiseScale", 5.0f)
         shader.setFloatUniform("uShadowOffset", 0.01f)
 
-        // 根据深浅色模式切换关键参数 (setPhoneDark / setPhoneLight)
         if (isDark) {
             shader.setFloatUniform("uLightOffset", -0.1f)
             shader.setFloatUniform("uSaturateOffset", 0.2f)

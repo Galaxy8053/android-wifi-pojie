@@ -29,7 +29,7 @@ class PojieService : Service() {
         super.onCreate()
         sharedPreferences = getSharedPreferences("settings_pojie", MODE_PRIVATE)
         sharedPreferences.registerOnSharedPreferenceChangeListener(prefsListener)
-        connectionWorker = ConnectWorker(this, serviceScope)
+        connectionWorker = ConnectWorker(this)
         taskDispatcher = PojieTaskManager(this, serviceScope, connectionWorker)
     }
 

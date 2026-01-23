@@ -1,9 +1,11 @@
 package com.wifi.toolbox.services.pojie
 
+import android.util.Log
 import androidx.compose.runtime.snapshotFlow
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.PojieService
 import com.wifi.toolbox.structs.*
+import com.wifi.toolbox.utils.PojieHistoryItem
 import com.wifi.toolbox.utils.ShizukuUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
@@ -49,7 +51,10 @@ class PojieTaskManager(
     fun startLoop(settings: PojieSettings) {
         val app = service.applicationContext as ToolboxApp
 
-        scope.launch {
+        // 1. 这里的 Scope 使用 SupervisorJob，防止子协程异常炸毁整个 Scope
+        val safeScope = scope + SupervisorJob()
+
+        safeScope.launch {
             while (isActive) {
                 if (settings.connectMode != 3) ShizukuUtil.executeCommandSync("am force-stop com.android.settings")
                 delay(100)
@@ -63,7 +68,7 @@ class PojieTaskManager(
                         val removed = old.map { it.ssid }.toSet() - new.map { it.ssid }.toSet()
                         removed.forEach {
                             if (!handledSsids.remove(it)) {
-                                if (worker.forgetNetwork(settings, it)) service.log("忘记网络:$it")
+                                if (worker.forgetNetwork(settings, it)) service.log("忘记网络: $it")
                             }
                         }
 
@@ -81,18 +86,22 @@ class PojieTaskManager(
             }
 
             while (isActive) {
-                if (app.runningPojieTasks.isEmpty()) {
-                    service.stop()
-                    break
+                try {
+                    if (app.runningPojieTasks.isEmpty()) {
+                        service.stop()
+                        break
+                    }
+                    val task = findNextReadyTask(app)
+                    if (task == null) {
+                        handleCooldown(app)
+                        continue
+                    }
+                    executeTaskAttempt(app, task, settings)
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    service.log("E: ${e.message}")
+                    delay(100)
                 }
-
-                val task = findNextReadyTask(app)
-                if (task == null) {
-                    handleCooldown(app)
-                    continue
-                }
-
-                executeTaskAttempt(app, task, settings)
             }
         }
     }
@@ -118,7 +127,7 @@ class PojieTaskManager(
         if (waitMs > 0) {
             val cooldownJob = scope.launch {
                 service.log("冷却中，等待${waitMs}ms")
-                PojieNotification.update(service,"冷却中")
+                PojieNotification.update(service, "冷却中")
                 delay(waitMs)
             }
             currentWorkerJob = cooldownJob
@@ -184,22 +193,37 @@ class PojieTaskManager(
             it.copy(textTip = "正在尝试：$currentPass", lastTryTime = System.currentTimeMillis())
         }
 
-        var taskResult = -1
+        var taskResult: Int
         service.log("${worker.getLogTime()} 尝试: (${task.ssid}, $currentPass) ...", true)
-        PojieNotification.update(service,"尝试: (${task.ssid}, $currentPass)")
+        PojieNotification.update(service, "尝试: (${task.ssid}, $currentPass)")
 
-        val workerSubJob = scope.launch {
+        val deferredResult = scope.async(Dispatchers.Default) {
             try {
-                taskResult =
-                    worker.performTaskLogic(app, SinglePojieTask(task.ssid, currentPass), settings)
+                Log.d("PojieDebug", "子协程开始执行逻辑")
+                worker.performTaskLogic(app, SinglePojieTask(task.ssid, currentPass), settings)
             } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                service.log("E: 任务执行出错：${e.message}")
-                taskResult = SinglePojieTask.RESULT_ERROR
+                if (e is CancellationException) {
+                    Log.d("PojieDebug", "子协程内部捕获到取消")
+                    throw e
+                }
+                Log.e("PojieDebug", "子协程逻辑出错: ${e.message}")
+                SinglePojieTask.RESULT_ERROR
             }
         }
-        currentWorkerJob = workerSubJob
-        workerSubJob.join()
+
+        currentWorkerJob = deferredResult
+
+        try {
+            taskResult = deferredResult.await()
+            Log.d("PojieDebug", "任务正常结束，结果码: $taskResult")
+        } catch (_: CancellationException) {
+            taskResult = SinglePojieTask.RESULT_CANCEL
+            Log.e("PojieDebug", "主协程捕获取消信号，强制设置 taskResult = RESULT_CANCEL")
+            deferredResult.cancel()
+        } catch (e: Exception) {
+            Log.e("PojieDebug", "未知异常: ${e.message}")
+            taskResult = SinglePojieTask.RESULT_ERROR
+        }
 
         handleAttemptResult(app, task, currentPass, taskResult, settings)
 
@@ -219,41 +243,52 @@ class PojieTaskManager(
         app: ToolboxApp, task: PojieRunInfo, pass: String, result: Int, settings: PojieSettings
     ) {
         val timeTag = worker.getLogTime()
-        val isCancelled = currentWorkerJob?.isCancelled == true
 
-        if (isCancelled) {
-            app.logState.setLine("$timeTag 尝试: (${task.ssid}, $pass) 结果: 任务中断")
-            app.finishedPojieTasksTip[task.ssid] = "任务中断(index=${task.tryIndex})"
-        } else if (result != SinglePojieTask.RESULT_ERROR) {
-            val resultStr = when (result) {
-                SinglePojieTask.RESULT_SUCCESS -> "连接成功"
-                SinglePojieTask.RESULT_FAILED -> "失败"
-                SinglePojieTask.RESULT_TIMEOUT -> "执行超时"
-                SinglePojieTask.RESULT_ERROR_TRANSIENT -> "路由器拒绝接入"
-                else -> "未知错误"
+        val resultStr = when (result) {
+            SinglePojieTask.RESULT_CANCEL -> "任务中断"
+            SinglePojieTask.RESULT_SUCCESS -> "连接成功"
+            SinglePojieTask.RESULT_FAILED -> "失败"
+            SinglePojieTask.RESULT_TIMEOUT -> "执行超时"
+            SinglePojieTask.RESULT_ERROR_TRANSIENT -> "路由器拒绝接入"
+            else -> "执行出错"
+        }
+
+        app.logState.setLine("$timeTag 尝试: (${task.ssid}, $pass) 结果: $resultStr")
+
+        when (result) {
+            SinglePojieTask.RESULT_CANCEL -> {
+                app.finishedPojieTasksTip[task.ssid] = "任务中断(index=${task.tryIndex})"
             }
-            app.logState.setLine("$timeTag 尝试: (${task.ssid}, $pass) 结果: $resultStr")
-        } else {
-            app.finishedPojieTasksTip[task.ssid] = "执行出错，请查看输出"
+
+            SinglePojieTask.RESULT_SUCCESS -> {
+                app.finishedPojieTasksTip[task.ssid] = "连接成功：$pass"
+            }
+
+            SinglePojieTask.RESULT_FAILED, SinglePojieTask.RESULT_TIMEOUT, SinglePojieTask.RESULT_ERROR_TRANSIENT -> {
+                // 正常流程，不更新 Tip
+            }
+
+            else -> {
+                app.finishedPojieTasksTip[task.ssid] = "执行出错，请查看输出"
+            }
         }
 
         updateHistory(app, task.ssid)
         worker.cleanConnection(settings)
 
+        if (result == SinglePojieTask.RESULT_CANCEL) return
+
         when (result) {
             SinglePojieTask.RESULT_SUCCESS -> {
                 service.log("连接成功: (${task.ssid}, $pass)")
-                app.finishedPojieTasksTip[task.ssid] = "连接成功：$pass"
-
                 app.pojieHistory.addOrUpdateHistory(
-                    com.wifi.toolbox.utils.PojieHistoryItem(
+                    PojieHistoryItem(
                         ssid = task.ssid,
                         passwords = task.tryList,
                         progress = task.tryIndex,
                         successfulPassword = pass
                     )
                 )
-
                 handledSsids.add(task.ssid)
                 app.pojieTask.stop(task.ssid)
             }
@@ -261,10 +296,6 @@ class PojieTaskManager(
             SinglePojieTask.RESULT_FAILED -> {
                 processTaskCompletion(app, task.ssid)
                 app.pojieTask.edit(task.ssid) { it.copy(retryCount = 0) }
-            }
-
-            SinglePojieTask.RESULT_ERROR -> {
-                app.pojieTask.stop(task.ssid)
             }
 
             SinglePojieTask.RESULT_TIMEOUT, SinglePojieTask.RESULT_ERROR_TRANSIENT -> {
@@ -275,6 +306,10 @@ class PojieTaskManager(
                         processTaskCompletion(app, task.ssid)
                     }
                 }
+            }
+
+            else -> {
+                app.pojieTask.stop(task.ssid)
             }
         }
     }
@@ -314,7 +349,7 @@ class PojieTaskManager(
     private fun updateHistory(app: ToolboxApp, ssid: String) {
         getTask(app, ssid)?.let { task ->
             app.pojieHistory.addOrUpdateHistory(
-                com.wifi.toolbox.utils.PojieHistoryItem(
+                PojieHistoryItem(
                     ssid = task.ssid,
                     passwords = task.tryList,
                     progress = task.tryIndex

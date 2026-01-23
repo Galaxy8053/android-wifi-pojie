@@ -8,6 +8,7 @@ import com.wifi.toolbox.services.*
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.utils.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -16,8 +17,7 @@ import kotlin.coroutines.resumeWithException
  * 负责管理单次连接并获取结果
  */
 class ConnectWorker(
-    private val service: PojieService,
-    private val scope: CoroutineScope
+    private val service: PojieService
 ) {
     private var readLogMode = 0
     private var logcatService: WifiLogcatService? = null
@@ -60,12 +60,14 @@ class ConnectWorker(
      * @return 任务执行结果状态码
      */
     suspend fun performTaskLogic(
-        app: ToolboxApp,
-        task: SinglePojieTask,
-        settings: PojieSettings
-    ): Int {
+        app: ToolboxApp, task: SinglePojieTask, settings: PojieSettings
+    ): Int = withContext(Dispatchers.Default) {
+        val taskId = "Task_${System.currentTimeMillis() % 10000}"
+        android.util.Log.d("PojieDebug", "[$taskId] 任务启动")
+
         val startTime = System.currentTimeMillis()
         val connectMode = settings.connectMode
+
         when (connectMode) {
             0 -> throw Exception("连接wifi实现为空，请先去设置中选择")
             1 -> ShizukuUtil.connectToWifi(task.ssid, task.password)
@@ -74,156 +76,106 @@ class ConnectWorker(
                 if (netId == -1) throw Exception("请求发送失败，请先手动忘记此网络")
             }
 
-            3 -> { /*这里的逻辑被移动到waitForTaskResult中了*/
+            3 -> { /* 逻辑由下方流程处理 */
             }
 
             else -> throw Exception("前面的区域，以后再来探索吧(connectMode=${settings.connectMode})")
         }
 
-        return withTimeoutOrNull(timeMillis = app.pojieConfig.maxTryTime.toLong()) {
-            suspendCancellableCoroutine<Int> { continuation ->
-
-                val collectJob = scope.launch {
-                    waitForTaskResult(app, connectMode, task, continuation, startTime)
-                }
-
-                continuation.invokeOnCancellation {
-                    collectJob.cancel()
-                }
-            }
-        } ?: SinglePojieTask.RESULT_TIMEOUT
-    }
-
-    suspend fun CoroutineScope.waitForTaskResult(
-        app: ToolboxApp,
-        connectMode: Int,
-        task: SinglePojieTask,
-        continuation: CancellableContinuation<Int>,
-        startTime: Long
-    ) {
         try {
-            if (connectMode == 3) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    connectWifiApi29Callback =
-                        connectToWifiApi29(task.ssid, task.password) { success ->
-                            if (continuation.isActive) {
-                                if (success) {
-                                    continuation.resume(SinglePojieTask.RESULT_SUCCESS)
-                                    cancel()
-                                } else {
-                                    continuation.resume(SinglePojieTask.RESULT_FAILED)
-                                    cancel()
+            withTimeout(app.pojieConfig.maxTryTime.toLong()) {
+                if (connectMode == 3) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        suspendCancellableCoroutine { continuation ->
+                            launch(Dispatchers.Main) {
+                                try {
+                                    connectWifiApi29Callback =
+                                        connectToWifiApi29(task.ssid, task.password) { success ->
+                                            if (continuation.isActive) {
+                                                continuation.resume(if (success) SinglePojieTask.RESULT_SUCCESS else SinglePojieTask.RESULT_FAILED)
+                                            }
+                                        }
+                                } catch (e: Exception) {
+                                    if (continuation.isActive) continuation.resumeWithException(e)
                                 }
                             }
+
+                            continuation.invokeOnCancellation {
+                                connectWifiApi29Callback?.let {
+                                    ApiUtil.cancelWifiRequest(
+                                        service,
+                                        it
+                                    )
+                                }
+                                connectWifiApi29Callback = null
+                            }
                         }
-                } else throw Exception("系统版本过低，无法使用[连接到设备]连接wifi(sdk<29&connectMode=3)")
-            }
+                    } else throw Exception("系统版本过低，无法使用[连接到设备]连接wifi(sdk<29&connectMode=3)")
+                } else {
+                    val flow = when (readLogMode) {
+                        1 -> logcatService?.logFlow
+                        2 -> {
+                            // 补回原本缺失的判断逻辑
+                            if (app.pojieConfig.failureFlag == 2) {
+                                throw Exception("广播监听模式不支持按握手次数判定，请在改为“握手超时”或切换为Logcat模式")
+                            }
+                            broadcastService?.setTargetSsid(task.ssid)
+                            broadcastService?.logFlow
+                        }
 
-            waitWifiStatus(app, task, startTime, connectMode, continuation)
+                        else -> null
+                    }
+
+                    if (flow == null) throw Exception("日志流未初始化")
+
+                    var finalResult = -1
+                    flow.first { data ->
+                        finalResult = checkLogDataSync(data, app, task, startTime, connectMode)
+                        finalResult != -1
+                    }
+                    finalResult
+                }
+            }
+        } catch (_: TimeoutCancellationException) {
+            SinglePojieTask.RESULT_TIMEOUT
         } catch (e: Exception) {
-            if (e !is CancellationException) {
-                if (continuation.isActive) {
-                    continuation.resumeWithException(e)
-                }
-            }
+            if (e is CancellationException) throw e
+            android.util.Log.e("PojieDebug", "E: ${e.message}")
+            service.log("E: ${e.message}")
+            SinglePojieTask.RESULT_ERROR
         }
     }
 
-    /**
-     * 处理网络日志收集，根据不同的读取模式分发日志处理
-     * @param app 全局 Application 实例
-     * @param task 当前执行的子任务
-     * @param startTime 任务开始时间戳
-     * @param connectMode 当前的连接模式
-     * @param continuation 协程挂起回调
-     */
-    private suspend fun CoroutineScope.waitWifiStatus(
-        app: ToolboxApp,
-        task: SinglePojieTask,
-        startTime: Long,
-        connectMode: Int,
-        continuation: CancellableContinuation<Int>
-    ) {
-        when (readLogMode) {
-            1 -> {
-                logcatService?.logFlow?.collect { data ->
-                    checkLogData(data, app, task, startTime, connectMode, continuation)
-                }
-            }
-
-            2 -> {
-                if (app.pojieConfig.failureFlag == 2) {
-                    throw Exception("广播监听模式不支持按握手次数判定，请在改为“握手超时”或切换为Logcat模式")
-                }
-                broadcastService?.setTargetSsid(task.ssid)
-                broadcastService?.logFlow?.collect { data ->
-                    checkLogData(data, app, task, startTime, connectMode, continuation)
-                }
-            }
-        }
-    }
-
-    /**
-     * 校验并处理单条日志数据，判定连接结果
-     * @param data 捕获的 WiFi 日志数据
-     * @param app 全局 Application 实例
-     * @param task 当前子任务信息
-     * @param startTime 任务启动时间
-     * @param connectMode 连接模式
-     * @param continuation 协程回调
-     */
-    private fun CoroutineScope.checkLogData(
+    private fun checkLogDataSync(
         data: WifiLogData,
         app: ToolboxApp,
         task: SinglePojieTask,
         startTime: Long,
-        connectMode: Int,
-        continuation: CancellableContinuation<Int>
-    ) {
-        if (!continuation.isActive) return
-
+        connectMode: Int
+    ): Int {
         val isMatch =
             connectMode == 3 || (data.ssid == task.ssid && data.eventStartTime >= startTime)
-        if (!isMatch) {
-            if (readLogMode == 1) service.log("W: 信息不匹配，实际${data.ssid}，应为${task.ssid}")
-            return
-        }
+        if (!isMatch) return -1
 
-        when (data.event) {
-            WifiLogData.EVENT_WIFI_CONNECTED -> {
-                if (connectMode != 3) {
-                    continuation.resume(SinglePojieTask.RESULT_SUCCESS)
-                    cancel()
-                }
-            }
-
+        return when (data.event) {
+            WifiLogData.EVENT_WIFI_CONNECTED -> if (connectMode != 3) SinglePojieTask.RESULT_SUCCESS else -1
             WifiLogData.EVENT_CONNECT_FAILED -> {
-                if (readLogMode == 2 || System.currentTimeMillis() - data.eventStartTime > 2000) {
-                    continuation.resume(SinglePojieTask.RESULT_FAILED)
-                    cancel()
-                }
+                if (readLogMode == 2 || System.currentTimeMillis() - data.eventStartTime > 2000) SinglePojieTask.RESULT_FAILED else -1
             }
 
             WifiLogData.EVENT_HANDSHAKE -> {
-                if (checkHandshakeFailure(data, app.pojieConfig)) {
-                    continuation.resume(SinglePojieTask.RESULT_FAILED)
-                    cancel()
-                }
+                if (checkHandshakeFailure(
+                        data,
+                        app.pojieConfig
+                    )
+                ) SinglePojieTask.RESULT_FAILED else -1
             }
 
-            WifiLogData.EVENT_CONNECT_ERROR -> {
-                continuation.resume(SinglePojieTask.RESULT_ERROR_TRANSIENT)
-                cancel()
-            }
+            WifiLogData.EVENT_CONNECT_ERROR -> SinglePojieTask.RESULT_ERROR_TRANSIENT
+            else -> -1
         }
     }
 
-    /**
-     * 根据配置校验握手过程是否已触发失败条件
-     * @param data 捕获的日志数据
-     * @param config 破解配置项
-     * @return 是否判定为失败
-     */
     private fun checkHandshakeFailure(data: WifiLogData, config: PojieConfig): Boolean {
         return when (config.failureFlag) {
             1 -> data.handshakeUseTime > config.timeout
@@ -292,10 +244,6 @@ class ConnectWorker(
         }
     }
 
-    /**
-     * 获取格式化的当前系统时间字符串
-     * @return 格式为 [HH:mm:ss] 的字符串
-     */
     fun getLogTime(): String {
         val df = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         return "[${df.format(java.util.Date())}]"

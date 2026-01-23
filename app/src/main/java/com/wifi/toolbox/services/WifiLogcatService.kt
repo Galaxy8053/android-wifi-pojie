@@ -51,18 +51,25 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
         onOutputReceived: Consumer<String>?,
         onCommandFinished: Consumer<CommandRunner.CommandResult>?
     ): Runnable {
-        var stopFunc = Runnable {}
-        when (pojieSettings.commandMethod) {
+        return when (val method = pojieSettings.commandMethod) {
             0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
-            1 -> stopFunc = ShizukuUtil.executeCommand(command, onOutputReceived, onCommandFinished)
-            2 -> throw Exception("前面的区域，以后再来探索吧(commandMethod=2)")
+            1 -> ShizukuUtil.executeCommand(command, onOutputReceived, onCommandFinished)
+            else -> throw Exception("前面的区域，以后再来探索吧(commandMethod=$method)")
         }
-        return stopFunc
+    }
+
+    fun executeCommandSync(command: String): CommandRunner.CommandResult {
+        return when (val method = pojieSettings.commandMethod) {
+            0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
+            1 -> ShizukuUtil.executeCommandSync(command)
+            else -> throw Exception("前面的区域，以后再来探索吧(commandMethod=$method)")
+        }
     }
 
     init {
+        executeCommandSync("logcat -c")
         stopFunc = executeCommand(
-            command = "sh -c \"logcat -c && logcat -s \\\"WifiService:D\\\" \\\"wpa_supplicant:D\\\" \\\"DhcpClient:D\\\"\"",
+            command = "logcat -s WifiService:D wpa_supplicant:D DhcpClient:D",
             onOutputReceived = { line ->
                 Log.d("WifiLogcatService", line)
                 when {

@@ -1,6 +1,7 @@
 package com.wifi.toolbox.ui.screen
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.Keep
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -97,8 +98,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import org.json.JSONArray
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,12 +115,19 @@ fun AboutScreen(onMenuClick: () -> Unit) {
 
     val creditProjects by produceState(initialValue = emptyList()) {
         value = withContext(Dispatchers.IO) {
-            try {
-                val jsonString =
-                    context.assets.open("thanks.json").bufferedReader().use { it.readText() }
-                val type = object : TypeToken<List<CreditProject>>() {}.type
-                Gson().fromJson<List<CreditProject>>(jsonString, type)
-            } catch (_: Exception) {
+            runCatching {
+                val jsonString = context.assets.open("thanks.json").bufferedReader().use { it.readText() }
+                val jsonArray = JSONArray(jsonString)
+                List(jsonArray.length()) { i ->
+                    val obj = jsonArray.getJSONObject(i)
+                    CreditProject(
+                        name = obj.optString("name"),
+                        description = obj.optString("description"),
+                        link = obj.optString("link").takeIf { it.isNotEmpty() },
+                        license = obj.optString("license").takeIf { it.isNotEmpty() }
+                    )
+                }
+            }.getOrElse {
                 emptyList()
             }
         }
@@ -493,6 +500,7 @@ fun ClickableInfoItem(
     }
 }
 
+@Keep
 @Parcelize
 data class CreditProject(
     val name: String,

@@ -118,7 +118,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(libs.aboutlibraries.core)
-    implementation(libs.gson)
 }
 
 fun getAndIncrementBuildNumber(): Int {
