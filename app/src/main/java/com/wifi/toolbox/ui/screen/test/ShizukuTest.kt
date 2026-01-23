@@ -1,5 +1,6 @@
 package com.wifi.toolbox.ui.screen.test
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.foundation.layout.*
@@ -12,7 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.utils.ShizukuUtil
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.utils.LogState
@@ -21,17 +25,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import rikka.shizuku.*
 
-inline fun shizukuAction(logState: LogState, errorPrefix: String, action: () -> Unit) {
+inline fun shizukuAction(
+    context: Context,
+    logState: LogState,
+    errorPrefix: String,
+    action: () -> Unit
+) {
     try {
         action()
     } catch (e: Exception) {
-        logState.addLog("E: $errorPrefix")
+        logState.addLog(context.getString(R.string.error_string, errorPrefix))
         logState.addLog(e.stackTraceToString())
     }
 }
-
 @Composable
 fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -46,7 +55,13 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
         Shizuku.OnRequestPermissionResultListener { code, grantResult ->
             if (code == REQUEST_PERMISSION_CODE) {
                 val granted = grantResult == PackageManager.PERMISSION_GRANTED
-                logState.addLog("权限申请结果：${if (granted) "同意" else "拒绝"}")
+                logState.addLog(
+                    context.getString(
+                        R.string.Permission_result,
+                        if (granted) context.getString(R.string.granted)
+                        else context.getString(R.string.refuse)
+                    )
+                )
             }
         }
     }
@@ -57,143 +72,151 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
     }
 
     fun checkStatus() {
-        logState.addLog("--- 检查Shizuku状态 ---")
+        logState.addLog(context.getString(R.string.check_shizuku_status_tip))
         try {
-            logState.addLog("服务已启动: ${Shizuku.pingBinder()}")
+            logState.addLog(context.getString(R.string.service_running, Shizuku.pingBinder()))
             val granted = Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-            logState.addLog("已授权: $granted")
+            logState.addLog(context.getString(R.string.is_granted_string, granted))
             if (granted) {
                 try {
-                    logState.addLog("UID: ${Shizuku.getUid()}")
+                    logState.addLog(context.getString(R.string.uid_string, Shizuku.getUid()))
                 } catch (_: IllegalStateException) {
-                    logState.addLog("E: 获取UID失败")
+                    logState.addLog(context.getString(R.string.get_uid_failed))
                 }
             }
         } catch (e: IllegalStateException) {
-            logState.addLog("E: 检查状态失败: ${e.message}")
+            logState.addLog(context.getString(R.string.check_status_failed, e.message))
         }
     }
 
     fun requestPermission() {
-        logState.addLog("--- 申请权限 ---")
+        logState.addLog(context.getString(R.string.apply_permission_tip))
         try {
             if (Shizuku.isPreV11()) {
-                logState.addLog("E: 不支持Shizuku pre-v11")
+                logState.addLog(context.getString(R.string.shizuku_pre_v11_not_supported))
             } else if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                logState.addLog("权限已经授予，无需重复申请")
+                logState.addLog(context.getString(R.string.permission_already_granted_tip))
             } else if (Shizuku.shouldShowRequestPermissionRationale()) {
-                logState.addLog("当前已被始终拒绝")
+                logState.addLog(context.getString(R.string.permission_always_refuse))
             } else {
                 Shizuku.requestPermission(REQUEST_PERMISSION_CODE)
-                logState.addLog("申请已发送")
+                logState.addLog(context.getString(R.string.apply_sent))
             }
         } catch (e: IllegalStateException) {
-            logState.addLog("E: 申请权限失败: ${e.message}")
+            logState.addLog(context.getString(R.string.apply_permission_failed_tip, e.message))
         }
     }
 
     LazyColumn {
         item {
-            Column(modifier = modifier
-                .fillMaxSize()
-                .padding(16.dp)) {
-                SectionTitle(title = "权限", icon = Icons.Default.Key)
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                SectionTitle(title = stringResource(R.string.permission), icon = Icons.Default.Key)
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ActionChip(
-                        text = "检查状态",
+                        text = stringResource(R.string.check_status),
                         icon = Icons.Filled.Search,
                         onClick = { checkStatus() })
                     ActionChip(
-                        text = "申请权限",
+                        text = stringResource(R.string.apply_permission),
                         icon = Icons.Filled.Security,
                         onClick = { requestPermission() })
                 }
 
                 SectionDivider()
 
-                SectionTitle(title = "设备控制", icon = Icons.Default.Devices)
+                SectionTitle(
+                    title = stringResource(R.string.device_control),
+                    icon = Icons.Default.Devices
+                )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ActionChip("打开wifi", Icons.Filled.Wifi) {
+                    ActionChip(stringResource(R.string.enable_wifi), Icons.Filled.Wifi) {
                         shizukuAction(
+                            context,
                             logState,
-                            "打开wifi失败"
-                        ) { ShizukuUtil.setWifiEnabled(true); logState.addLog("请求已发送") }
+                            context.getString(R.string.enable_wifi_failed)
+                        ) { ShizukuUtil.setWifiEnabled(true); logState.addLog(context.getString(R.string.apply_sent)) }
                     }
-                    ActionChip("关闭wifi", Icons.Filled.WifiOff) {
+                    ActionChip(stringResource(R.string.disable_wifi), Icons.Filled.WifiOff) {
                         shizukuAction(
+                            context,
                             logState,
-                            "关闭wifi失败"
-                        ) { ShizukuUtil.setWifiEnabled(false); logState.addLog("请求已发送") }
+                            context.getString(R.string.disable_wifi_failed)
+                        ) { ShizukuUtil.setWifiEnabled(false); logState.addLog(context.getString(R.string.apply_sent)) }
                     }
-                    ActionChip("扫描wifi", Icons.Filled.Radar) {
+                    ActionChip(stringResource(R.string.scan_wifi), Icons.Filled.Radar) {
                         scope.launch {
-                            shizukuAction(logState, "扫描wifi失败") {
-                                if (ShizukuUtil.startWifiScan()) logState.addLog("请求已发送，3秒后获取结果") else logState.addLog(
-                                    "W: 请求发送失败"
-                                )
+                            shizukuAction(
+                                context, logState, context.getString(R.string.scan_wifi_failed)
+                            ) {
+                                if (ShizukuUtil.startWifiScan()) logState.addLog(context.getString(R.string.start_scan_success_later))
+                                else logState.addLog(context.getString(R.string.start_scan_failed_warning))
                                 delay(3000)
                                 val result = ShizukuUtil.getWifiScanResults()
-                                logState.addLog("=== 扫描结果 ===")
+                                logState.addLog(context.getString(R.string.scan_result_head))
                                 result.forEach {
                                     logState.addLog(
-                                        String.format(
-                                            "名称: %-16s 信号强度: %-8s 支持的协议: %s",
-                                            it.ssid,
-                                            it.level,
-                                            it.capabilities
-                                        )
+                                        context.getString(R.string.scan_result_item, it.ssid, it.level, it.capabilities)
                                     )
                                 }
-                                logState.addLog("===============")
+                                logState.addLog(context.getString(R.string.command_end))
                             }
                         }
                     }
-                    ActionChip("获取已保存wifi", Icons.Outlined.Dns) {
-                        shizukuAction(logState, "获取失败") {
+                    ActionChip(stringResource(R.string.get_saved_wifi), Icons.Outlined.Dns) {
+                        shizukuAction(
+                            context, logState, context.getString(R.string.get_failed)
+                        ) {
                             val result = ShizukuUtil.getSavedWifiList()
-                            logState.addLog("=== 已保存的wifi列表 ===")
+                            logState.addLog(context.getString(R.string.saved_wifi_list_head))
                             result.forEach {
                                 @Suppress("DEPRECATION") logState.addLog(
-                                    String.format(
-                                        "ID: %-4s 名称: %-16s 密码: %s",
-                                        it.networkId,
+                                    context.getString(
+                                        R.string.saved_wifi_item_with_psk,
+                                        it.networkId.toString(),
                                         it.SSID.removeSurrounding("\""),
                                         it.preSharedKey?.removeSurrounding("\"") ?: ""
                                     )
                                 )
                             }
-                            logState.addLog("===============")
+                            logState.addLog(context.getString(R.string.command_end))
                         }
                     }
-                    ActionChip("断开wifi", Icons.Filled.WifiOff) {
+                    ActionChip(stringResource(R.string.disconnect_wifi), Icons.Filled.WifiOff) {
                         shizukuAction(
+                            context,
                             logState,
-                            "断开失败"
-                        ) { ShizukuUtil.disconnectWifi(); logState.addLog("请求已发送") }
+                            context.getString(R.string.disconnect_failed)
+                        ) { ShizukuUtil.disconnectWifi(); logState.addLog(context.getString(R.string.apply_sent)) }
                     }
-                    ActionChip("锁屏", Icons.Filled.Lock) {
+                    ActionChip(stringResource(R.string.lock_screen), Icons.Filled.Lock) {
                         shizukuAction(
+                            context,
                             logState,
-                            "锁屏失败"
-                        ) { ShizukuUtil.lookScreen(); logState.addLog("请求已发送") }
+                            context.getString(R.string.lock_screen_failed)
+                        ) { ShizukuUtil.lookScreen(); logState.addLog(context.getString(R.string.apply_sent)) }
                     }
-                    ActionChip("调整音量最大", Icons.AutoMirrored.Filled.VolumeUp) {
+                    ActionChip(stringResource(R.string.max_volume), Icons.AutoMirrored.Filled.VolumeUp) {
                         shizukuAction(
+                            context,
                             logState,
-                            "调整音量失败"
-                        ) { ShizukuUtil.setMediaVolumeMax(); logState.addLog("请求已发送") }
+                            context.getString(R.string.set_volume_failed)
+                        ) { ShizukuUtil.setMediaVolumeMax(); logState.addLog(context.getString(R.string.apply_sent)) }
                     }
                 }
 
                 SectionDivider()
 
-                SectionTitle(title = "连接wifi", icon = Icons.Default.InsertLink)
+                SectionTitle(title = stringResource(R.string.connect_wifiz), icon = Icons.Default.InsertLink)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -205,7 +228,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("名称") },
+                            label = { Text(stringResource(R.string.ssidz)) },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp)
@@ -213,7 +236,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("密码") },
+                            label = { Text(stringResource(R.string.password)) },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 8.dp)
@@ -222,38 +245,35 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            shizukuAction(logState, "执行Shell命令失败") {
+                            shizukuAction(
+                                context, logState, context.getString(R.string.execute_shell_failed)
+                            ) {
                                 val command = "cmd wifi connect-network $name wpa2 $password"
-                                logState.addLog("执行Shell命令：$command")
+                                logState.addLog(context.getString(R.string.run_command_string, command))
                                 logState.addLog(
-                                    "请求已发送（响应：${
-                                        ShizukuUtil.executeCommandSync(
-                                            command
-                                        )
-                                    }）"
+                                    context.getString(R.string.request_sent_with_response, ShizukuUtil.executeCommandSync(command))
                                 )
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(end = 8.dp)
-                    ) { Text("命令行（cmd wifi connect-network）") }
+                    ) { Text(stringResource(R.string.btn_cmd_connect)) }
                     Button(
                         onClick = {
                             shizukuAction(
+                                context,
                                 logState,
-                                "连接wifi失败"
+                                context.getString(R.string.connect_wifi_failed_general)
                             ) {
-                                ShizukuUtil.connectToWifi(
-                                    name,
-                                    password
-                                ); logState.addLog("请求已发送")
+                                ShizukuUtil.connectToWifi(name, password)
+                                logState.addLog(context.getString(R.string.apply_sent))
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(end = 8.dp)
-                    ) { Text("系统隐藏API（IWifiManager）") }
+                    ) { Text(stringResource(R.string.btn_hidden_api_connect)) }
                 }
             }
         }

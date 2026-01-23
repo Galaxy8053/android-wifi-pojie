@@ -10,8 +10,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.pojie.*
 import com.wifi.toolbox.utils.*
@@ -23,6 +26,7 @@ fun ResourcesPage(
     showFabDialog: Boolean,
     onShowFabDialogChange: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     val state = ResourcesState.rememberState(onShowFabDialogChange)
     val sheetState = rememberModalBottomSheetState()
 
@@ -53,7 +57,7 @@ fun ResourcesPage(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "¯\\_(ツ)_/¯\n暂无资源，点击 + 号添加",
+                    text = stringResource(R.string.resources_nothing),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -137,7 +141,7 @@ fun ResourcesPage(
                                 state.showEditDialog = false
                             }
                         } catch (e: Exception) {
-                            state.app.alert("保存失败", e.message.toString())
+                            state.app.alert(context.getString(R.string.save_failed), e.message.toString())
                         }
                     }
                 }

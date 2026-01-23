@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.utils.*
 import kotlinx.coroutines.*
@@ -41,11 +44,11 @@ fun ApiTest(logState: LogState, modifier: Modifier = Modifier) {
                 ) {
                     performWifiScan(context, logState)
                 } else {
-                    logState.addLog("E: 缺少位置权限，无法扫描Wi-Fi")
+                    logState.addLog(context.getString(R.string.error_scan_wifi_no_permission))
                 }
             }
         } else {
-            logState.addLog("E: 缺少位置权限，无法扫描Wi-Fi")
+            logState.addLog(context.getString(R.string.error_scan_wifi_no_permission))
         }
     }
 
@@ -56,51 +59,63 @@ fun ApiTest(logState: LogState, modifier: Modifier = Modifier) {
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                SectionTitle(title = "设备控制", icon = Icons.Default.Devices)
+                SectionTitle(
+                    title = stringResource(R.string.device_control),
+                    icon = Icons.Default.Devices
+                )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ActionChip(
-                        text = "打开wifi",
+                        text = stringResource(R.string.enable_wifi),
                         icon = Icons.Filled.Wifi,
                         onClick = {
                             val success = ApiUtil.setWifiEnabled(context, true)
                             if (success) {
-                                logState.addLog("Wi-Fi 打开成功")
+                                logState.addLog(context.getString(R.string.enable_wifi_success))
                             } else {
-                                logState.addLog("请求已发送")
+                                logState.addLog(context.getString(R.string.request_sent))
                             }
                         })
                     ActionChip(
-                        text = "关闭wifi",
+                        text = stringResource(R.string.disable_wifi),
                         icon = Icons.Filled.WifiOff,
                         onClick = {
                             val success = ApiUtil.setWifiEnabled(context, false)
                             if (success) {
-                                logState.addLog("Wi-Fi 关闭成功")
+                                logState.addLog(context.getString(R.string.disable_wifi_success))
                             } else {
-                                logState.addLog("请求已发送")
+                                logState.addLog(context.getString(R.string.request_sent))
                             }
                         })
                     ActionChip(
-                        text = "断开wifi",
+                        text = stringResource(R.string.disconnect_wifi),
                         icon = Icons.Filled.WifiOff,
                         onClick = {
                             ApiUtil.disconnectWifi(context)
-                            logState.addLog("请求已发送")
+                            logState.addLog(context.getString(R.string.request_sent))
                         })
                     ActionChip(
-                        text = "扫描wifi",
+                        text = stringResource(R.string.scan_wifi),
                         icon = Icons.Filled.Radar,
                         onClick = {
                             checkAndPerformWifiScan(context, logState, wifiScanLauncher, scope)
+                        })
+                    ActionChip(
+                        text = stringResource(R.string.get_saved_wifi),
+                        icon = Icons.Outlined.Dns,
+                        onClick = {
+                            checkAndPerformAndGetWifiList(context, logState, wifiScanLauncher)
                         })
                 }
 
                 SectionDivider()
 
-                SectionTitle(title = "连接wifi", icon = Icons.Default.InsertLink)
+                SectionTitle(
+                    title = stringResource(R.string.connect_wifi),
+                    icon = Icons.Default.InsertLink
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
@@ -108,7 +123,7 @@ fun ApiTest(logState: LogState, modifier: Modifier = Modifier) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("名称") },
+                        label = { Text(stringResource(R.string.ssid)) },
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp)
@@ -116,7 +131,7 @@ fun ApiTest(logState: LogState, modifier: Modifier = Modifier) {
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("密码") },
+                        label = { Text(stringResource(R.string.password)) },
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 8.dp)
@@ -126,28 +141,32 @@ fun ApiTest(logState: LogState, modifier: Modifier = Modifier) {
                 Button(
                     onClick = {
                         if (ApiUtil.connectToWifiApi28(context, name, password) != -1)
-                            logState.addLog("请求已发送") else logState.addLog("请求发送失败，请先手动忘记此网络")
+                            logState.addLog(context.getString(R.string.request_sent))
+                        else logState.addLog(context.getString(R.string.connect_wifi_failed))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    Text("WifiManager (API 28)")
+                    Text(stringResource(R.string.wifimanager))
                 }
                 Button(
                     onClick = {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             ApiUtil.connectToWifiApi29(context, name, password)
                             { success ->
-                                logState.addLog(if (success) "连接成功" else "连接失败")
+                                logState.addLog(
+                                    if (success) context.getString(R.string.connect_success)
+                                    else context.getString(R.string.connect_failed)
+                                )
                             }
                         } else {
-                            logState.addLog("设备版本过低")
+                            logState.addLog(context.getString(R.string.device_too_old))
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    Text("WifiNetworkSpecifier (API 29)")
+                    Text(stringResource(R.string.wifinetworkspecifier))
                 }
             }
         }
@@ -158,34 +177,34 @@ private suspend fun performWifiScan(context: Context, logState: LogState) {
     try {
         val success = ApiUtil.startScan(context)
         if (!success) {
-            logState.addLog("W: 扫描频率过快，请求被系统拒绝")
+            logState.addLog(context.getString(R.string.start_scan_failed_warning))
         } else {
-            logState.addLog("请求已发送，3秒后获取结果")
+            logState.addLog(context.getString(R.string.start_scan_success_later))
         }
 
         delay(3000)
 
         if (!ApiUtil.hasLocationPermission(context)) {
-            throw RuntimeException("缺少位置权限")
+            throw RuntimeException(context.getString(R.string.no_location_permission))
         }
 
         val scanResults = ApiUtil.getScanResults(context)
 
-        logState.addLog("=== 扫描结果 ===")
+        logState.addLog(context.getString(R.string.scan_result_head))
         scanResults.forEach {
             logState.addLog(
                 String.format(
-                    "名称: %-16s 信号强度: %-8s 支持的协议: %s",
+                    context.getString(R.string.scan_result_item),
                     it.ssid,
                     it.level,
                     it.capabilities
                 )
             )
         }
-        logState.addLog("===============")
+        logState.addLog(context.getString(R.string.command_end))
 
     } catch (e: Exception) {
-        logState.addLog("E: 扫描wifi失败")
+        logState.addLog(context.getString(R.string.scan_wifi_failed))
         logState.addLog(e.stackTraceToString())
     }
 }
@@ -198,13 +217,13 @@ private fun checkAndPerformWifiScan(
 ) {
     if (ApiUtil.hasLocationPermission(context)) {
         if (!ApiUtil.isLocationEnabled(context)) {
-            logState.addLog("系统定位服务未开启，请在设置中打开")
+            logState.addLog(context.getString(R.string.location_not_enabled))
             ApiUtil.enableLocation(context)
             return
         }
 
         if (!ApiUtil.isWifiEnabled(context)) {
-            logState.addLog("Wi-Fi未开启，请打开Wi-Fi")
+            logState.addLog(context.getString(R.string.wifi_not_enabled))
             return
         }
 
@@ -212,7 +231,45 @@ private fun checkAndPerformWifiScan(
             performWifiScan(context, logState)
         }
     } else {
-        logState.addLog("请先允许定位权限")
+        logState.addLog(context.getString(R.string.please_grant_loaction_permission))
         wifiScanLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
+}
+
+
+private fun checkAndPerformAndGetWifiList(
+    context: Context,
+    logState: LogState,
+    wifiScanLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+) {
+    try {
+        if (ApiUtil.hasLocationPermission(context)) {
+            if (!ApiUtil.isLocationEnabled(context)) {
+                logState.addLog(context.getString(R.string.location_not_enabled))
+                ApiUtil.enableLocation(context)
+                return
+            }
+
+            val result = ApiUtil.getSavedWifiList(context)
+            logState.addLog(context.getString(R.string.saved_wifi_list_head))
+            result.forEach {
+                @Suppress("DEPRECATION") logState.addLog(
+                    String.format(
+                        context.getString(R.string.saved_wifi_item),
+                        it.first,
+                        it.second.removeSurrounding("\""),
+                    )
+                )
+            }
+            logState.addLog(context.getString(R.string.command_end))
+
+        } else {
+            logState.addLog(context.getString(R.string.please_grant_loaction_permission))
+            wifiScanLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    } catch (e: Exception) {
+        logState.addLog(context.getString(R.string.get_failed))
+        logState.addLog(e.stackTraceToString())
+    }
+
 }

@@ -1,5 +1,8 @@
 package com.wifi.toolbox.structs
 
+import com.wifi.toolbox.R
+import com.wifi.toolbox.ToolboxApp
+
 data class PojieResource(
     val id: String,
     val name: String?,
@@ -15,8 +18,12 @@ data class PojieResource(
         private val HEADER_REGEX = Regex("""// ==ToolboxScript==([\s\S]*?)// ==/ToolboxScript==""")
         private val PROPERTY_REGEX = Regex("""@(\w+)\s+(.*)""")
 
+        private fun getString(resId: Int): String {
+            return ToolboxApp.instance.getString(resId)
+        }
+
         fun parseScript(scriptContent: String): PojieResource {
-            val matchResult = HEADER_REGEX.find(scriptContent) ?: throw Exception("未找到脚本声明头")
+            val matchResult = HEADER_REGEX.find(scriptContent) ?: throw Exception(getString(R.string.error_script_header_not_found))
             val headerContent = matchResult.groupValues[1]
 
             val properties = mutableMapOf<String, String?>()
@@ -26,7 +33,7 @@ data class PojieResource(
                 }
             }
 
-            val id = properties["id"] ?: throw Exception("脚本声明中未找到id属性")
+            val id = properties["id"] ?: throw Exception(getString(R.string.error_script_id_not_found))
 
             testId(id)
 
@@ -43,7 +50,7 @@ data class PojieResource(
 
         fun parseJSON(jsonString: String): PojieResource {
             val json = org.json.JSONObject(jsonString)
-            val id = json.optString("id") ?: throw Exception("信息缺少id")
+            val id = json.optString("id").takeIf { it.isNotEmpty() } ?: throw Exception(getString(R.string.error_json_id_missing))
 
             testId(id)
 
@@ -52,15 +59,15 @@ data class PojieResource(
                 name = if (json.isNull("name")) null else json.optString("name"),
                 description = if (json.isNull("description")) null else json.optString("description"),
                 type = 0,
-                content = json.optString("content") ?: throw Exception("信息缺少content"),
+                content = json.optString("content").takeIf { it.isNotEmpty() } ?: throw Exception(getString(R.string.error_json_content_missing)),
                 author = if (json.isNull("author")) null else json.optString("author"),
                 version = if (json.isNull("version")) null else json.optString("version")
             )
         }
 
-        fun testId(id:String){
+        fun testId(id: String) {
             if (!ID_REGEX.matches(id)) {
-                throw Exception("id必须匹配/^[a-zA-Z][a-zA-Z0-9._-]+\$/")
+                throw Exception(getString(R.string.error_id_format))
             }
         }
     }

@@ -7,8 +7,12 @@ import com.wifi.toolbox.utils.PojieHistoryManager
 import com.wifi.toolbox.utils.SettingsManager
 import kotlinx.coroutines.*
 
-
 class ToolboxApp : Application() {
+
+    companion object {
+        lateinit var instance: ToolboxApp
+            private set
+    }
 
     data class AlertDialogData(val title: String, val text: String)
     data class SnackbarData(
@@ -35,6 +39,7 @@ class ToolboxApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
 
         appCrash = AppCrash(this)
         shizuku = AppShizuku(appScope)
@@ -49,26 +54,11 @@ class ToolboxApp : Application() {
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) = ActivityStack.register(activity)
             override fun onActivityPaused(activity: Activity) = ActivityStack.unregister()
-            override fun onActivityCreated(
-                activity: Activity,
-                savedInstanceState: android.os.Bundle?
-            ) {
-            }
-
-            override fun onActivityStarted(activity: Activity) {/*不覆写接口*/
-            }
-
-            override fun onActivityStopped(activity: Activity) {/*不覆写接口*/
-            }
-
-            override fun onActivitySaveInstanceState(
-                activity: Activity,
-                outState: android.os.Bundle
-            ) {
-            }
-
-            override fun onActivityDestroyed(activity: Activity) {/*不覆写接口*/
-            }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
+            override fun onActivityStarted(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {}
         })
     }
 
@@ -78,11 +68,5 @@ class ToolboxApp : Application() {
         appScope.cancel()
     }
 
-    /**
-     * 显示弹窗
-     * @param title 标题
-     * @param text 内容
-     * @return none
-     */
     fun alert(title: String, text: String) = ui.alert(title, text)
 }

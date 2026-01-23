@@ -26,6 +26,7 @@ runtimeAnnotation = "1.10.1"
 shizukuVersion = "13.1.5"
 foundationLayout = "1.10.1"
 ui = "1.10.1"
+room = "2.8.4"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutlibrariesCore" }
@@ -64,6 +65,9 @@ materialKolor = "com.materialkolor:material-kolor:4.1.0"
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 languageTextmate = { module = "io.github.rosemoe:language-textmate" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

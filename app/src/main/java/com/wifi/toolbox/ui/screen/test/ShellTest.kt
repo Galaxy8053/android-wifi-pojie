@@ -35,6 +35,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.Timelapse
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.wifi.toolbox.R
 import com.wifi.toolbox.utils.CommandRunner
 
 
@@ -42,41 +45,45 @@ data class ActionChipItem(val icon: ImageVector, val text: String, val command: 
 
 @Composable
 fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
-
+    val context = LocalContext.current
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     var command by remember { mutableStateOf("") }
-    val buttonLabels = arrayOf("Normal", "Shizuku", "Root")
+    val buttonLabels = arrayOf(
+        stringResource(R.string.normal),
+        stringResource(R.string.shizuku),
+        stringResource(R.string.root)
+    )
 
     val actionChips = listOf(
         ActionChipItem(
             Icons.Filled.Search,
-            "查看当前身份",
+            stringResource(R.string.check_id),
             "id"
         ),
         ActionChipItem(
             Icons.Filled.Build,
-            "修复Shizuku隐藏API调用",
+            stringResource(R.string.fix_hidden_api),
             "settings put global hidden_api_policy 1"
         ),
         ActionChipItem(
             Icons.Filled.Link,
-            "连接wifi",
+            stringResource(R.string.connect_wifi),
             "cmd wifi connect-network 名称 wpa2 密码"
         ),
         ActionChipItem(
             Icons.Filled.Radar,
-            "扫描wifi",
+            stringResource(R.string.scan_wifi),
             "sh -c \"cmd wifi start-scan && echo 3秒后获取结果 && sleep 3 && cmd wifi list-scan-results\""
         ),
         ActionChipItem(
             Icons.Filled.Timelapse,
-            "等待10秒",
+            stringResource(R.string.wait_10s),
             $$"sh -c \"for i in $(seq 1 10); do echo $i; sleep 1; done\""
         ),
         ActionChipItem(
             Icons.AutoMirrored.Filled.ManageSearch,
-            "wifi logcat",
+            stringResource(R.string.wifi_logcat),
             "sh -c \"logcat -c && logcat -s \\\"WifiService:D\\\" \\\"wpa_supplicant:D\\\" \\\"DhcpClient:D\\\"\""
         )
     )
@@ -92,11 +99,14 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                SectionTitle(title = "输入命令", icon = Icons.Default.Code)
+                SectionTitle(
+                    title = stringResource(R.string.input_command),
+                    icon = Icons.Default.Code
+                )
                 OutlinedTextField(
                     value = command,
                     onValueChange = { command = it },
-                    label = { Text("命令") },
+                    label = { Text(stringResource(R.string.command)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
@@ -119,7 +129,10 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
 
                 SectionDivider()
 
-                SectionTitle(title = "运行方式", icon = Icons.Default.Build)
+                SectionTitle(
+                    title = stringResource(R.string.run_method),
+                    icon = Icons.Default.Build
+                )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     buttonLabels.forEachIndexed { index,
@@ -146,14 +159,24 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                             val commandToExecute = command
                             val onOutput: (String) -> Unit = { output -> logState.addLog(output) }
                             val onFinish: (CommandRunner.CommandResult) -> Unit = { result ->
-                                logState.addLog("[执行完毕 退出码${result.exitCode}]")
+                                logState.addLog(
+                                    context.getString(
+                                        R.string.run_completed_tip,
+                                        result.exitCode
+                                    )
+                                )
                                 isCommandRunning = false
                                 stopCommandRunnable = null
                             }
 
                             when (selectedTabIndex) {
                                 0 -> { // Normal mode
-                                    logState.addLog("执行命令：$commandToExecute")
+                                    logState.addLog(
+                                        context.getString(
+                                            R.string.run_command_string,
+                                            commandToExecute
+                                        )
+                                    )
                                     stopCommandRunnable = CommandRunner.executeCommand(
                                         command = commandToExecute,
                                         isRoot = false,
@@ -163,7 +186,12 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                                 }
 
                                 1 -> { // Shizuku mode
-                                    logState.addLog("使用Shizuku执行：$commandToExecute")
+                                    logState.addLog(
+                                        context.getString(
+                                            R.string.run_command_string_shizuku,
+                                            commandToExecute
+                                        )
+                                    )
                                     stopCommandRunnable = ShizukuUtil.executeCommand(
                                         command = commandToExecute,
                                         onOutputReceived = onOutput,
@@ -172,7 +200,12 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                                 }
 
                                 2 -> { // Root mode
-                                    logState.addLog("使用Root执行：$commandToExecute")
+                                    logState.addLog(
+                                        context.getString(
+                                            R.string.run_command_string_root,
+                                            commandToExecute
+                                        )
+                                    )
                                     stopCommandRunnable = CommandRunner.executeCommand(
                                         command = commandToExecute,
                                         isRoot = true,
@@ -182,7 +215,7 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                                 }
                             }
                         } else {
-                            logState.addLog("[执行中断]")
+                            logState.addLog(context.getString(R.string.run_pause_tip))
                             stopCommandRunnable?.run()
                             isCommandRunning = false
                             stopCommandRunnable = null
@@ -197,7 +230,8 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                     )
                 ) {
                     Text(
-                        text = if (isCommandRunning) "结束运行" else "开始运行",
+                        text = if (isCommandRunning) stringResource(R.string.stop_run)
+                        else stringResource(R.string.start_run),
                         color = if (isCommandRunning) Color.White else MaterialTheme.colorScheme.onPrimary
                     )
                 }

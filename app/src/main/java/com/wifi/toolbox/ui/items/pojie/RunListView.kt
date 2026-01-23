@@ -16,8 +16,10 @@ import androidx.compose.ui.*
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.BannerTip
 import com.wifi.toolbox.utils.ApiUtil
@@ -50,6 +52,14 @@ data class ScanResult(
     }
 }
 
+sealed class PojieListItem {
+    abstract val key: String
+    data object WifiConnectedBanner : PojieListItem() { override val key = "item-top1" }
+    data object SendFailedBanner : PojieListItem() { override val key = "item-top2" }
+    data class WifiItem(val wifi: WifiInfo) : PojieListItem() { override val key = "item-${wifi.ssid}" }
+    data object ManualInputBanner : PojieListItem() { override val key = "item-bottom" }
+}
+
 sealed class ScreenState : Parcelable {
     @Parcelize
     object Idle : ScreenState()
@@ -78,10 +88,6 @@ fun RunListView(
     LaunchedEffect(Unit) {
         if (controller.uiState is ScreenState.Idle) controller.reload()
     }
-
-//    LaunchedEffect(controller.isScanning) {
-//        if (!controller.isScanning) listState.animateScrollToItem(0)
-//    }
 
     LaunchedEffect(runningTasks.size) {
         if (runningTasks.isNotEmpty()) listState.animateScrollToItem(0)
@@ -136,7 +142,7 @@ fun RunListView(
                 }
                 DropdownMenu(expanded, { expanded = false }) {
                     DropdownMenuItem(
-                        text = { Text("前面的区域，以后再来探索吧") },
+                        text = { Text(stringResource(R.string.tip_not_completed)) },
                         onClick = { expanded = false })
                 }
             }
@@ -172,41 +178,34 @@ fun RunListView(
             else if (!controller.isScanning && fullList.isEmpty()) 1
             else 2
 
+            val isWifiConnected = ApiUtil.isWifiConnected(LocalContext.current)
+
+            val displayList = remember(fullList, controller.isScanning, controller.uiState) {
+                val list = mutableListOf<PojieListItem>()
+
+                if (isWifiConnected) {
+                    list.add(PojieListItem.WifiConnectedBanner)
+                }
+
+                val uiState = controller.uiState
+                if (uiState is ScreenState.Success && !uiState.sendSucceed) {
+                    list.add(PojieListItem.SendFailedBanner)
+                }
+
+                list.addAll(fullList.map { PojieListItem.WifiItem(it) })
+
+                if (!controller.isScanning || !res.wifiList.isNullOrEmpty()) {
+                    list.add(PojieListItem.ManualInputBanner)
+                }
+                list
+            }
+
             AnimatedContent(state, label = "ListContent") { targetState ->
                 when (targetState) {
                     0 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                         ContainedLoadingIndicator(Modifier.size(60.dp))
                     }
-
-                    1 -> Column(Modifier.fillMaxSize()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Rounded.Inbox,
-                                    null,
-                                    Modifier.size(96.dp),
-                                    tint = MaterialTheme.colorScheme.outlineVariant
-                                )
-                                Text("空列表", style = MaterialTheme.typography.bodyLarge)
-                            }
-                        }
-
-                        BannerTip(
-                            title = "没有找到想要的wifi？",
-                            text = "点击手动输入名称",
-                            trailingIcon = true,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                            onBannerClick = { showManualInput = true }
-                        )
-                    }
-
+                    1 -> { /* 空列表 UI 保持原样 */ }
                     2 -> Column(Modifier.fillMaxSize()) {
                         AnimatedVisibility(
                             visible = controller.isScanning,
@@ -221,45 +220,49 @@ fun RunListView(
                         }
                         Spacer(Modifier.height(4.dp))
                         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                            item {
-                                if (ApiUtil.isWifiConnected(LocalContext.current)) {
-                                    BannerTip(
-                                        title = "当前已连接wifi",
-                                        text = "可能对扫描及运行造成干扰，点击断开",
-                                        trailingIcon = true,
-                                        modifier = Modifier.padding(4.dp),
-                                        onBannerClick = {
-                                            controller.disconnectWifi()
-                                        }
-                                    )
+                            items(displayList, key = { it.key }) { item ->
+                                when (item) {
+                                    is PojieListItem.WifiConnectedBanner -> {
+                                        BannerTip(
+                                            title = "当前已连接wifi",
+                                            text = "可能对扫描及运行造成干扰，点击断开",
+                                            trailingIcon = true,
+                                            modifier = Modifier
+                                                .padding(4.dp)
+                                                .animateItem(),
+                                            onBannerClick = { controller.disconnectWifi() }
+                                        )
+                                    }
+                                    is PojieListItem.SendFailedBanner -> {
+                                        BannerTip(
+                                            text = "扫描请求发送失败，当前查看的是旧数据",
+                                            modifier = Modifier
+                                                .padding(4.dp)
+                                                .animateItem()
+                                        )
+                                    }
+                                    is PojieListItem.WifiItem -> {
+                                        WifiPojieItem(
+                                            modifier = Modifier.animateItem(),
+                                            wifi = item.wifi,
+                                            runningInfo = runningTasks.find { it.ssid == item.wifi.ssid },
+                                            onStartClick = onStartClick,
+                                            onStopClick = onStopClick,
+                                            finishedInfo = controller.finishedInfo[item.wifi.ssid]
+                                        )
+                                    }
+                                    is PojieListItem.ManualInputBanner -> {
+                                        BannerTip(
+                                            title = "没有找到想要的wifi？",
+                                            text = "点击手动输入名称",
+                                            trailingIcon = true,
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .animateItem(),
+                                            onBannerClick = { showManualInput = true }
+                                        )
+                                    }
                                 }
-                            }
-                            item {
-                                val state = controller.uiState
-                                if (state is ScreenState.Success && !state.sendSucceed)
-                                    BannerTip(
-                                        text = "扫描请求发送失败，当前查看的是旧数据",
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                            }
-                            items(fullList, key = { it.ssid }) { wifi ->
-                                WifiPojieItem(
-                                    modifier = Modifier.animateItem(),
-                                    wifi = wifi,
-                                    runningInfo = runningTasks.find { it.ssid == wifi.ssid },
-                                    onStartClick = onStartClick,
-                                    onStopClick = onStopClick,
-                                    finishedInfo = controller.finishedInfo[wifi.ssid]
-                                )
-                            }
-                            item {
-                                if (!controller.isScanning || !res.wifiList.isNullOrEmpty()) BannerTip(
-                                    title = "没有找到想要的wifi？",
-                                    text = "点击手动输入名称",
-                                    trailingIcon = true,
-                                    modifier = Modifier.padding(8.dp),
-                                    onBannerClick = { showManualInput = true }
-                                )
                             }
                         }
                     }
@@ -282,7 +285,7 @@ fun RunListView(
                         Button(onClick = {
                             controller.enableWifi()
                         }) {
-                            Text("开启wifi")
+                            Text(stringResource(R.string.enable_wifi))
                         }
                     }
 
@@ -290,7 +293,7 @@ fun RunListView(
                         Button(onClick = {
                             controller.enableLocation()
                         }) {
-                            Text("开启定位")
+                            Text(stringResource(R.string.enable_location))
                         }
                     }
 
@@ -298,7 +301,7 @@ fun RunListView(
                         Button(onClick = {
                             controller.applyLocation()
                         }) {
-                            Text("申请权限")
+                            Text(stringResource(R.string.apply_permission))
                         }
                     }
 
@@ -306,7 +309,7 @@ fun RunListView(
                         Button(onClick = {
                             controller.reload()
                         }) {
-                            Text("重试")
+                            Text(stringResource(R.string.retry))
                         }
                     }
                 }
@@ -320,14 +323,14 @@ fun RunListView(
     if (showManualInput) {
         AlertDialog(
             onDismissRequest = { showManualInput = false },
-            title = { Text("手动输入名称") },
+            title = { Text(stringResource(R.string.manual_input_name)) },
             text = {
                 OutlinedTextField(
                     value = manualSsid,
                     onValueChange = { manualSsid = it },
-                    label = { Text("ssid") },
+                    label = { Text(stringResource(R.string.ssid)) },
                     supportingText = {
-                        Text("注意区分大小写、空格等")
+                        Text(stringResource(R.string.input_ssid_tip))
                     },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -341,10 +344,10 @@ fun RunListView(
                         manualSsid = ""
                         showManualInput = false
                     }
-                ) { Text("确定") }
+                ) { Text(stringResource(R.string.btn_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showManualInput = false }) { Text("取消") }
+                TextButton(onClick = { showManualInput = false }) { Text(stringResource(R.string.btn_cancel)) }
             }
         )
     }

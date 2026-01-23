@@ -22,7 +22,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
+import com.wifi.toolbox.R
 import com.wifi.toolbox.utils.EditorViewModel
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
@@ -46,7 +48,7 @@ fun CodeEditor(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Code Editor") },
+            title = { Text(stringResource(R.string.code_editor)) },
             navigationIcon = {
                 IconButton(onClick = {
                     vm.handleBackPress {
@@ -63,7 +65,7 @@ fun CodeEditor(
                     onSave(text) {
                         // 可以在这里处理保存成功逻辑
                     }
-                }) { Text("保存") }
+                }) { Text(stringResource(R.string.save)) }
             }
         )
         AndroidView(
@@ -150,7 +152,9 @@ fun CodeEditorPage(
             vm.handleBackPress { keyboardController?.hide() }
         }
         Surface(
-            modifier = Modifier.fillMaxSize().imePadding(),
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding(),
             color = MaterialTheme.colorScheme.background
         ) {
             CodeEditor(

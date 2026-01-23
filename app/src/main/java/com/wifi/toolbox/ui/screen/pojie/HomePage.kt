@@ -9,8 +9,10 @@ import androidx.compose.runtime.saveable.*
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.*
@@ -69,7 +71,7 @@ fun HomePageContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         FoldCard(
-            title = "运行参数",
+            title = stringResource(R.string.run_config),
             expanded = expandedParamsCard,
             onExpandedChange = {
                 expandedParamsCard = it
@@ -100,7 +102,7 @@ fun HomePageContent(
         }
 
         FoldCard(
-            title = "运行输出",
+            title = stringResource(R.string.run_output),
             expanded = expandedOutputCard,
             onExpandedChange = {
                 expandedOutputCard = it

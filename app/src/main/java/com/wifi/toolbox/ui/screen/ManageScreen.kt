@@ -8,7 +8,9 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.*
+import androidx.compose.ui.res.stringResource
 import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,7 +20,7 @@ fun ManageScreen(onMenuClick: () -> Unit) {
 
             listOf(
                 object : NavPage {
-                    override val name = "扫描"
+                    override val name = stringResource(R.string.scan)
                     override val selectedIcon = Icons.Filled.Radar
                     override val unselectedIcon = Icons.Outlined.Radar
                     override val content = @Composable {
@@ -27,12 +29,12 @@ fun ManageScreen(onMenuClick: () -> Unit) {
                                 .fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("前面的区域，以后再来探索吧")
+                            Text(stringResource(R.string.tip_not_completed))
                         }
                     }
                 },
                 object : NavPage {
-                    override val name = "本地"
+                    override val name = stringResource(R.string.local)
                     override val selectedIcon = Icons.Filled.Dns
                     override val unselectedIcon = Icons.Outlined.Dns
                     override val content = @Composable {
@@ -41,12 +43,12 @@ fun ManageScreen(onMenuClick: () -> Unit) {
                                 .fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("前面的区域，以后再来探索吧")
+                            Text(stringResource(R.string.tip_not_completed))
                         }
                     }
                 },
                 object : NavPage {
-                    override val name = "设置"
+                    override val name = stringResource(R.string.settings)
                     override val selectedIcon = Icons.Filled.Settings
                     override val unselectedIcon = Icons.Outlined.Settings
                     override val content = @Composable {
@@ -55,10 +57,10 @@ fun ManageScreen(onMenuClick: () -> Unit) {
                                 .fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("前面的区域，以后再来探索吧")
+                            Text(stringResource(R.string.tip_not_completed))
                         }
                     }
                 }
-            ), 0, "wifi管理器", onMenuClick)
+            ), 0, stringResource(R.string.wifi_manager), onMenuClick)
     }
 }

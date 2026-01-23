@@ -43,8 +43,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.PojieResource
 import kotlinx.coroutines.Dispatchers
@@ -63,20 +65,20 @@ fun AddResourceDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            title = { Text("添加资源") },
+            title = { Text(stringResource(R.string.add_resource)) },
             text = {
                 Column(Modifier.selectableGroup()) {
                     ResourceOptionItem(
                         icon = Icons.Default.Description,
-                        title = "普通",
-                        description = "通用格式，一行一个密码",
+                        title = stringResource(R.string.resource_normal),
+                        description = stringResource(R.string.resource_normal_desc),
                         selected = selectedOption == 0,
                         onClick = { onOptionSelect(0) }
                     )
                     ResourceOptionItem(
                         icon = Icons.Default.Code,
-                        title = "脚本",
-                        description = "使用JS脚本动态生成密码本",
+                        title = stringResource(R.string.tag_script),
+                        description = stringResource(R.string.resource_script_desc),
                         selected = selectedOption == 1,
                         onClick = { onOptionSelect(1) }
                     )
@@ -89,18 +91,18 @@ fun AddResourceDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onImport) {
-                        Text("导入外部")
+                        Text(stringResource(R.string.import_external))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = onDismiss) {
-                            Text("取消")
+                            Text(stringResource(R.string.btn_cancel))
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
                             enabled = selectedOption != null,
                             onClick = onContinue
                         ) {
-                            Text("继续")
+                            Text(stringResource(R.string.continue_text))
                         }
                     }
                 }
@@ -161,27 +163,27 @@ fun EditResourceDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isNew) "新建资源" else "编辑资源") },
+        title = { Text(if (isNew) stringResource(R.string.new_resource) else stringResource(R.string.edit_resource)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = id,
                     onValueChange = { id = it },
-                    label = { Text("ID (必填)") },
+                    label = { Text(stringResource(R.string.id_required)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("名称") },
+                    label = { Text(stringResource(R.string.label_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("描述") },
+                    label = { Text(stringResource(R.string.description)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
@@ -189,13 +191,13 @@ fun EditResourceDialog(
                     OutlinedTextField(
                         value = author,
                         onValueChange = { author = it },
-                        label = { Text("作者") },
+                        label = { Text(stringResource(R.string.developer)) },
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
                         value = version,
                         onValueChange = { version = it },
-                        label = { Text("版本") },
+                        label = { Text(stringResource(R.string.version)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -216,7 +218,7 @@ fun EditResourceDialog(
                     ) {
                         Icon(Icons.Default.ContentPaste, null)
                         Spacer(Modifier.width(4.dp))
-                        Text("剪贴板")
+                        Text(stringResource(R.string.clipboard))
                     }
                     OutlinedButton(
                         onClick = { filePickerLauncher.launch(arrayOf("text/plain")) },
@@ -224,7 +226,7 @@ fun EditResourceDialog(
                     ) {
                         Icon(Icons.Default.FileOpen, null)
                         Spacer(Modifier.width(4.dp))
-                        Text("导入文件")
+                        Text(stringResource(R.string.import_file))
                     }
                 }
                 OutlinedButton(
@@ -233,10 +235,10 @@ fun EditResourceDialog(
                 ) {
                     Icon(Icons.Default.EditNote, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("文本编辑器")
+                    Text(stringResource(R.string.text_editor))
                 }
                 Text(
-                    text = "当前包含 $lineCount 条数据",
+                    text = stringResource(R.string.data_count_tip, lineCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -250,16 +252,16 @@ fun EditResourceDialog(
                     try {
                         onSave(getCurrentResource())
                     } catch (e: Exception) {
-                        app.alert("保存失败", e.message.toString())
+                        app.alert(context.getString(R.string.save_failed), e.message.toString())
                     }
                 },
                 enabled = id.isNotBlank()
             ) {
-                Text("保存")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
         }
     )
 }

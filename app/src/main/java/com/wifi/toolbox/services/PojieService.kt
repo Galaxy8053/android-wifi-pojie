@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.IBinder
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.pojie.*
 import com.wifi.toolbox.structs.PojieSettings
@@ -33,26 +34,17 @@ class PojieService : Service() {
         taskDispatcher = PojieTaskManager(this, serviceScope, connectionWorker)
     }
 
-    /**
-     * 打印日志到全局状态中
-     * @param log 日志内容字符串
-     */
-    fun log(log: String,allowEdit: Boolean=false) {
-        (applicationContext as ToolboxApp).logState.addLog(log,allowEdit)
+    fun log(log: String, allowEdit: Boolean = false) {
+        (applicationContext as ToolboxApp).logState.addLog(log, allowEdit)
     }
 
-    /**
-     * 停止所有正在运行的破解任务并取消当前的协程作业
-     */
     fun stopAllTasks() {
         val app = applicationContext as ToolboxApp
         app.runningPojieTasks.clear()
         taskDispatcher.cancelCurrentJob()
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val app = applicationContext as ToolboxApp
@@ -71,18 +63,14 @@ class PojieService : Service() {
             return START_STICKY
         } catch (e: Exception) {
             stopAllTasks()
-            log("E: 服务启动失败")
+            log(getString(R.string.service_start_failed))
             log(e.toString())
             stop()
             return START_NOT_STICKY
         }
     }
 
-    /**
-     * 获取启动时的ASCII艺术字
-     * @return 字符串
-     */
-    fun getAsciiArt(): String {
+    private fun getAsciiArt(): String {
         return """      _      __                 _        
      | |___ / _|_ __ ___  _   _| |_ __ _ 
   _  | / __| |_| '_ ` _ \| | | | __/ _` |
@@ -90,15 +78,12 @@ class PojieService : Service() {
   \___/|___/_| |_| |_| |_|\__, |\__\__, |
                           |___/    |___/ 
 ==========================================
-wifi密码暴力破解工具 v3 for Android
+${getString(R.string.pojie_service_description)}
 """
     }
 
-    /**
-     * 停止破解服务，关闭日志监听并销毁服务实例
-     */
     fun stop() {
-        log("[运行结束]")
+        log(getString(R.string.run_finished))
         connectionWorker.closeServices()
         stopSelf()
     }

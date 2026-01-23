@@ -1,6 +1,7 @@
 package com.wifi.toolbox.services
 
 import android.util.Log
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieSettings
 import com.wifi.toolbox.structs.WifiLogData
 import com.wifi.toolbox.utils.CommandRunner
@@ -9,7 +10,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.function.Consumer
 
-class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseable {
+class WifiLogcatService(
+    private val context: android.content.Context, private val pojieSettings: PojieSettings
+) : AutoCloseable {
     var stopFunc: Runnable? = null
 
     private val _logFlow = MutableSharedFlow<WifiLogData>(extraBufferCapacity = 64)
@@ -54,7 +57,7 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
         return when (val method = pojieSettings.commandMethod) {
             0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
             1 -> ShizukuUtil.executeCommand(command, onOutputReceived, onCommandFinished)
-            else -> throw Exception("前面的区域，以后再来探索吧(commandMethod=$method)")
+            else -> throw Exception(context.getString(R.string.tip_not_completed) + "(commandMethod=$method)")
         }
     }
 
@@ -62,7 +65,7 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
         return when (val method = pojieSettings.commandMethod) {
             0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
             1 -> ShizukuUtil.executeCommandSync(command)
-            else -> throw Exception("前面的区域，以后再来探索吧(commandMethod=$method)")
+            else -> throw Exception(context.getString(R.string.tip_not_completed) + "(commandMethod=$method)")
         }
     }
 
@@ -90,17 +93,15 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
                     }
 
                     line.contains("WPA: RX message 1 of 4-Way Handshake from") -> {
-                        if (handshakeStartTime == 0L)
-                            handshakeStartTime = System.currentTimeMillis()
+                        if (handshakeStartTime == 0L) handshakeStartTime =
+                            System.currentTimeMillis()
                     }
 
                     line.contains("WPA: Key negotiation completed with") -> {
                         Log.d("WifiLogcatService", "连接成功")
                         _logFlow.tryEmit(
                             WifiLogData(
-                                WifiLogData.EVENT_WIFI_CONNECTED,
-                                connectStartTime,
-                                currentSsid
+                                WifiLogData.EVENT_WIFI_CONNECTED, connectStartTime, currentSsid
                             )
                         )
                     }
@@ -123,9 +124,7 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
                     line.contains("WPA: 4-Way Handshake failed") -> {
                         _logFlow.tryEmit(
                             WifiLogData(
-                                WifiLogData.EVENT_CONNECT_FAILED,
-                                connectStartTime,
-                                currentSsid
+                                WifiLogData.EVENT_CONNECT_FAILED, connectStartTime, currentSsid
                             )
                         )
                     }
@@ -133,9 +132,7 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
                     line.contains("CTRL-EVENT-ASSOC-REJECT") -> {
                         _logFlow.tryEmit(
                             WifiLogData(
-                                WifiLogData.EVENT_CONNECT_ERROR,
-                                connectStartTime,
-                                currentSsid
+                                WifiLogData.EVENT_CONNECT_ERROR, connectStartTime, currentSsid
                             )
                         )
                     }
@@ -143,8 +140,7 @@ class WifiLogcatService(private val pojieSettings: PojieSettings) : AutoCloseabl
             },
             onCommandFinished = {
                 //注：这里正常不应被执行
-            }
-        )
+            })
     }
 
 }

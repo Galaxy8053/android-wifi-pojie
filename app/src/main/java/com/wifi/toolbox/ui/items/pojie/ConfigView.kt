@@ -1,7 +1,6 @@
 package com.wifi.toolbox.ui.items.pojie
 
 import androidx.compose.animation.*
-import androidx.compose.animation.expandVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -22,8 +21,16 @@ fun ConfigView(
     config: PojieConfig,
     onConfigChange: (PojieConfig) -> Unit
 ) {
-    val retryCountLabels = listOf("不重试", "1", "2", "3", "4", "5", "无限")
-    val failureOptions = listOf("密码错误", "握手超时", "握手超次")
+    val retryCountLabels = listOf(
+        stringResource(R.string.config_retry_none),
+        "1", "2", "3", "4", "5",
+        stringResource(R.string.config_retry_infinite)
+    )
+    val failureOptions = listOf(
+        stringResource(R.string.config_failure_password),
+        stringResource(R.string.config_failure_timeout),
+        stringResource(R.string.config_failure_handshake)
+    )
 
     val belowAnchorPopupPositionProvider = remember {
         object : PopupPositionProvider {
@@ -44,11 +51,10 @@ fun ConfigView(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "单次尝试",
+            stringResource(R.string.config_single_try),
             modifier = Modifier.padding(0.dp, 8.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
@@ -59,7 +65,7 @@ fun ConfigView(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("最大尝试时间")
+        Text(stringResource(R.string.config_max_try_time))
         Text(
             text = "${config.maxTryTime} ms",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -79,7 +85,7 @@ fun ConfigView(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "失败标志",
+            stringResource(R.string.config_failure_flag),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -92,21 +98,17 @@ fun ConfigView(
                     modifier = Modifier
                         .width(320.dp)
                         .padding(8.dp),
-                    title = {
-                        Text("失败标志")
-                    },
+                    title = { Text(stringResource(R.string.config_failure_flag)) },
                     action = {
                         Row(
                             horizontalArrangement = Arrangement.End,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             TextButton(
-                                onClick = {
-                                    scope.launch { tooltipState.dismiss() }
-                                },
+                                onClick = { scope.launch { tooltipState.dismiss() } },
                                 modifier = Modifier.padding(end = 8.dp)
                             ) {
-                                Text("了解更多")
+                                Text(stringResource(R.string.config_learn_more))
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
                                     contentDescription = null,
@@ -115,11 +117,8 @@ fun ConfigView(
                                         .padding(start = 2.dp)
                                 )
                             }
-
-                            TextButton(onClick = {
-                                scope.launch { tooltipState.dismiss() }
-                            }) {
-                                Text("知道了")
+                            TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
+                                Text(stringResource(R.string.btn_disappear))
                             }
                         }
                     }
@@ -132,12 +131,8 @@ fun ConfigView(
             },
             state = tooltipState
         ) {
-            IconButton(onClick = {
-                scope.launch {
-                    tooltipState.show()
-                }
-            }) {
-                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = "帮助")
+            IconButton(onClick = { scope.launch { tooltipState.show() } }) {
+                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = stringResource(R.string.config_help_description))
             }
         }
     }
@@ -145,10 +140,7 @@ fun ConfigView(
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         failureOptions.forEachIndexed { index, label ->
             SegmentedButton(
-                shape = SegmentedButtonDefaults.itemShape(
-                    index = index,
-                    count = failureOptions.size
-                ),
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = failureOptions.size),
                 onClick = { onConfigChange(config.copy(failureFlag = index)) },
                 selected = index == config.failureFlag
             ) {
@@ -158,10 +150,7 @@ fun ConfigView(
     }
     Spacer(modifier = Modifier.height(8.dp))
 
-    AnimatedContent(
-        targetState = config.failureFlag,
-        label = "failure_option_content"
-    ) { failureState ->
+    AnimatedContent(targetState = config.failureFlag, label = "failure_option_content") { failureState ->
         when (failureState) {
             1 -> {
                 Column {
@@ -170,7 +159,7 @@ fun ConfigView(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("超时时间")
+                        Text(stringResource(R.string.config_timeout))
                         Text(
                             text = "${config.timeout} ms",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -185,7 +174,6 @@ fun ConfigView(
                     )
                 }
             }
-
             2 -> {
                 Column {
                     Row(
@@ -193,7 +181,7 @@ fun ConfigView(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("最大握手次数")
+                        Text(stringResource(R.string.config_max_handshake_count))
                         Text(
                             text = "${config.maxHandshakeCount}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -217,7 +205,7 @@ fun ConfigView(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "异常重试",
+            stringResource(R.string.config_error_retry),
             modifier = Modifier.padding(0.dp, 8.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
@@ -231,21 +219,17 @@ fun ConfigView(
                     modifier = Modifier
                         .width(320.dp)
                         .padding(8.dp),
-                    title = {
-                        Text("异常重试")
-                    },
+                    title = { Text(stringResource(R.string.config_error_retry)) },
                     action = {
                         Row(
                             horizontalArrangement = Arrangement.End,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             TextButton(
-                                onClick = {
-                                    scope.launch { tooltipState.dismiss() }
-                                },
+                                onClick = { scope.launch { tooltipState.dismiss() } },
                                 modifier = Modifier.padding(end = 8.dp)
                             ) {
-                                Text("了解更多")
+                                Text(stringResource(R.string.config_learn_more))
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
                                     contentDescription = null,
@@ -254,11 +238,8 @@ fun ConfigView(
                                         .padding(start = 2.dp)
                                 )
                             }
-
-                            TextButton(onClick = {
-                                scope.launch { tooltipState.dismiss() }
-                            }) {
-                                Text("知道了")
+                            TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
+                                Text(stringResource(R.string.btn_disappear))
                             }
                         }
                     }
@@ -271,12 +252,8 @@ fun ConfigView(
             },
             state = tooltipState
         ) {
-            IconButton(onClick = {
-                scope.launch {
-                    tooltipState.show()
-                }
-            }) {
-                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = "帮助")
+            IconButton(onClick = { scope.launch { tooltipState.show() } }) {
+                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = stringResource(R.string.config_help_description))
             }
         }
     }
@@ -286,7 +263,7 @@ fun ConfigView(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("重试次数")
+        Text(stringResource(R.string.config_retry_count))
         Text(
             text = retryCountLabels[config.retryCountType],
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -311,9 +288,9 @@ fun ConfigView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("等待时间翻倍基数")
+                Text(stringResource(R.string.config_doubling_base))
                 Text(
-                    text = "${config.doublingBase} ms",
+                    text = stringResource(R.string.ms_string, config.doublingBase),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )

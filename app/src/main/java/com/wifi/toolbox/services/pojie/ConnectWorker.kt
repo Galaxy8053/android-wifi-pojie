@@ -3,6 +3,7 @@ package com.wifi.toolbox.services.pojie
 import android.net.ConnectivityManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.*
 import com.wifi.toolbox.structs.*
@@ -10,7 +11,6 @@ import com.wifi.toolbox.utils.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import java.util.Locale
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
@@ -26,20 +26,19 @@ class ConnectWorker(
 
     /**
      * 初始化日志收集服务
-     * @param settings 配置信息
      */
     fun initLogServices(settings: PojieSettings) {
         readLogMode = settings.readLogMode
         when (readLogMode) {
-            0 -> throw Exception("读取网络日志实现为空，请先去设置中选择")
+            0 -> throw Exception(service.getString(R.string.log_mode_empty))
             1 -> {
-                logcatService = WifiLogcatService(settings)
-                service.log("Logcat服务已启动")
+                logcatService = WifiLogcatService(service, settings)
+                service.log(service.getString(R.string.log_logcat_started))
             }
 
             2 -> {
                 broadcastService = WifiBroadcastService(service)
-                service.log("广播监听服务已启动")
+                service.log(service.getString(R.string.log_broadcast_started))
             }
         }
     }
@@ -53,33 +52,26 @@ class ConnectWorker(
     }
 
     /**
-     * 执行具体的任务逻辑，包括调用系统 API 连接 WiFi 及其超时处理
-     * @param app 全局 Application 实例
-     * @param task 包含 SSID 和密码的任务信息
-     * @param settings 设置信息
-     * @return 任务执行结果状态码
+     * 执行具体的任务逻辑
      */
     suspend fun performTaskLogic(
         app: ToolboxApp, task: SinglePojieTask, settings: PojieSettings
     ): Int = withContext(Dispatchers.Default) {
-        val taskId = "Task_${System.currentTimeMillis() % 10000}"
-        android.util.Log.d("PojieDebug", "[$taskId] 任务启动")
-
         val startTime = System.currentTimeMillis()
         val connectMode = settings.connectMode
 
         when (connectMode) {
-            0 -> throw Exception("连接wifi实现为空，请先去设置中选择")
+            0 -> throw Exception(service.getString(R.string.connect_mode_empty))
             1 -> ShizukuUtil.connectToWifi(task.ssid, task.password)
             2 -> {
                 val netId = ApiUtil.connectToWifiApi28(service, task.ssid, task.password)
-                if (netId == -1) throw Exception("请求发送失败，请先手动忘记此网络")
+                if (netId == -1) throw Exception(service.getString(R.string.connect_wifi_failed))
             }
 
-            3 -> { /* 逻辑由下方流程处理 */
+            3 -> { /* API 29 处理流程 */
             }
 
-            else -> throw Exception("前面的区域，以后再来探索吧(connectMode=${settings.connectMode})")
+            else -> throw Exception(service.getString(R.string.tip_not_completed) + "(connectMode=$connectMode)")
         }
 
         try {
@@ -92,7 +84,10 @@ class ConnectWorker(
                                     connectWifiApi29Callback =
                                         connectToWifiApi29(task.ssid, task.password) { success ->
                                             if (continuation.isActive) {
-                                                continuation.resume(if (success) SinglePojieTask.RESULT_SUCCESS else SinglePojieTask.RESULT_FAILED)
+                                                continuation.resume(
+                                                    if (success) SinglePojieTask.RESULT_SUCCESS else SinglePojieTask.RESULT_FAILED,
+                                                    null
+                                                )
                                             }
                                         }
                                 } catch (e: Exception) {
@@ -110,14 +105,13 @@ class ConnectWorker(
                                 connectWifiApi29Callback = null
                             }
                         }
-                    } else throw Exception("系统版本过低，无法使用[连接到设备]连接wifi(sdk<29&connectMode=3)")
+                    } else throw Exception(service.getString(R.string.device_too_old))
                 } else {
                     val flow = when (readLogMode) {
                         1 -> logcatService?.logFlow
                         2 -> {
-                            // 补回原本缺失的判断逻辑
                             if (app.pojieConfig.failureFlag == 2) {
-                                throw Exception("广播监听模式不支持按握手次数判定，请在改为“握手超时”或切换为Logcat模式")
+                                throw Exception(service.getString(R.string.broadcast_not_support_handshake))
                             }
                             broadcastService?.setTargetSsid(task.ssid)
                             broadcastService?.logFlow
@@ -126,7 +120,7 @@ class ConnectWorker(
                         else -> null
                     }
 
-                    if (flow == null) throw Exception("日志流未初始化")
+                    if (flow == null) throw Exception(service.getString(R.string.log_flow_uninitialized))
 
                     var finalResult = -1
                     flow.first { data ->
@@ -140,8 +134,7 @@ class ConnectWorker(
             SinglePojieTask.RESULT_TIMEOUT
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            android.util.Log.e("PojieDebug", "E: ${e.message}")
-            service.log("E: ${e.message}")
+            service.log(service.getString(R.string.error_string, e.message ?: ""))
             SinglePojieTask.RESULT_ERROR
         }
     }
@@ -184,19 +177,11 @@ class ConnectWorker(
         }
     }
 
-    /**
-     * 适配 Android 10+ 的 WiFi 连接 API
-     * @param ssid WiFi 名称
-     * @param pass WiFi 密码
-     * @param callback 连接结果回调
-     * @return 网络回调实例
-     */
     @RequiresApi(Build.VERSION_CODES.Q)
     private suspend fun connectToWifiApi29(
         ssid: String, pass: String, callback: (Boolean) -> Unit
     ): ConnectivityManager.NetworkCallback? {
         val foregroundActivity = ActivityStack.get()
-
         return if (foregroundActivity != null) {
             withContext(Dispatchers.Main) {
                 ApiUtil.connectToWifiApi29(foregroundActivity, ssid, pass, callback)
@@ -206,10 +191,6 @@ class ConnectWorker(
         }
     }
 
-    /**
-     * 清理连接过程中占用的系统资源，包括取消 API 29 回调或断开当前 Wi-Fi 连接
-     * @param settings 设置信息
-     */
     fun cleanConnection(settings: PojieSettings) {
         if (connectWifiApi29Callback != null) {
             ApiUtil.cancelWifiRequest(service, connectWifiApi29Callback!!)
@@ -222,10 +203,6 @@ class ConnectWorker(
         }
     }
 
-    /**
-     * 根据名称移除网络配置
-     * @param settings 设置信息
-     */
     fun forgetNetwork(settings: PojieSettings, ssid: String): Boolean {
         val netId = when (settings.connectMode) {
             1 -> ShizukuUtil.getNetIdBySsid(ssid)

@@ -6,52 +6,26 @@ import android.content.Context
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.WrapText
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.VerticalAlignBottom
-import androidx.compose.material.icons.filled.VerticalAlignTop
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -103,7 +77,7 @@ fun LogView(
                         lineHeightStyle = LineHeightStyle(
                             alignment = LineHeightStyle.Alignment.Center,
                             trim = LineHeightStyle.Trim.Both
-                        )
+                        ), fontFeatureSettings = "liga 0, calt 0"
                     ),
                     modifier = Modifier
                         .fillMaxSize()
@@ -134,41 +108,43 @@ fun BoxScope.LogActionsFab(
     var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
+    val logCopyLabel = stringResource(R.string.log_copy_label)
+
     val menuItems = listOf(
         FabMenuItem(
-            label = "自动滚动",
+            label = stringResource(R.string.log_auto_scroll),
             icon = Icons.Default.KeyboardDoubleArrowDown,
             isSelected = logState.autoScroll,
             onClick = { logState.autoScroll = !logState.autoScroll }
         ),
         FabMenuItem(
-            label = "自动换行",
+            label = stringResource(R.string.log_word_wrap),
             icon = Icons.AutoMirrored.Filled.WrapText,
             isSelected = logState.wordWrap,
             onClick = { logState.wordWrap = !logState.wordWrap }
         ),
         FabMenuItem(
-            label = "清空日志",
+            label = stringResource(R.string.log_clear),
             icon = Icons.Filled.DeleteSweep,
             onClick = { logState.clear() }
         ),
         FabMenuItem(
-            label = "复制日志",
+            label = stringResource(R.string.log_copy),
             icon = Icons.Filled.ContentCopy,
             onClick = {
                 val clipboardManager =
                     context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clipData = ClipData.newPlainText("Log", logState.logs.joinToString("\n"))
+                val clipData = ClipData.newPlainText(logCopyLabel, logState.logs.joinToString("\n"))
                 clipboardManager.setPrimaryClip(clipData)
             }
         ),
         FabMenuItem(
-            label = "滚动到顶部",
+            label = stringResource(R.string.log_scroll_to_top),
             icon = Icons.Default.VerticalAlignTop,
             onClick = { coroutineScope.launch { verticalScrollState.animateScrollTo(0) } }
         ),
         FabMenuItem(
-            label = "滚动到底部",
+            label = stringResource(R.string.log_scroll_to_bottom),
             icon = Icons.Default.VerticalAlignBottom,
             onClick = {
                 coroutineScope.launch {
@@ -195,7 +171,7 @@ fun LogViewPreview() {
     val logState = rememberLogState()
     LaunchedEffect(Unit) {
         logState.addLog("Log message 1")
-        logState.addLog("Another log message",true)
+        logState.addLog("Another log message", true)
         logState.addLog("Log message 2")
         logState.setLine("This is the last line, modified.")
     }

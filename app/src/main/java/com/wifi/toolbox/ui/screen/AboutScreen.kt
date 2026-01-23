@@ -140,7 +140,7 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             changelogText = try {
                 context.assets.open("CHANGELOG.md").bufferedReader().use { it.readText() }
             } catch (_: Exception) {
-                "此版本未包含CHANGELOG.md"
+                context.getString(R.string.changelog_md_not_found)
             }
         }
     }
@@ -249,7 +249,11 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                                text = stringResource(
+                                    R.string.version_text,
+                                    BuildConfig.VERSION_NAME,
+                                    BuildConfig.VERSION_CODE
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                             )
@@ -277,11 +281,15 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                                 slideInVertically(animationSpec = tween(800, 0)) { 100 }
                     ) {
                         SettingsGroup {
-                            ClickableInfoItem("更新日志", "查看最近更新的改动内容") {
+                            ClickableInfoItem(stringResource(R.string.changelog),
+                                stringResource(R.string.changelog_tip)
+                            ) {
                                 showDialog = true
                             }
                             SettingsDivider()
-                            ClickableInfoItem("开源地址", "在GitHub上查看项目源码") {
+                            ClickableInfoItem(stringResource(R.string.score_code_location),
+                                stringResource(R.string.score_code_location_tip)
+                            ) {
                                 uriHandler.openUri("https://github.com/bszapp/android-wifi-pojie")
                             }
                         }
@@ -299,13 +307,13 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                     ) {
                         SettingsGroup {
                             ClickableInfoItem(
-                                "鸣谢项目",
-                                "感谢为本项目提供灵感与技术支持的开源项目"
+                                stringResource(R.string.thanks_project),
+                                stringResource(R.string.thanks_project_tip)
                             ) { showCreditsDialog = true }
                             SettingsDivider()
                             ClickableInfoItem(
-                                "三方开源许可",
-                                "查看第三方库授权协议"
+                                stringResource(R.string.license),
+                                stringResource(R.string.license_tip)
                             ) { showLicenseDialog = true }
                         }
                     }
@@ -321,7 +329,7 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                 }
 
                 Text(
-                    text = "© 2025-$buildYear WiFi Toolbox - Apache 2.0",
+                    text = stringResource(R.string.copyright, buildYear),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
                 )
@@ -334,9 +342,9 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 confirmButton = {
-                    TextButton(onClick = { showDialog = false }) { Text("知道了") }
+                    TextButton(onClick = { showDialog = false }) { Text(stringResource(R.string.btn_disappear)) }
                 },
-                title = { Text("更新日志", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.changelog), fontWeight = FontWeight.Bold) },
                 text = {
                     Box(
                         modifier = Modifier
@@ -355,11 +363,11 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                 onDismissRequest = { showCreditsDialog = false },
                 confirmButton = {
                     TextButton(onClick = { showCreditsDialog = false }) {
-                        Text("关闭")
+                        Text(stringResource(R.string.btn_close))
                     }
                 },
                 title = {
-                    Text("鸣谢项目", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.thanks_project), fontWeight = FontWeight.Bold)
                 },
                 text = {
                     LazyColumn(
@@ -387,7 +395,7 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                                 Spacer(Modifier.width(6.dp))
 
                                 Text(
-                                    "专业名词解释",
+                                    stringResource(R.string.thank_project_dialog_tip),
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.titleSmall
                                 )
@@ -396,8 +404,7 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                             Spacer(Modifier.height(8.dp))
 
                             Text(
-                                "• 参考：指看着界面直接仿写\n" +
-                                        "• 借鉴：指CtrlCV代码然后洗稿当作自己的",
+                                stringResource(R.string.thank_project_dialog_tip_content),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }

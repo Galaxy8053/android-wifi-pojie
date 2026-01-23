@@ -21,6 +21,10 @@ import com.wifi.toolbox.ui.items.pojie.RunListView
 import com.wifi.toolbox.ui.items.pojie.ScanResult
 import com.wifi.toolbox.ui.items.pojie.ScreenState
 import com.wifi.toolbox.utils.*
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import com.wifi.toolbox.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,12 +72,13 @@ fun PojieScreenContent(
     pojieWifiController: PojieWifiController,
     onSettingsUpdate: (PojieSettings) -> Unit
 ) {
+    val context = LocalContext.current
     var currentTargetSsid by rememberSaveable { mutableStateOf("") }
     var showResourceSheet by rememberSaveable { mutableStateOf(false) }
 
     var showResourcesFabDialog by rememberSaveable { mutableStateOf(false) }
 
-    var showHistoryConfirmDialog by remember { mutableStateOf(false) }
+    var showHistoryConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
     val historyItem = remember(currentTargetSsid, app?.pojieHistory?.historyFlow?.collectAsState()?.value) {
         app?.pojieHistory?.historyFlow?.value?.find { it.ssid == currentTargetSsid }
@@ -82,7 +87,7 @@ fun PojieScreenContent(
     val pages = remember(pojieSettings, pojieWifiController, showResourcesFabDialog) {
         listOf(
             object : NavPage {
-                override val name = "资源"
+                override val name = context.getString(R.string.resource)
                 override val selectedIcon = Icons.Filled.Inbox
                 override val unselectedIcon = Icons.Outlined.Inbox
                 override val content = @Composable {
@@ -92,13 +97,13 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name = "历史"
+                override val name =  context.getString(R.string.hitsory)
                 override val selectedIcon = Icons.Filled.History
                 override val unselectedIcon = Icons.Outlined.History
                 override val content = @Composable { HistoryPage() }
             },
             object : NavPage {
-                override val name = "运行"
+                override val name =  context.getString(R.string.run)
                 override val selectedIcon = Icons.Filled.Home
                 override val unselectedIcon = Icons.Outlined.Home
                 override val content = @Composable {
@@ -123,7 +128,7 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name = "设置"
+                override val name =  context.getString(R.string.settings)
                 override val selectedIcon = Icons.Filled.Settings
                 override val unselectedIcon = Icons.Outlined.Settings
                 override val content = @Composable {
@@ -131,7 +136,7 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name = "帮助"
+                override val name =  context.getString(R.string.help)
                 override val selectedIcon = Icons.Filled.Info
                 override val unselectedIcon = Icons.Outlined.Info
                 override val content = @Composable { HelpPage() }
@@ -140,7 +145,7 @@ fun PojieScreenContent(
     }
 
     Box(Modifier.fillMaxSize()) {
-        NavContainer(pages, 2, "密码字典破解", onMenuClick)
+        NavContainer(pages, 2, stringResource(R.string.wifi_pojie_name), onMenuClick)
         ResourceSelectSheet(
             show = showResourceSheet,
             onDismiss = { showResourceSheet = false },
@@ -187,7 +192,7 @@ fun PojieScreenContent(
 
 @Composable
 fun HistoryRecoveryDialog(
-    item: com.wifi.toolbox.utils.PojieHistoryItem,
+    item: PojieHistoryItem,
     onDismiss: () -> Unit,
     onContinue: () -> Unit,
     onReSelect: () -> Unit
@@ -195,19 +200,29 @@ fun HistoryRecoveryDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        title = { Text("发现历史记录") },
+        title = { Text(stringResource(R.string.found_history)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("检测到该网络曾有破解进度，是否继续？", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = stringResource(R.string.found_history_tip),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
                 Surface(
                     modifier = Modifier.padding(top = 16.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
-                        Text("SSID: ${item.ssid}", style = MaterialTheme.typography.labelLarge)
+                    Column(modifier = Modifier
+                        .padding(12.dp)
+                        .fillMaxWidth()) {
+                        Text(stringResource(R.string.ssid_string, item.ssid), style = MaterialTheme.typography.labelLarge)
                         Text(
-                            "上次进度: 第 ${item.progress} / ${item.passwords.size} 个密码",
+                            stringResource(
+                                R.string.wifi_pojie_history_progress_number,
+                                item.progress,
+                                item.passwords.size
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -216,30 +231,23 @@ fun HistoryRecoveryDialog(
             }
         },
         confirmButton = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text("取消")
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-                TextButton(
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
                     onClick = onReSelect,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                        brush = SolidColor(MaterialTheme.colorScheme.error)
+                    )
                 ) {
-                    Text("重选字典")
+                    Text(stringResource(R.string.re_select_password))
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
 
                 Button(
                     onClick = onContinue,
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("沿用进度")
+                    Text(stringResource(R.string.use_latest_password))
                 }
             }
         },

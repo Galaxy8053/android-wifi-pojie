@@ -49,7 +49,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("前面的区域，以后再来探索吧")
+            Text(stringResource(R.string.tip_not_completed))
         }
     }
 }

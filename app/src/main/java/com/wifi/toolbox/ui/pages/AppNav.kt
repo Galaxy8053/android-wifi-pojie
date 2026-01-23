@@ -22,10 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuOpen
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -304,20 +301,48 @@ fun NavContent(
     drawerState: DrawerState,
     navController: NavHostController
 ) {
+    val context = LocalContext.current
     val menuGroups = remember {
         listOf(
-            NavGroup("应用", Icons.Rounded.Android, listOf(
-                NavMenuItem("主页", "Home", Icons.Rounded.Home)
-            )),
-            NavGroup("工具箱", Icons.AutoMirrored.Rounded.MenuOpen, listOf(
-                NavMenuItem("密码字典破解", "Pojie", Icons.Rounded.VpnKey),
-                NavMenuItem("WiFi 管理器", "Viewer", Icons.Rounded.Dns),
-                NavMenuItem("实验室", "Test", Icons.Rounded.Science)
-            )),
-            NavGroup("选项", Icons.Rounded.AutoAwesome, listOf(
-                NavMenuItem("设置", "Settings", Icons.Rounded.Settings),
-                NavMenuItem("关于", "About", Icons.Rounded.Info)
-            ))
+            NavGroup(
+                context.getString(R.string.app), Icons.Rounded.Android,
+                listOf(
+                    NavMenuItem(
+                        context.getString(R.string.home),
+                        "Home", Icons.Rounded.Home
+                    )
+                )
+            ),
+            NavGroup(
+                context.getString(R.string.toolbox), Icons.AutoMirrored.Rounded.MenuOpen,
+                listOf(
+                    NavMenuItem(
+                        context.getString(R.string.wifi_pojie_name),
+                        "Pojie", Icons.Rounded.VpnKey
+                    ),
+                    NavMenuItem(
+                        context.getString(R.string.wifi_manager),
+                        "Viewer", Icons.Rounded.Dns
+                    ),
+                    NavMenuItem(
+                        context.getString(R.string.lab),
+                        "Test", Icons.Rounded.Science
+                    )
+                )
+            ),
+            NavGroup(
+                context.getString(R.string.options), Icons.Rounded.AutoAwesome,
+                listOf(
+                    NavMenuItem(
+                        context.getString(R.string.settings),
+                        "Settings", Icons.Rounded.Settings
+                    ),
+                    NavMenuItem(
+                        context.getString(R.string.about),
+                        "About", Icons.Rounded.Info
+                    )
+                )
+            )
         )
     }
 
@@ -341,7 +366,7 @@ fun NavContent(
         if (currentTip.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Tip: $currentTip",
+                text = stringResource(R.string.tip_string, currentTip),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

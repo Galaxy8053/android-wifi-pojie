@@ -64,13 +64,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mikepenz.aboutlibraries.Libs
 import com.mikepenz.aboutlibraries.entity.Library
+import com.wifi.toolbox.R
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -84,6 +87,7 @@ fun LicensePage(
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
 
     var selectedLibraryUniqueId by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedLibrary = remember(selectedLibraryUniqueId, libs) {
@@ -106,7 +110,7 @@ fun LicensePage(
             when {
                 developerNames.isNotBlank() -> developerNames
                 library.organization?.name?.isNotBlank() == true -> library.organization!!.name
-                else -> "其他"
+                else -> context.getString(R.string.other)
             }
         }
 
@@ -151,7 +155,7 @@ fun LicensePage(
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             decorationBox = { innerTextField ->
                                 if (searchQuery.isEmpty()) Text(
-                                    "搜索关键词…",
+                                    stringResource(R.string.search_tip),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp)
                                 )
@@ -159,7 +163,7 @@ fun LicensePage(
                             }
                         )
                     } else {
-                        Text("三方开源许可", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.license), fontWeight = FontWeight.SemiBold)
                     }
                 },
                 navigationIcon = {
@@ -177,7 +181,10 @@ fun LicensePage(
                 actions = {
                     if (!isSearching) {
                         IconButton(onClick = { isSearching = true }) {
-                            Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = stringResource(R.string.search)
+                            )
                         }
                     }
                 },
@@ -189,7 +196,7 @@ fun LicensePage(
         if (groupedLibraries.isEmpty() && searchQuery.isNotEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "¯\\_(ツ)_/¯\n换个关键词试试吧",
+                    text = stringResource(R.string.search_nothing_tip),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -227,7 +234,7 @@ fun LicensePage(
                             color = containerColor
                         ) {
                             Text(
-                                text = author ?: "其他",
+                                text = author ?: stringResource(R.string.other),
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
@@ -294,7 +301,10 @@ fun LicensePage(
                                     },
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 ) {
-                                    Text(if (isExpanded) "收起" else "查看全部 ${libsInGroup.size} 项")
+                                    Text(if (isExpanded) stringResource(R.string.un_expand) else stringResource(
+                                        R.string.expand_list_number,
+                                        libsInGroup.size
+                                    ))
                                 }
                             }
                         }
@@ -375,7 +385,7 @@ fun LibraryDetailDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("确认", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.btn_ok), fontWeight = FontWeight.Bold)
             }
         },
         title = {
@@ -398,7 +408,7 @@ fun LibraryDetailDialog(
 
                     library.description?.let {
                         if (it.isNotBlank()) item {
-                            DetailSection("描述", Icons.Default.Description) {
+                            DetailSection(stringResource(R.string.description), Icons.Default.Description) {
                                 Text(
                                     text = it,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -408,17 +418,17 @@ fun LibraryDetailDialog(
                     }
 
                     item {
-                        DetailSection("详细信息", Icons.Default.Info) {
-                            InfoTag(label = "ID", value = library.uniqueId)
+                        DetailSection(stringResource(R.string.detailed_information), Icons.Default.Info) {
+                            InfoTag(label = stringResource(R.string.id), value = library.uniqueId)
                             library.artifactVersion?.let {
                                 Spacer(Modifier.height(8.dp))
-                                InfoTag(label = "版本", value = it)
+                                InfoTag(label = stringResource(R.string.version), value = it)
                             }
                         }
                     }
 
                     item {
-                        DetailSection("链接", Icons.Default.Link) {
+                        DetailSection(stringResource(R.string.link), Icons.Default.Link) {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -426,7 +436,7 @@ fun LibraryDetailDialog(
                                 library.website?.let { url ->
                                     AssistChip(
                                         onClick = { uriHandler.openUri(url) },
-                                        label = { Text("官方网站") },
+                                        label = { Text(stringResource(R.string.website)) },
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Default.Public,
@@ -439,7 +449,7 @@ fun LibraryDetailDialog(
                                 library.scm?.url?.let { scmUrl ->
                                     AssistChip(
                                         onClick = { uriHandler.openUri(scmUrl) },
-                                        label = { Text("查看源码") },
+                                        label = { Text(stringResource(R.string.view_score_code)) },
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Default.Code,
@@ -455,7 +465,7 @@ fun LibraryDetailDialog(
 
                     if (library.licenses.isNotEmpty()) {
                         item {
-                            DetailSection("开源协议", Icons.Default.Gavel) {
+                            DetailSection(stringResource(R.string.ope_source_license), Icons.Default.Gavel) {
                                 library.licenses.forEach { license ->
                                     Surface(
                                         modifier = Modifier
@@ -487,7 +497,7 @@ fun LibraryDetailDialog(
                                             )
                                             license.url?.let { licenseUrl ->
                                                 TextButton(onClick = { uriHandler.openUri(licenseUrl) }) {
-                                                    Text("查看详情")
+                                                    Text(stringResource(R.string.view_details))
                                                 }
                                             }
                                         }
@@ -498,10 +508,11 @@ fun LibraryDetailDialog(
                     }
 
                     val devInfo = library.developers.mapNotNull { it.name }.joinToString()
+
                     if (devInfo.isNotBlank()) {
                         item {
-                            DetailSection("贡献者", Icons.Default.People) {
-                                InfoTag(label = "开发者", value = devInfo)
+                            DetailSection(stringResource(R.string.contributor), Icons.Default.People) {
+                                InfoTag(label = stringResource(R.string.developer), value = devInfo)
                             }
                         }
                     }

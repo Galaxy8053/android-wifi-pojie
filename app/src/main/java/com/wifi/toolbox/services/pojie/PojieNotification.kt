@@ -22,7 +22,9 @@ object PojieNotification {
     fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID, "密码字典破解", NotificationManager.IMPORTANCE_MIN
+                NOTIFICATION_CHANNEL_ID,
+                context.getString(R.string.wifi_pojie_name),
+                NotificationManager.IMPORTANCE_MIN
             )
             val manager = context.getSystemService(NotificationManager::class.java)
             manager?.createNotificationChannel(serviceChannel)
@@ -43,9 +45,13 @@ object PojieNotification {
         )
 
         return NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("密码字典破解").setContentText("正在运行")
-            .setSmallIcon(R.drawable.ic_launcher_foreground).setContentIntent(pendingIntent)
-            .setOngoing(true).setPriority(NotificationCompat.PRIORITY_MIN).build()
+            .setContentTitle(context.getString(R.string.wifi_pojie_name))
+            .setContentText(context.getString(R.string.running))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .build()
     }
 
     /**
@@ -54,11 +60,12 @@ object PojieNotification {
      * @param contentText 要更新的内容
      */
     fun update(context: Context, contentText: String) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = buildForeground(context).let {
             NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("密码字典破解")
+                .setContentTitle(context.getString(R.string.wifi_pojie_name))
                 .setContentText(contentText)
                 .setContentIntent(it.contentIntent)
                 .setOngoing(true)

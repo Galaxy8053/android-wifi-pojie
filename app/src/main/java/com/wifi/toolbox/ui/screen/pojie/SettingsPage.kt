@@ -12,9 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.ToolboxApp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieSettings
 import com.wifi.toolbox.ui.items.BannerTip
 import me.zhanghai.compose.preference.*
@@ -26,35 +28,36 @@ fun SettingsPage(
 ) {
 
     val app = LocalContext.current.applicationContext as ToolboxApp
+    val context = LocalContext.current
 
     val readLogValues = listOf(
-        "--请选择--",
-        "[命令行] logcat",
-        "[应用API] BroadcastReceiver"
+        stringResource(R.string.no_choose_tip),
+        stringResource(R.string.command_logcat),
+        stringResource(R.string.api_broadcastreceiver)
     )
     val connectValues = listOf(
-        "--请选择--",
-        "[Shizuku] IWifiManager",
-        "[应用API] WifiManager",
-        "[应用API] 连接到设备",
-        "❌命令行"
+        stringResource(R.string.no_choose_tip),
+        stringResource(R.string.shizuku_iwifimanager),
+        stringResource(R.string.api_wifimanager),
+        stringResource(R.string.api_connect_device),
+        stringResource(R.string.command_not_completed)
     )
     val scanValues = listOf(
-        "空闲",
-        "[Shizuku] IWifiManager",
-        "[应用API] WifiManager",
-        "❌命令行"
+        stringResource(R.string.item_free),
+        stringResource(R.string.shizuku_iwifimanager),
+        stringResource(R.string.api_wifimanager),
+        stringResource(R.string.command_not_completed)
     )
     val turnOnValues = listOf(
-        "空闲",
-        "[Shizuku] IWifiManager",
-        "[应用API] WifiManager",
-        "❌命令行"
+        stringResource(R.string.item_free),
+        stringResource(R.string.shizuku_iwifimanager),
+        stringResource(R.string.api_wifimanager),
+        stringResource(R.string.command_not_completed)
     )
     val commandMethodValues = listOf(
-        "--请选择--",
-        "[Shizuku] newProcess",
-        "❌[root] su -c"
+        stringResource(R.string.no_choose_tip),
+        stringResource(R.string.shizuku_newprocess),
+        stringResource(R.string.root_su_file_not_completed)
     )
 
     ProvidePreferenceLocals {
@@ -64,13 +67,13 @@ fun SettingsPage(
         ) {
             item {
                 PreferenceCategory(
-                    title = { Text("运行方式") },
+                    title = { Text(stringResource(R.string.run_method)) },
                 )
             }
 
             item {
                 BannerTip(
-                    text = "实现方法越往前越推荐，“请选择”为必选项，“空闲”为可选项。如果不能使用请尝试更换不同的组合",
+                    text = stringResource(R.string.run_method_settings_tip),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                 )
             }
@@ -85,7 +88,7 @@ fun SettingsPage(
                             )
                         )
                     },
-                    title = { Text("读取网络日志") },
+                    title = { Text(stringResource(R.string.read_log_mode)) },
                     summary = { Text(readLogValues[pojieSettings.readLogMode]) },
                     icon = {
                         Icon(
@@ -109,7 +112,7 @@ fun SettingsPage(
                             )
                         )
                     },
-                    title = { Text("连接wifi") },
+                    title = { Text(stringResource(R.string.connect_wifi_mode)) },
                     summary = { Text(connectValues[pojieSettings.connectMode]) },
                     icon = { Icon(Icons.Filled.Link, contentDescription = null) },
                     values = connectValues.indices.toList(),
@@ -122,7 +125,7 @@ fun SettingsPage(
                 ListPreference(
                     value = pojieSettings.scanMode,
                     onValueChange = { newValue -> onPojieSettingsChange(pojieSettings.copy(scanMode = newValue)) },
-                    title = { Text("扫描wifi") },
+                    title = { Text(stringResource(R.string.scan_wifi_mode)) },
                     summary = { Text(scanValues[pojieSettings.scanMode]) },
                     icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
                     values = scanValues.indices.toList(),
@@ -146,9 +149,9 @@ fun SettingsPage(
                                 )
                             )
                         },
-                        title = { Text("允许使用命令行") },
+                        title = { Text(stringResource(R.string.allow_use_command)) },
                         icon = { Icon(Icons.Filled.Terminal, contentDescription = null) },
-                        summary = { Text("使用系统API发送开始扫描失败时，尝试使用 cmd wifi start-scan 代替") }
+                        summary = { Text(stringResource(R.string.allow_use_command_tip)) }
                     )
                 }
             }
@@ -163,7 +166,7 @@ fun SettingsPage(
                             )
                         )
                     },
-                    title = { Text("调整wifi状态") },
+                    title = { Text(stringResource(R.string.enable_wifi_mode)) },
                     summary = { Text(turnOnValues[pojieSettings.enableMode]) },
                     icon = { Icon(Icons.Outlined.ToggleOn, contentDescription = null) },
                     values = turnOnValues.indices.toList(),
@@ -192,7 +195,7 @@ fun SettingsPage(
                                 )
                             )
                         },
-                        title = { Text("命令行实现方式") },
+                        title = { Text(stringResource(R.string.command_method)) },
                         summary = { Text(commandMethodValues[pojieSettings.commandMethod]) },
                         icon = { Icon(Icons.Filled.Terminal, contentDescription = null) },
                         values = commandMethodValues.indices.toList(),
@@ -204,7 +207,7 @@ fun SettingsPage(
 
             item {
                 PreferenceCategory(
-                    title = { Text("运行行为") },
+                    title = { Text(stringResource(R.string.running_behavior)) },
                 )
             }
 
@@ -218,9 +221,9 @@ fun SettingsPage(
                             )
                         )
                     },
-                    title = { Text("屏幕常亮") },
+                    title = { Text(stringResource(R.string.keep_screen_on)) },
                     icon = { Icon(Icons.Filled.BrightnessHigh, contentDescription = null) },
-                    summary = { Text("运行时且保持在前台时永不息屏") }
+                    summary = { Text(stringResource(R.string.keep_screen_on_tip)) }
                 )
             }
 
@@ -233,11 +236,11 @@ fun SettingsPage(
 //                                showRunningNotification = newValue
 //                            )
 //                        )
-                        app.ui.snackbar("前面的区域，以后再来探索吧")
+                        app.ui.snackbar(context.getString(R.string.tip_not_completed))
                     },
-                    title = { Text("显示通知") },
+                    title = { Text(stringResource(R.string.show_notification)) },
                     icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
-                    summary = { Text("运行时显示一个通知，展示当前进度") }
+                    summary = { Text(stringResource(R.string.show_notification_tip)) }
                 )
             }
 
@@ -251,9 +254,9 @@ fun SettingsPage(
                             )
                         )
                     },
-                    title = { Text("自动进入小窗") },
+                    title = { Text(stringResource(R.string.auto_picture_to_picture)) },
                     icon = { Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null) },
-                    summary = { Text("运行时切换到其他应用时以小窗形式继续运行") }
+                    summary = { Text(stringResource(R.string.auto_picture_to_picture_tip)) }
                 )
             }
         }

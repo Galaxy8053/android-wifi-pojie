@@ -17,7 +17,11 @@ import com.wifi.toolbox.ui.screen.test.*
 @Composable
 fun TestScreen(onMenuClick: () -> Unit) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Shizuku", "系统API", "终端命令")
+    val tabs = listOf(
+        stringResource(R.string.shizuku),
+        stringResource(R.string.system_api),
+        stringResource(R.string.terminal_command)
+    )
     val logState = rememberLogState()
     var logCardExpanded by remember { mutableStateOf(true) }
 
@@ -28,7 +32,8 @@ fun TestScreen(onMenuClick: () -> Unit) {
                     modifier = Modifier.padding(0.dp, 8.dp)
                 ) {
                     Text(
-                        text = "实验室", style = MaterialTheme.typography.titleLarge
+                        text = stringResource(R.string.lab),
+                        style = MaterialTheme.typography.titleLarge
                     )
                     Text(
                         text = stringResource(R.string.app_name),
@@ -75,7 +80,7 @@ fun TestScreen(onMenuClick: () -> Unit) {
             }
 
             FoldCard(
-                title = "运行输出",
+                title = stringResource(R.string.run_output),
                 expanded = logCardExpanded,
                 onExpandedChange = { logCardExpanded = it },
                 modifier = Modifier

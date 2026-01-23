@@ -12,6 +12,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.result.IntentSenderRequest
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -144,12 +145,13 @@ object ApiUtil {
     }
 
 
+    @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     fun getSavedWifiList(context: Context): List<Pair<Int, String>> {
         val wifiManager =
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val configs = wifiManager.configuredNetworks ?: return emptyList()
 
-        return configs.mapNotNull { config ->
+        return configs.distinctBy { it.networkId }.mapNotNull { config ->
             var ssid = config.SSID ?: return@mapNotNull null
             if (ssid.startsWith("\"") && ssid.endsWith("\"") && ssid.length >= 2) {
                 ssid = ssid.substring(1, ssid.length - 1)

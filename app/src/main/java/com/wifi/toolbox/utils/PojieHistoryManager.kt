@@ -1,84 +1,142 @@
 package com.wifi.toolbox.utils
 
 import android.content.Context
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.File
+import androidx.room.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 data class PojieHistoryItem(
+
     val ssid: String,
     val passwords: List<String>,
     val progress: Int,
-    val successfulPassword: String? = null
+    val password: String? = null,
+    val lasttime: Long = 0L
 )
 
-class PojieHistoryManager(context: Context) {
-    private val _historyFlow = MutableStateFlow<List<PojieHistoryItem>>(emptyList())
-    val historyFlow: StateFlow<List<PojieHistoryItem>> = _historyFlow
+@Entity(tableName = "history_metadata")
+data class HistoryEntity(
+    @PrimaryKey val ssid: String,
+    val progress: Int,
+    val successfulPassword: String?,
+    val lasttime: Long
+)
 
-    private val historyFile = File(context.filesDir, "pojiehistory.json")
+@Entity(
+    tableName = "password_items",
+    foreignKeys = [ForeignKey(
+        entity = HistoryEntity::class,
+        parentColumns = ["ssid"],
+        childColumns = ["historyId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("historyId")]
+)
+data class PasswordEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val historyId: String,
+    val password: String
+)
 
-    init {
-        loadHistory()
+data class HistoryWithPasswords(
+    @Embedded val history: HistoryEntity,
+    @Relation(
+        parentColumn = "ssid",
+        entityColumn = "historyId"
+    )
+    val passwords: List<PasswordEntity>
+)
+
+@Dao
+interface PojieDao {
+    @Transaction
+    @Query("SELECT * FROM history_metadata ORDER BY lasttime DESC")
+    fun getAllHistoryFlow(): Flow<List<HistoryWithPasswords>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMetadata(history: HistoryEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPasswords(passwords: List<PasswordEntity>)
+
+    @Query("DELETE FROM password_items WHERE historyId = :ssid")
+    suspend fun deleteOldPasswords(ssid: String)
+
+    @Transaction
+    suspend fun fullUpsert(item: PojieHistoryItem) {
+        insertMetadata(HistoryEntity(item.ssid, item.progress, item.password, item.lasttime))
+        deleteOldPasswords(item.ssid)
+        val entities = item.passwords.map { PasswordEntity(historyId = item.ssid, password = it) }
+        insertPasswords(entities)
     }
 
-    fun loadHistory() {
-        if (!historyFile.exists()) return
-        try {
-            val content = historyFile.readText()
-            val jsonArray = JSONArray(content)
-            val list = mutableListOf<PojieHistoryItem>()
-            for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                val pwdArray = obj.getJSONArray("passwords")
-                val pwds = List(pwdArray.length()) { pwdArray.getString(it) }
-                list.add(
-                    PojieHistoryItem(
-                        obj.getString("ssid"),
-                        pwds,
-                        obj.getInt("progress"),
-                        if (obj.has("successfulPassword") && !obj.isNull("successfulPassword"))
-                            obj.getString("successfulPassword") else null
-                    )
+    @Query("UPDATE history_metadata SET progress = :progress, lasttime = :time WHERE ssid = :ssid")
+    suspend fun updateProgress(ssid: String, progress: Int, time: Long)
+
+    @Query("DELETE FROM history_metadata WHERE ssid = :ssid")
+    suspend fun deleteHistory(ssid: String)
+}
+
+// --- Database ---
+
+@Database(entities = [HistoryEntity::class, PasswordEntity::class], version = 1, exportSchema = false)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun pojieDao(): PojieDao
+
+    companion object {
+        @Volatile private var INSTANCE: AppDatabase? = null
+        fun getInstance(context: Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "pojie_history.db"
+                ).build()
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+}
+
+// --- Manager ---
+
+class PojieHistoryManager(context: Context) {
+    private val dao = AppDatabase.getInstance(context).pojieDao()
+    private val scope = CoroutineScope(Dispatchers.IO)
+
+    val historyFlow: StateFlow<List<PojieHistoryItem>> = dao.getAllHistoryFlow()
+        .map { list ->
+            list.map {
+                PojieHistoryItem(
+                    it.history.ssid,
+                    it.passwords.map { p -> p.password },
+                    it.history.progress,
+                    it.history.successfulPassword,
+                    it.history.lasttime
                 )
             }
-            _historyFlow.value = list
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
-    }
-
-    fun saveHistory(list: List<PojieHistoryItem>) {
-        val jsonArray = JSONArray()
-        list.forEach { item ->
-            val obj = JSONObject()
-            obj.put("ssid", item.ssid)
-            obj.put("progress", item.progress)
-            obj.put("successfulPassword", item.successfulPassword ?: JSONObject.NULL)
-            val pwdArray = JSONArray()
-            item.passwords.forEach { pwdArray.put(it) }
-            obj.put("passwords", pwdArray)
-            jsonArray.put(obj)
-        }
-        historyFile.writeText(jsonArray.toString())
-        _historyFlow.value = list
-    }
+        .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     fun addOrUpdateHistory(item: PojieHistoryItem) {
-        val currentList = _historyFlow.value.toMutableList()
-        val index = currentList.indexOfFirst { it.ssid == item.ssid }
-        if (index != -1) {
-            currentList[index] = item
-        } else {
-            currentList.add(0, item)
+        scope.launch {
+            val itemWithTime = item.copy(lasttime = System.currentTimeMillis())
+            dao.fullUpsert(itemWithTime)
         }
-        saveHistory(currentList)
+    }
+
+    fun updateProgressOnly(ssid: String, progress: Int) {
+        scope.launch {
+            dao.updateProgress(ssid, progress, System.currentTimeMillis())
+        }
     }
 
     fun deleteHistory(ssid: String) {
-        val currentList = _historyFlow.value.filter { it.ssid != ssid }
-        saveHistory(currentList)
+        scope.launch {
+            dao.deleteHistory(ssid)
+        }
     }
 }

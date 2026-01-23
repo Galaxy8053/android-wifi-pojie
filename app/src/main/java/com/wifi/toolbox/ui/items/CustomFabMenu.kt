@@ -1,4 +1,5 @@
 package com.wifi.toolbox.ui.items
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,8 +10,10 @@ import androidx.compose.ui.*
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 
 data class FabMenuItem(
     val label: String,
@@ -38,7 +41,7 @@ fun BoxScope.CustomFabMenu(
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                     if (expanded) TooltipAnchorPosition.Start else TooltipAnchorPosition.Above
                 ),
-                tooltip = { PlainTooltip { Text("更多操作") } },
+                tooltip = { PlainTooltip { Text(stringResource(R.string.tooltip_more_actions)) } },
                 state = rememberTooltipState(),
             ) {
                 ToggleFloatingActionButton(
@@ -69,6 +72,7 @@ fun BoxScope.CustomFabMenu(
             }
         },
     ) {
+        val closeMenuActionLabel = stringResource(R.string.acc_close_menu)
         items.forEachIndexed { i, item ->
             FloatingActionButtonMenuItem(
                 modifier = Modifier
@@ -77,7 +81,7 @@ fun BoxScope.CustomFabMenu(
                         isTraversalGroup = true
                         if (i == items.size - 1) {
                             customActions = listOf(
-                                CustomAccessibilityAction(label = "Close menu") {
+                                CustomAccessibilityAction(label = closeMenuActionLabel) {
                                     onCheckedChange(false); true
                                 }
                             )

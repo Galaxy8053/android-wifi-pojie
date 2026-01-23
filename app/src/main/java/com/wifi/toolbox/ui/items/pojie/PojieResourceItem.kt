@@ -3,22 +3,19 @@ package com.wifi.toolbox.ui.items.pojie
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieResource
 import com.wifi.toolbox.ui.items.TagItem
 import com.wifi.toolbox.ui.items.TagType
@@ -51,16 +48,16 @@ fun PojieResourceItem(
                     style = MaterialTheme.typography.bodyLarge
                 )
                 if (res.isBuiltin == 1) {
-                    TagItem("内置")
+                    TagItem(stringResource(R.string.tag_builtin))
                 } else if (res.isBuiltin == 2) {
-                    TagItem("覆写内置")
+                    TagItem(stringResource(R.string.tag_overwrite))
                 }
                 if (res.type == 1) {
-                    TagItem(text = "脚本", type = TagType.Tertiary)
+                    TagItem(text = stringResource(R.string.tag_script), type = TagType.Tertiary)
                 }
             }
             Text(
-                text = res.description ?: "无描述",
+                text = res.description ?: stringResource(R.string.no_description),
                 maxLines = 2,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

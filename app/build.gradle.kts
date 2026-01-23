@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-parcelize")
     id("com.mikepenz.aboutlibraries.plugin")
+    id("com.google.devtools.ksp") version "2.3.4"
 }
 
 android {
@@ -28,7 +29,7 @@ android {
         //noinspection ExpiredTargetSdkVersion 注:WifiManager需要
         targetSdk = 28
         versionCode = 4
-        versionName =  "v3.0.0_Alpha-05"
+        versionName = "v3.0.0_Alpha-05"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -118,6 +119,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(libs.aboutlibraries.core)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 }
 
 fun getAndIncrementBuildNumber(): Int {

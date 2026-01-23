@@ -1,6 +1,7 @@
 package com.wifi.toolbox.ui.items
 
 import android.content.pm.PackageManager
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import rikka.shizuku.Shizuku
 
@@ -14,7 +15,7 @@ fun checkShizukuUI(
             onSuccess()
             return true
         } else if (Shizuku.shouldShowRequestPermissionRationale()) {
-            app.alert("Shizuku", "当前已被始终拒绝，请手动授予")
+            app.alert(app.getString(R.string.shizuku), app.getString(R.string.permission_always_refuse))
         } else {
             app.shizuku.request{
                 onGranted()
@@ -24,9 +25,9 @@ fun checkShizukuUI(
     } catch (_: IllegalStateException) {
         try {
             app.packageManager.getPackageInfo("moe.shizuku.privileged.api", 0)
-            app.alert("Shizuku", "Shizuku服务未启动")
+            app.alert(app.getString(R.string.shizuku), app.getString(R.string.shizuku_not_running))
         } catch (_: PackageManager.NameNotFoundException) {
-            app.alert("Shizuku", "还没有安装Shizuku")
+            app.alert(app.getString(R.string.shizuku), app.getString(R.string.shizuku_not_installed))
         }
     }
     return false

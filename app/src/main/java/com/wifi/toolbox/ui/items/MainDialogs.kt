@@ -11,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.utils.EditorViewModel
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -35,7 +37,7 @@ fun MainDialogs(
             onDismissRequest = { app.ui.dismissAlert() }
         ) {
             TextButton(
-                text = "确定",
+                text = stringResource(R.string.btn_ok),
                 onClick = { app.ui.dismissAlert() },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -45,20 +47,20 @@ fun MainDialogs(
     if (editorViewModel.showExitConfirmDialog) {
         AlertDialog(
             onDismissRequest = { editorViewModel.showExitConfirmDialog = false },
-            title = { Text("提示") },
-            text = { Text("文档已修改，是否保存？") },
+            title = { Text(stringResource(R.string.default_alert_title)) },
+            text = { Text(stringResource(R.string.dialog_exit_confirm_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     val text = editorViewModel.editorInstance?.text.toString()
                     handleSave(text) {
                         editorViewModel.closeAndRelease { keyboardController?.hide() }
                     }
-                }) { Text("保存") }
+                }) { Text(stringResource(R.string.save)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     editorViewModel.closeAndRelease { keyboardController?.hide() }
-                }) { Text("不保存") }
+                }) { Text(stringResource(R.string.btn_save_not)) }
             }
         )
     }
@@ -66,13 +68,13 @@ fun MainDialogs(
     if (editorViewModel.errorMessage != null) {
         AlertDialog(
             onDismissRequest = { editorViewModel.errorMessage = null },
-            title = { Text("保存失败") },
+            title = { Text(stringResource(R.string.save_failed)) },
             text = { Text(editorViewModel.errorMessage ?: "") },
             confirmButton = {
                 TextButton(onClick = {
                     editorViewModel.errorMessage = null
                     editorViewModel.showExitConfirmDialog = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.btn_ok)) }
             }
         )
     }

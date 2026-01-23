@@ -13,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.LogView
 import com.wifi.toolbox.utils.*
@@ -44,6 +46,8 @@ fun ResourceSelectSheet(
         selected + unselected
     }
 
+    val recalculatingTip = stringResource(R.string.log_config_changed_recalculating)
+
     LaunchedEffect(selectedIds) {
         if (selectedIds.isEmpty()) {
             resultList = emptyList()
@@ -54,7 +58,7 @@ fun ResourceSelectSheet(
         isRunning = true
         resultList = emptyList()
         logState.clear()
-        logState.addLog("配置变更，重新计算中...")
+        logState.addLog(recalculatingTip)
 
         try {
             val selectedResources =
@@ -81,7 +85,7 @@ fun ResourceSelectSheet(
         sheetState = sheetState,
     ) {
         Text(
-            text = "选择密码本",
+            text = stringResource(R.string.title_select_password_resource),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(16.dp)
         )
@@ -127,7 +131,7 @@ fun ResourceSelectSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (showLog) "收起日志" else "展开日志",
+                            text = if (showLog) stringResource(R.string.btn_collapse_log) else stringResource(R.string.btn_expand_log),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(start = 4.dp)
@@ -154,9 +158,9 @@ fun ResourceSelectSheet(
                         }
                     ) {
                         Text(
-                            if (isRunning) "运行中..."
-                            else if (selectedIds.isEmpty()) "请选择"
-                            else "完成 (${resultList.size})"
+                            if (isRunning) stringResource(R.string.status_running_dots)
+                            else if (selectedIds.isEmpty()) stringResource(R.string.no_choose_tip)
+                            else stringResource(R.string.btn_finish_with_count, resultList.size)
                         )
                     }
                 }

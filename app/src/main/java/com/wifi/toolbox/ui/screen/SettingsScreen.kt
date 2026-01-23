@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.ColorLens
@@ -65,8 +66,25 @@ fun SettingsScreen(
     val settings = app.settings.global // 订阅全局状态
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val hiddenApiBypassValues = listOf("不使用", "LSPass", "HiddenApiBypass")
-    val darkThemeValues = listOf("跟随设备", "开启", "关闭")
+    val hiddenApiBypassValues = listOf(
+        stringResource(R.string.no_use),
+        stringResource(R.string.lspass), stringResource(R.string.hiddenapibypass)
+    )
+    val darkThemeValues = listOf(
+        stringResource(R.string.follow_system),
+        stringResource(R.string.always_on), stringResource(R.string.always_off)
+    )
+
+    val providerComponent = remember {
+        android.content.ComponentName(context, "com.wifi.toolbox.services.AppFileProvider")
+    }
+
+    var isProviderEnabled by remember {
+        mutableStateOf(
+            context.packageManager.getComponentEnabledSetting(providerComponent) ==
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        )
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -74,7 +92,10 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Column(modifier = Modifier.padding(0.dp, 8.dp)) {
-                        Text(text = "设置", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            text = stringResource(R.string.settings),
+                            style = MaterialTheme.typography.titleLarge
+                        )
                         Text(
                             text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.bodyMedium,
@@ -98,15 +119,15 @@ fun SettingsScreen(
                     .fillMaxSize()
             ) {
                 item {
-                    PreferenceCategory(title = { Text("主题") })
+                    PreferenceCategory(title = { Text(stringResource(R.string.theme)) })
 
                     SwitchPreference(
                         value = settings.dynamicColor,
                         onValueChange = { newValue ->
                             app.settings.update { it.copy(dynamicColor = newValue) }
                         },
-                        title = { Text("动态主题色（Android12+）") },
-                        summary = { Text("使用系统主题的动态颜色") },
+                        title = { Text(stringResource(R.string.dynamic_color)) },
+                        summary = { Text(stringResource(R.string.dynamic_color_tip)) },
                         icon = { Icon(Icons.Outlined.ColorLens, null) }
                     )
 
@@ -114,7 +135,7 @@ fun SettingsScreen(
                     var selectedColor by remember { mutableStateOf(Color(settings.dynamicColorSeed)) }
 
                     SuperDialog(
-                        title = "选择颜色",
+                        title = stringResource(R.string.choose_color),
                         show = mutableStateOf(showColorDialog),
                         onDismissRequest = { showColorDialog = false }
                     ) {
@@ -130,12 +151,12 @@ fun SettingsScreen(
                             ) {
                                 TextButton(
                                     modifier = Modifier.weight(1f),
-                                    text = "取消",
+                                    text = stringResource(R.string.btn_cancel),
                                     onClick = { showColorDialog = false }
                                 )
                                 TextButton(
                                     modifier = Modifier.weight(1f),
-                                    text = "确认",
+                                    text = stringResource(R.string.btn_confirm),
                                     colors = ButtonDefaults.textButtonColorsPrimary(),
                                     onClick = {
                                         showColorDialog = false
@@ -152,7 +173,7 @@ fun SettingsScreen(
                         exit = shrinkVertically()
                     ) {
                         Preference(
-                            title = { Text("颜色种子") },
+                            title = { Text(stringResource(R.string.color_seed)) },
                             icon = { Icon(Icons.Filled.FormatColorFill, null) },
                             summary = { Text(Color(settings.dynamicColorSeed).toHexString()) },
                             onClick = {
@@ -169,19 +190,22 @@ fun SettingsScreen(
                         },
                         values = darkThemeValues.indices.toList(),
                         valueToText = { AnnotatedString(darkThemeValues[it]) },
-                        title = { Text("深色主题") },
+                        title = { Text(stringResource(R.string.dark_theme)) },
                         summary = { Text(darkThemeValues[settings.darkTheme]) },
                         type = ListPreferenceType.DROPDOWN_MENU,
                         icon = { Icon(Icons.Filled.Brightness4, null) }
                     )
 
-                    PreferenceCategory(title = { Text("隐藏API调用") })
+                    PreferenceCategory(title = { Text(stringResource(R.string.use_hidden_api)) })
 
                     ListPreference(
                         value = settings.hiddenApiBypass,
                         onValueChange = { newValue ->
                             app.settings.update { it.copy(hiddenApiBypass = newValue) }
-                            app.ui.snackbar("重启应用生效", "重启") {
+                            app.ui.snackbar(
+                                context.getString(R.string.need_restart_app),
+                                context.getString(R.string.restart)
+                            ) {
                                 val restartIntent =
                                     context.packageManager.getLaunchIntentForPackage(context.packageName)
                                 context.startActivity(
@@ -194,10 +218,34 @@ fun SettingsScreen(
                         },
                         values = hiddenApiBypassValues.indices.toList(),
                         valueToText = { AnnotatedString(hiddenApiBypassValues[it]) },
-                        title = { Text("实现方式") },
+                        title = { Text(stringResource(R.string.hidden_api_method)) },
                         summary = { Text(hiddenApiBypassValues[settings.hiddenApiBypass]) },
                         type = ListPreferenceType.DROPDOWN_MENU,
                         icon = { Icon(Icons.Filled.Api, null) }
+                    )
+
+                    PreferenceCategory(title = { Text(stringResource(R.string.debug)) })
+
+                    SwitchPreference(
+                        value = isProviderEnabled,
+                        onValueChange = { newValue ->
+                            val setting = if (newValue) {
+                                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                            } else {
+                                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                            }
+
+                            context.packageManager.setComponentEnabledSetting(
+                                providerComponent,
+                                setting,
+                                android.content.pm.PackageManager.DONT_KILL_APP
+                            )
+
+                            isProviderEnabled = newValue
+                        },
+                        title = { Text(stringResource(R.string.show_file_in_system)) },
+                        summary = { Text(stringResource(R.string.show_file_in_system_tip)) },
+                        icon = { Icon(Icons.Default.FolderOpen, null) }
                     )
                 }
             }

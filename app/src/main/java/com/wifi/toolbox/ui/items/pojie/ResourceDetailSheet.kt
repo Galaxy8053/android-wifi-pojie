@@ -33,7 +33,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieResource
 import com.wifi.toolbox.ui.items.TagItem
 import kotlinx.coroutines.launch
@@ -88,7 +90,7 @@ fun ResourceDetailContent(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text(text = "资源详情", style = MaterialTheme.typography.headlineSmall)
+        Text(text = stringResource(R.string.resource_details), style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -99,7 +101,7 @@ fun ResourceDetailContent(
                 .weight(1f)
                 .padding(vertical = 4.dp)) {
                 Text(
-                    text = "名称",
+                    text = stringResource(R.string.label_name),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -110,12 +112,12 @@ fun ResourceDetailContent(
                         modifier = Modifier.weight(1f, false)
                     )
                     if (resource.type == 1) {
-                        TagItem(text = "脚本", modifier = Modifier.padding(4.dp))
+                        TagItem(text = stringResource(R.string.tag_script), modifier = Modifier.padding(4.dp))
                     }
                 }
             }
             Column(Modifier.weight(1f)) {
-                DetailItem("ID", resource.id)
+                DetailItem(stringResource(R.string.id), resource.id)
             }
         }
 
@@ -126,16 +128,16 @@ fun ResourceDetailContent(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Column(Modifier.weight(1f)) {
-                DetailItem("作者", resource.author)
+                DetailItem(stringResource(R.string.developer), resource.author)
             }
             Column(Modifier.weight(1f)) {
-                DetailItem("版本", resource.version)
+                DetailItem(stringResource(R.string.version), resource.version)
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        DetailItem("描述", resource.description)
+        DetailItem(stringResource(R.string.description), resource.description)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -149,12 +151,12 @@ fun ResourceDetailContent(
                     ) {
                         Icon(Icons.Default.Lock, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("内置资源")
+                        Text(stringResource(R.string.builtin_resource))
                     }
                     Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.Edit, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("覆写资源")
+                        Text(stringResource(R.string.overwrite_resource))
                     }
                 }
 
@@ -165,12 +167,12 @@ fun ResourceDetailContent(
                     ) {
                         Icon(Icons.Default.SettingsBackupRestore, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("还原内置")
+                        Text(stringResource(R.string.restore_builtin))
                     }
                     Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.Edit, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("编辑覆写")
+                        Text(stringResource(R.string.edit_overwrite))
                     }
                 }
 
@@ -182,12 +184,12 @@ fun ResourceDetailContent(
                     ) {
                         Icon(Icons.Default.Delete, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("删除")
+                        Text(stringResource(R.string.delete))
                     }
                     Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.Edit, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("编辑")
+                        Text(stringResource(R.string.edit))
                     }
                 }
             }

@@ -13,8 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.WifiIcon
 
@@ -47,6 +49,7 @@ fun WifiPojieItem(
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            @Suppress("DEPRECATION")
             val levelIndex =
                 if (wifi.level == 0) 0 else WifiManager.calculateSignalLevel(wifi.level, 5)
             WifiIcon(modifier = Modifier.size(28.dp), level = levelIndex)
@@ -79,7 +82,7 @@ private fun WifiItemMainHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(text = wifi.ssid, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
             Text(
-                text = if (wifi.level == 0) "未知" else "${wifi.level} dBm",
+                text = if (wifi.level == 0) stringResource(R.string.unknown) else stringResource(R.string.dbm_string, wifi.level),
                 style = MaterialTheme.typography.bodySmall
             )
             AnimatedVisibility(
@@ -108,7 +111,7 @@ private fun WifiItemMainHeader(
             )
             Spacer(Modifier.size(4.dp))
             Text(
-                text = if (isRunning) "停止" else "开始",
+                text = if (isRunning) stringResource(R.string.btn_stop) else stringResource(R.string.btn_start),
                 color = if (isRunning) Color.White else MaterialTheme.colorScheme.onPrimary
             )
         }
@@ -144,7 +147,7 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "运行中",
+                        stringResource(R.string.status_running),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight(600),
                         color = MaterialTheme.colorScheme.tertiary,
@@ -176,12 +179,12 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        if (total > 0) "$current / $total" else "-/-",
+                        if (total > 0) stringResource(R.string.progress_format, current, total) else stringResource(R.string.progress_unknown),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                     )
                     Text(
-                        if (total > 0) "${"%.1f".format(progress * 100)}%" else "-%",
+                        if (total > 0) stringResource(R.string.percentage_format, progress * 100) else stringResource(R.string.percentage_unknown),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )

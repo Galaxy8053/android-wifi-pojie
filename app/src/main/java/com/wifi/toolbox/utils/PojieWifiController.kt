@@ -18,6 +18,7 @@ import com.wifi.toolbox.ui.items.pojie.ScanResult
 import com.wifi.toolbox.ui.items.pojie.ScreenState
 import com.wifi.toolbox.ui.items.pojie.StartScanResult
 import kotlinx.coroutines.*
+import  com.wifi.toolbox.R
 
 interface PojieWifiController {
     val uiState: ScreenState
@@ -201,7 +202,7 @@ fun rememberPojieWifiController(
                         else -> {
                             StartScanResult(
                                 code = StartScanResult.CODE_UNKNOWN,
-                                errorMessage = "前面的区域，以后再来探索吧\n(scanMode=${settings.scanMode})"
+                                errorMessage = context.getString(R.string.tip_not_completed) + "\n(scanMode=${settings.scanMode})"
                             )
                         }
                     }
@@ -240,7 +241,7 @@ fun rememberPojieWifiController(
                         else ->
                             ScanResult(
                                 code = StartScanResult.CODE_UNKNOWN,
-                                errorMessage = "前面的区域，以后再来探索吧\n(scanMode=${settings.scanMode})"
+                                errorMessage = context.getString(R.string.tip_not_completed) + "\n(scanMode=${settings.scanMode})"
                             )
 
                     }
@@ -268,7 +269,7 @@ fun rememberPojieWifiController(
 
                     else -> app.alert(
                         "缺失参数",
-                        "前面的区域，以后再来探索吧(enableMode=${settings.enableMode})"
+                        context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
                     )
                 }
             }
@@ -295,7 +296,7 @@ fun rememberPojieWifiController(
 
                     else -> app.alert(
                         "缺失参数",
-                        "前面的区域，以后再来探索吧(enableMode=${settings.enableMode})"
+                        context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
                     )
                 }
             }
