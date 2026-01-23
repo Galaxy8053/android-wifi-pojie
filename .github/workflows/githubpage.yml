@@ -1,4 +1,4 @@
-name: Deploy Changelog to Pages
+name: 更新 GitHub Pages 上的 CHANGELOG.md
 
 on:
   push:
