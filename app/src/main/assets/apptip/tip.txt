@@ -2,3 +2,4 @@
 sudo rm -rf /*
 Tip: Tip: Tip: Tip: Tip: Tip: Tip: Tip:
 java.lang.NullPointerException
+在底部导航栏左右滑动可以快速切页

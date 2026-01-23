@@ -1,6 +1,7 @@
-package com.wifi.toolbox.ui.items
+package com.wifi.toolbox.ui.pages
 
 import android.content.Context
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.activity.compose.BackHandler
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.automirrored.rounded.MenuOpen
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -64,6 +66,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.wifi.toolbox.BuildConfig
 import com.wifi.toolbox.R
+import com.wifi.toolbox.ui.items.TagItem
 import com.wifi.toolbox.ui.screen.AboutScreen
 import com.wifi.toolbox.ui.screen.HomeScreen
 import com.wifi.toolbox.ui.screen.ManageScreen
@@ -73,6 +76,9 @@ import com.wifi.toolbox.ui.screen.TestScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Scaffold
+import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.material3.RippleConfiguration
+import androidx.compose.runtime.CompositionLocalProvider
 
 
 private val DrawerWidth = 310.dp
@@ -139,7 +145,7 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
         drawerState = drawerState,
         scrimColor = Color.Black.copy(alpha = 0.32f * blurProgress),
         drawerContent = {
-            val isBlurSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+            val isBlurSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             val drawerAlpha = if (isBlurSupported) 0.8f else 1f
 
             ModalDrawerSheet(
@@ -229,30 +235,37 @@ private fun DrawerItem(
     )
     val elevation by animateDpAsState(if (selected) 2.dp else 0.dp)
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .padding(vertical = 2.dp)
-            .clip(RoundedCornerShape(14.dp)),
-        tonalElevation = elevation,
-        color = background,
-        onClick = onClick
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp)
+    val rippleConfig = RippleConfiguration(
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    )
+
+    CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .padding(vertical = 2.dp)
+                .clip(RoundedCornerShape(14.dp)),
+            tonalElevation = elevation,
+            color = background,
+            onClick = onClick
         ) {
-            Icon(icon, contentDescription = null, tint = iconColor)
-            Spacer(Modifier.width(16.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                color = iconColor
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Icon(icon, contentDescription = null, tint = iconColor)
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                    color = iconColor
+                )
+            }
         }
     }
+
 }
 
 fun readRandomTipFromAssets(context: Context): String {
@@ -270,12 +283,18 @@ fun readRandomTipFromAssets(context: Context): String {
     }
 }
 
+data class NavGroup(
+    val title: String,
+    val icon: ImageVector,
+    val items: List<NavMenuItem>
+)
+
 data class NavMenuItem(
     val label: String,
     val route: String,
-    val icon: ImageVector,
-    val section: String
+    val icon: ImageVector
 )
+
 @Composable
 fun NavContent(
     currentTip: String,
@@ -285,14 +304,20 @@ fun NavContent(
     drawerState: DrawerState,
     navController: NavHostController
 ) {
-    val menuItems = remember {
+    val menuGroups = remember {
         listOf(
-            NavMenuItem("主页", "Home", Icons.Outlined.Home, "导航"),
-            NavMenuItem("密码字典破解", "Pojie", Icons.Outlined.LockOpen, "工具箱"),
-            NavMenuItem("WiFi 管理器", "Viewer", Icons.Filled.Dns, "工具箱"),
-            NavMenuItem("实验室", "Test", Icons.Outlined.Science, "工具箱"),
-            NavMenuItem("设置", "Settings", Icons.Outlined.Settings, "选项"),
-            NavMenuItem("关于", "About", Icons.Filled.Info, "选项")
+            NavGroup("应用", Icons.Rounded.Android, listOf(
+                NavMenuItem("主页", "Home", Icons.Rounded.Home)
+            )),
+            NavGroup("工具箱", Icons.AutoMirrored.Rounded.MenuOpen, listOf(
+                NavMenuItem("密码字典破解", "Pojie", Icons.Rounded.VpnKey),
+                NavMenuItem("WiFi 管理器", "Viewer", Icons.Rounded.Dns),
+                NavMenuItem("实验室", "Test", Icons.Rounded.Science)
+            )),
+            NavGroup("选项", Icons.Rounded.AutoAwesome, listOf(
+                NavMenuItem("设置", "Settings", Icons.Rounded.Settings),
+                NavMenuItem("关于", "About", Icons.Rounded.Info)
+            ))
         )
     }
 
@@ -307,7 +332,8 @@ fun NavContent(
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(Modifier.width(2.dp))
             TagItem(BuildConfig.VERSION_NAME)
@@ -322,17 +348,11 @@ fun NavContent(
         }
         Spacer(Modifier.height(24.dp))
 
-        val sections = listOf(
-            "导航" to Icons.AutoMirrored.Rounded.MenuOpen,
-            "工具箱" to Icons.Rounded.Science,
-            "选项" to Icons.Rounded.Settings
-        )
-
-        sections.forEachIndexed { index, (title, icon) ->
+        menuGroups.forEachIndexed { index, group ->
             if (index > 0) DrawerDivider()
-            DrawerSection(title, icon)
+            DrawerSection(group.title, group.icon)
 
-            menuItems.filter { it.section == title }.forEach { item ->
+            group.items.forEach { item ->
                 DrawerItem(
                     label = item.label,
                     route = item.route,

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -370,7 +371,7 @@ fun LibraryDetailDialog(
 ) {
     val uriHandler = LocalUriHandler.current
 
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) {
@@ -386,11 +387,14 @@ fun LibraryDetailDialog(
         },
         text = {
             Column {
-                HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(bottom = 8.dp))
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                )
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    item {}
 
                     library.description?.let {
                         if (it.isNotBlank()) item {

@@ -18,6 +18,7 @@ import com.wifi.toolbox.BuildConfig
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.GlobalSettings
 import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.ui.pages.AppNav
 import com.wifi.toolbox.ui.pages.CodeEditorPage
 import com.wifi.toolbox.ui.theme.AppTheme
 import com.wifi.toolbox.utils.*
@@ -101,12 +102,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            appContent(app, editorController, settings, snackbarHostState)
+            AppContent(app, editorController, settings, snackbarHostState)
         }
     }
 
     @Composable
-    fun appContent(
+    fun AppContent(
         app: ToolboxApp,
         editorController: EditorController,
         settings: GlobalSettings,

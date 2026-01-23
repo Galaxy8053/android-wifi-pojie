@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,7 +47,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,6 +57,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -68,12 +72,10 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,9 +87,19 @@ import com.mikepenz.aboutlibraries.Libs
 import com.mikepenz.aboutlibraries.util.withContext
 import com.wifi.toolbox.BuildConfig
 import com.wifi.toolbox.R
+import com.wifi.toolbox.ui.items.HyperOSBackground
 import com.wifi.toolbox.ui.items.TagItem
+import com.wifi.toolbox.ui.items.TagType
 import com.wifi.toolbox.ui.pages.LicensePage
 import kotlinx.parcelize.Parcelize
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,51 +113,17 @@ fun AboutScreen(onMenuClick: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     var showCreditsDialog by rememberSaveable { mutableStateOf(false) }
 
-    val creditProjects = remember {
-        listOf(
-            CreditProject(
-                "Hail",
-                "参考完成设置页的布局\n借鉴了使用Shizuku访问隐藏API的原理",
-                "https://github.com/aistra0528/Hail",
-                "GPL-3.0 license"
-            ),
-            CreditProject(
-                "WiFiList",
-                "借鉴了通过Shizuku在Android11+设备上免root获取已保存wifi的明文密码的实现方式",
-                "https://github.com/zacharee/WiFiList",
-            ),
-            CreditProject(
-                "Native Detector",
-                "借鉴了可折叠卡片的布局样式并以此为基础稍作修改",
-                "https://github.com/reveny/Android-Native-Root-Detector",
-                "MIT License"
-            ),
-            CreditProject(
-                "幻影WIFI",
-                "借鉴了使用应用API来连接wifi以及监听wifi连接状态的实现方式\n密码字典破解的脚本类型密码由高级字典启发而来"
-            ),
-            CreditProject(
-                "HyperCeiler",
-                "v2版本之后的关于页面参考了此应用的布局样式",
-                "https://github.com/ReChronoRain/HyperCeiler"
-            ),
-            CreditProject(
-                "LSPosed",
-                "密码字典破解的页面参考了此应用的导航栏样式",
-                "https://github.com/JingMatrix/LSPosed",
-            ),
-            CreditProject(
-                "清浊",
-                "参考了UI架构及侧边导航栏布局",
-                "https://www.dircleaner.com/"
-            ),
-            CreditProject(
-                "Easter Eggs",
-                "借鉴了折叠块的小箭头以及点按区域设计",
-                "https://github.com/hushenghao/AndroidEasterEggs",
-                "Apache License 2.0"
-            )
-        )
+    val creditProjects by produceState(initialValue = emptyList()) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                val jsonString =
+                    context.assets.open("thanks.json").bufferedReader().use { it.readText() }
+                val type = object : TypeToken<List<CreditProject>>() {}.type
+                Gson().fromJson<List<CreditProject>>(jsonString, type)
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
     }
 
     LaunchedEffect(Unit) { visible = true }
@@ -175,12 +153,22 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainer)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.about_bg),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.5f)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.about_bg),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds
+            )
+
+            Box(modifier = Modifier.matchParentSize()) {
+                HyperOSBackground()
+            }
+        }
 
         Scaffold(
             topBar = {
@@ -259,7 +247,7 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                             )
                             if (BuildConfig.DEBUG) {
-                                TagItem("DEBUG")
+                                TagItem(text = "DEBUG", type = TagType.Primary)
                             }
                         }
                     }
@@ -326,11 +314,12 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                 }
 
                 Text(
-                    text = "© 2025-$buildYear WiFi Toolbox · Apache-2.0",
+                    text = "© 2025-$buildYear WiFi Toolbox - Apache 2.0",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
                 )
 
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
@@ -401,7 +390,7 @@ fun AboutScreen(onMenuClick: () -> Unit) {
 
                             Text(
                                 "• 参考：指看着界面直接仿写\n" +
-                                        "• 借鉴：指 CtrlCV 代码然后洗稿",
+                                        "• 借鉴：指CtrlCV代码然后洗稿当作自己的",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -432,24 +421,31 @@ fun AboutScreen(onMenuClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsGroup(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 8.dp),
-            content = content
-        )
+    val rippleConfig = RippleConfiguration(
+        color = MaterialTheme.colorScheme.onSurface
+    )
+
+    CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(vertical = 8.dp),
+                content = content
+            )
+        }
     }
 }
 
@@ -501,8 +497,8 @@ fun ClickableInfoItem(
 data class CreditProject(
     val name: String,
     val description: String,
-    val link: String = "",
-    val license: String = ""
+    val link: String? = null,
+    val license: String? = null
 ) : android.os.Parcelable
 
 @Composable
@@ -518,7 +514,7 @@ fun CreditProjectCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
-        onClick = { expanded.value = !expanded.value  }
+        onClick = { expanded.value = !expanded.value }
     ) {
         Column {
             Row(
@@ -564,7 +560,7 @@ fun CreditProjectCard(
                         lineHeight = 16.sp
                     )
                 }
-                if (project.link.isNotBlank() || project.license.isNotBlank()) {
+                if (project.link != null || project.license != null) {
                     val angle by animateFloatAsState(if (expanded.value) 180f else 0f)
                     Icon(
                         imageVector = Icons.Rounded.KeyboardArrowDown,
@@ -576,7 +572,7 @@ fun CreditProjectCard(
 
             AnimatedVisibility(visible = expanded.value) {
                 Column {
-                    if (project.link.isNotBlank()) {
+                    if (project.link != null) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 14.dp),
                             thickness = 0.5.dp,
@@ -588,7 +584,7 @@ fun CreditProjectCard(
                             onClick = { uriHandler.openUri(project.link) }
                         )
                     }
-                    if (project.license.isNotBlank()) {
+                    if (project.license != null) {
                         ProjectDetailItem(
                             icon = Icons.Default.Gavel,
                             text = project.license
