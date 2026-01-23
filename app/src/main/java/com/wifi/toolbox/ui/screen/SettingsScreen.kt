@@ -2,6 +2,7 @@ package com.wifi.toolbox.ui.screen
 
 import android.app.ActivityOptions
 import android.content.Intent
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.FormatColorFill
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +57,7 @@ import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.ColorPicker
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.extra.SuperDialog
+import androidx.core.os.LocaleListCompat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +66,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as ToolboxApp
-    val settings = app.settings.global // 订阅全局状态
+    val settings = app.settings.global
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val hiddenApiBypassValues = listOf(
@@ -73,6 +76,14 @@ fun SettingsScreen(
     val darkThemeValues = listOf(
         stringResource(R.string.follow_system),
         stringResource(R.string.always_on), stringResource(R.string.always_off)
+    )
+
+    val languageValues = listOf(
+        stringResource(R.string.follow_system),
+        "中文（简体）",
+        "中文（繁體）",
+        "文言（華夏）",
+        "English"
     )
 
     val providerComponent = remember {
@@ -246,6 +257,30 @@ fun SettingsScreen(
                         title = { Text(stringResource(R.string.show_file_in_system)) },
                         summary = { Text(stringResource(R.string.show_file_in_system_tip)) },
                         icon = { Icon(Icons.Default.FolderOpen, null) }
+                    )
+
+                    PreferenceCategory(title = { Text(stringResource(R.string.language_settings)) })
+
+                    ListPreference(
+                        value = settings.language,
+                        onValueChange = { index ->
+                            app.settings.update { it.copy(language = index) }
+
+                            val appLocale: LocaleListCompat = when (index) {
+                                1 -> LocaleListCompat.forLanguageTags("zh-CN")
+                                2 -> LocaleListCompat.forLanguageTags("zh-TW")
+                                3 -> LocaleListCompat.forLanguageTags("lzh-CN")
+                                4 -> LocaleListCompat.forLanguageTags("en")
+                                else -> LocaleListCompat.getEmptyLocaleList()
+                            }
+                            AppCompatDelegate.setApplicationLocales(appLocale)
+                        },
+                        values = languageValues.indices.toList(),
+                        valueToText = { AnnotatedString(languageValues[it]) },
+                        title = { Text(stringResource(R.string.language)) },
+                        summary = { Text(languageValues[settings.language]) },
+                        type = ListPreferenceType.DROPDOWN_MENU,
+                        icon = { Icon(Icons.Default.Language, null) }
                     )
                 }
             }

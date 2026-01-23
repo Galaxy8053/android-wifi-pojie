@@ -81,6 +81,7 @@ android {
 dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.ui)
+    implementation(libs.androidx.appcompat)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.api)

@@ -99,7 +99,7 @@ fun RunListView(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "wifi列表",
+            text = stringResource(R.string.wifi_list),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f)
         )
@@ -119,7 +119,7 @@ fun RunListView(
                         modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize)
                     )
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("刷新")
+                    Text(stringResource(R.string.refresh))
                 }
             },
             trailingButton = {
@@ -205,7 +205,7 @@ fun RunListView(
                     0 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                         ContainedLoadingIndicator(Modifier.size(60.dp))
                     }
-                    1 -> { /* 空列表 UI 保持原样 */ }
+                    1 -> { /* 空列表 UI */ }
                     2 -> Column(Modifier.fillMaxSize()) {
                         AnimatedVisibility(
                             visible = controller.isScanning,
@@ -224,8 +224,8 @@ fun RunListView(
                                 when (item) {
                                     is PojieListItem.WifiConnectedBanner -> {
                                         BannerTip(
-                                            title = "当前已连接wifi",
-                                            text = "可能对扫描及运行造成干扰，点击断开",
+                                            title = stringResource(R.string.current_connected_wifi),
+                                            text = stringResource(R.string.interference_tip),
                                             trailingIcon = true,
                                             modifier = Modifier
                                                 .padding(4.dp)
@@ -235,7 +235,7 @@ fun RunListView(
                                     }
                                     is PojieListItem.SendFailedBanner -> {
                                         BannerTip(
-                                            text = "扫描请求发送失败，当前查看的是旧数据",
+                                            text = stringResource(R.string.scan_failed_old_data),
                                             modifier = Modifier
                                                 .padding(4.dp)
                                                 .animateItem()
@@ -253,8 +253,8 @@ fun RunListView(
                                     }
                                     is PojieListItem.ManualInputBanner -> {
                                         BannerTip(
-                                            title = "没有找到想要的wifi？",
-                                            text = "点击手动输入名称",
+                                            title = stringResource(R.string.manual_input_tip_title),
+                                            text = stringResource(R.string.manual_input_tip_content),
                                             trailingIcon = true,
                                             modifier = Modifier
                                                 .padding(8.dp)
@@ -276,48 +276,34 @@ fun RunListView(
                 StartScanResult.CODE_SCAN_FAIL -> Icons.Rounded.ErrorOutline
                 StartScanResult.CODE_LOCATION_NOT_ENABLED -> Icons.Rounded.LocationOff
                 StartScanResult.CODE_LOCATION_NOT_ALLOWED -> Icons.Rounded.WrongLocation
-
                 else -> Icons.Rounded.BugReport
             }
             ErrorTip(icon, s.message) {
                 when (s.type) {
                     StartScanResult.CODE_WIFI_NOT_ENABLED -> {
-                        Button(onClick = {
-                            controller.enableWifi()
-                        }) {
+                        Button(onClick = { controller.enableWifi() }) {
                             Text(stringResource(R.string.enable_wifi))
                         }
                     }
-
                     StartScanResult.CODE_LOCATION_NOT_ENABLED -> {
-                        Button(onClick = {
-                            controller.enableLocation()
-                        }) {
+                        Button(onClick = { controller.enableLocation() }) {
                             Text(stringResource(R.string.enable_location))
                         }
                     }
-
                     StartScanResult.CODE_LOCATION_NOT_ALLOWED -> {
-                        Button(onClick = {
-                            controller.applyLocation()
-                        }) {
+                        Button(onClick = { controller.applyLocation() }) {
                             Text(stringResource(R.string.apply_permission))
                         }
                     }
-
                     else -> {
-                        Button(onClick = {
-                            controller.reload()
-                        }) {
+                        Button(onClick = { controller.reload() }) {
                             Text(stringResource(R.string.retry))
                         }
                     }
                 }
             }
         }
-
         else -> {}
-
     }
 
     if (showManualInput) {
@@ -329,9 +315,7 @@ fun RunListView(
                     value = manualSsid,
                     onValueChange = { manualSsid = it },
                     label = { Text(stringResource(R.string.ssid)) },
-                    supportingText = {
-                        Text(stringResource(R.string.input_ssid_tip))
-                    },
+                    supportingText = { Text(stringResource(R.string.input_ssid_tip)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

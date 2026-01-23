@@ -20,7 +20,8 @@ class SettingsManager(context: Context) {
             dynamicColor = prefs.getBoolean(GlobalSettings.DYNAMIC_COLOR, true),
             dynamicColorSeed = prefs.getInt(GlobalSettings.DYNAMIC_COLOR_SEED, defaultColorSeed.toArgb()),
             darkTheme = prefs.getInt(GlobalSettings.DARK_THEME, 0),
-            hiddenApiBypass = prefs.getInt(GlobalSettings.HIDDEN_API_BYPASS, 1)
+            hiddenApiBypass = prefs.getInt(GlobalSettings.HIDDEN_API_BYPASS, 1),
+            language = prefs.getInt(GlobalSettings.LANGUAGE, 0)
         )
     }
 
@@ -32,6 +33,7 @@ class SettingsManager(context: Context) {
             putInt(GlobalSettings.DYNAMIC_COLOR_SEED, new.dynamicColorSeed)
             putInt(GlobalSettings.DARK_THEME, new.darkTheme)
             putInt(GlobalSettings.HIDDEN_API_BYPASS, new.hiddenApiBypass)
+            putInt(GlobalSettings.LANGUAGE, new.language)
         }
     }
 }

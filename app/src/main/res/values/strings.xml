@@ -128,7 +128,6 @@
     <string name="tip_string">Tip: %1$s</string>
     <string name="error_scan_wifi_no_permission">E: 缺少位置权限，无法扫描wifi</string>
     <string name="device_control">设备控制</string>
-    <string name="enable_wifiz">打开wifi</string>
     <string name="enable_wifi_success">wifi开启成功</string>
     <string name="request_sent">请求已发送</string>
     <string name="disable_wifi">关闭wifi</string>
@@ -137,7 +136,6 @@
     <string name="scan_wifi">扫描wifi</string>
     <string name="get_saved_wifi">获取已保存wifi</string>
     <string name="connect_wifi">连接wifi</string>
-    <string name="ssidz">名称</string>
     <string name="password">密码</string>
     <string name="connect_wifi_failed">请求发送失败，请先手动忘记此网络</string>
     <string name="wifimanager">WifiManager (API 28)</string>
@@ -155,21 +153,18 @@
     <string name="location_not_enabled">系统定位服务未开启，请在设置中打开</string>
     <string name="wifi_not_enabled">Wi-Fi未开启，请打开Wi-Fi</string>
     <string name="please_grant_loaction_permission">请先允许定位权限</string>
-    <string name="location_not_enabledz">系统定位服务未开启，请在设置中打开</string>
     <string name="saved_wifi_list_head">=== 已保存的wifi列表 ===</string>
     <string name="saved_wifi_item">ID: %-4s 名称: %-16s</string>
     <string name="get_failed">E: 获取失败</string>
     <string name="check_id">查看当前身份</string>
-    <string name="fix_hidden_api">修复Shizuku隐藏API调用</string>
-    <string name="connect_wifiz">连接wifi</string>
+    <string name="fix_hidden_api">修复Shizuku隐藏API调用</string>/
     <string name="wait_10s">等待10秒</string>
     <string name="wifi_logcat">wifi logcat</string>
     <string name="input_command">输入命令</string>
     <string name="command">命令</string>
     <string name="normal">Normal</string>
     <string name="shizuku">Shizuku</string>
-    <string name="root">Root</string>
-    <string name="run_methodz">运行方式</string>
+    <string name="root">Root</string>/
     <string name="run_completed_tip">[执行完毕 退出码%1$d]</string>
     <string name="run_command_string">执行命令：%1$s</string>
     <string name="run_command_string_shizuku">使用Shizuku执行：%1$s</string>
@@ -194,8 +189,7 @@
     <string name="apply_sent">申请已发送</string>
     <string name="apply_permission_failed_tip">E: 申请权限失败: %1$s</string>
     <string name="permission">权限</string>
-    <string name="check_status">检查状态</string>
-    <string name="apply_permissionz">申请权限</string>
+    <string name="check_status">检查状态</string>/
     <string name="enable_wifi_failed">打开wifi失败</string>
     <string name="disable_wifi_failed">关闭wifi失败</string>
     <string name="disconnect_failed">断开失败</string>
@@ -316,4 +310,18 @@
     <string name="btn_save_not">不保存</string>
     <string name="shizuku_not_installed">还没有安装Shizuku</string>
     <string name="shizuku_not_running">Shizuku服务未启动</string>
+    <string name="language_settings">语言设置</string>
+    <string name="language">语言</string>
+    <string name="refresh">刷新</string>
+    <string name="wifi_list">wifi列表</string>
+    <string name="current_connected_wifi">当前已连接wifi</string>
+    <string name="interference_tip">可能对扫描及运行造成干扰，点击断开</string>
+    <string name="scan_failed_old_data">扫描请求发送失败，当前查看的是旧数据</string>
+    <string name="manual_input_tip_title">没有找到想要的wifi？</string>
+    <string name="manual_input_tip_content">点击手动输入名称</string>
+    <string name="script_error_prefix">脚本执行错误: %1$s</string>
+    <string name="execution_exception">执行异常: %1$s</string>
+    <string name="executing_resource">执行第[%1$d]个：%2$s(%3$s)</string>
+    <string name="execution_finished_item">第[%1$d]个执行完毕，共%2$d条</string>
+    <string name="all_execution_finished">全部执行完毕，共%1$d条</string>
 </resources>

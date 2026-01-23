@@ -22,7 +22,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                         modifier = Modifier.padding(0.dp, 8.dp)
                     ) {
                         Text(
-                            text = "主页",
+                            text = stringResource(R.string.home),
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(

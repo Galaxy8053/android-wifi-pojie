@@ -646,7 +646,7 @@ object ShizukuUtil {
                     }
                 }
             }
-            if (resultList.isEmpty()) throw Exception("获取到的wifi列表为空")
+            if (resultList.isEmpty()) throw Exception("empty list")
             return resultList.distinctBy { it.networkId }
         } catch (e: Exception) {
             //这里兜个底，密码不要了其实也可以的

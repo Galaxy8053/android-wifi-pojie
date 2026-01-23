@@ -24,9 +24,11 @@ import com.wifi.toolbox.ui.theme.AppTheme
 import com.wifi.toolbox.utils.*
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 
-
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private var pendingNavigation = mutableStateOf<String?>(null)
     private val editorViewModel: EditorViewModel by viewModels()
 
@@ -71,9 +73,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        val app = applicationContext as ToolboxApp
+        val langIndex = app.settings.global.language
+
+        val targetLocale: LocaleListCompat = when (langIndex) {
+            1 -> LocaleListCompat.forLanguageTags("zh-CN")
+            2 -> LocaleListCompat.forLanguageTags("zh-TW")
+            3 -> LocaleListCompat.forLanguageTags("lzh-CN")
+            4 -> LocaleListCompat.forLanguageTags("en")
+            else -> LocaleListCompat.getEmptyLocaleList()
+        }
+
+        if (AppCompatDelegate.getApplicationLocales() != targetLocale) {
+            AppCompatDelegate.setApplicationLocales(targetLocale)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
+            } else {
+                @Suppress("DEPRECATION")
+                overridePendingTransition(0, 0)
+            }
+        }
+
         super.onCreate(savedInstanceState)
+
         handleCrashRecovery(intent)
         handleIntent(intent)
 

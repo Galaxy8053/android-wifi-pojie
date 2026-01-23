@@ -216,7 +216,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
 
                 SectionDivider()
 
-                SectionTitle(title = stringResource(R.string.connect_wifiz), icon = Icons.Default.InsertLink)
+                SectionTitle(title = stringResource(R.string.connect_wifi), icon = Icons.Default.InsertLink)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -228,7 +228,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text(stringResource(R.string.ssidz)) },
+                            label = { Text(stringResource(R.string.ssid)) },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp)

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.Wifi工具箱" parent="android:Theme.Material.Light.NoActionBar" >
+    <style name="Theme.Wifi工具箱" parent="Theme.AppCompat.DayNight.NoActionBar" >
         <item name="android:windowBackground">@drawable/splash</item>
     </style>
 </resources>

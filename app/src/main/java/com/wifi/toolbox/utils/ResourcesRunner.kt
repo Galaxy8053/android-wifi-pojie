@@ -2,6 +2,7 @@ package com.wifi.toolbox.utils
 
 import android.content.Context
 import android.webkit.*
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.WifiInfo
 import kotlinx.coroutines.*
 import kotlin.coroutines.resume
@@ -39,9 +40,9 @@ object ResourcesRunner {
         val webView = WebView(context)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
-        webView.settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onConsoleMessage(cm: android.webkit.ConsoleMessage?): Boolean {
+            override fun onConsoleMessage(cm: ConsoleMessage?): Boolean {
                 cm?.message()?.let { onLog(it) }
                 return true
             }
@@ -71,7 +72,7 @@ object ResourcesRunner {
                                     $jsContent
                                 })();
                             } catch(e) {
-                                console.log("脚本执行错: " + e.message);
+                                console.log("${context.getString(R.string.script_error_prefix, "")}" + e.message);
                             } finally {
                                 window.task.finish();
                             }
@@ -87,7 +88,7 @@ object ResourcesRunner {
                 }
             }
         } catch (e: Exception) {
-            onLog("执行异常: ${e.message}")
+            onLog(context.getString(R.string.execution_exception, e.message))
         } finally {
             webView.destroy()
         }
@@ -104,7 +105,7 @@ object ResourcesRunner {
         val allLists = mutableListOf<List<String>>()
         resources.forEachIndexed { index, res ->
             onProgress(index + 1, resources.size)
-            onLog("执行第[${index + 1}]个：${res.name}(${res.id})")
+            onLog(context.getString(R.string.executing_resource, index + 1, res.name, res.id))
             val items = when (res.type) {
                 0 -> res.content.split("\n")
                     .map { it.trim() }
@@ -113,7 +114,7 @@ object ResourcesRunner {
                 else -> emptyList()
             }.distinct()
             allLists.add(items)
-            onLog("第[${index + 1}]个执行完毕，共${items.size}条")
+            onLog(context.getString(R.string.execution_finished_item, index + 1, items.size))
         }
         val combined = mutableListOf<String>()
         val iterators = allLists.map { it.iterator() }.toMutableList()
@@ -125,7 +126,7 @@ object ResourcesRunner {
             }
         }
         val result = combined.asSequence().distinct().filter { it.length >= 8 }.toList()
-        onLog("全部执行完毕，共${result.size}条")
+        onLog(context.getString(R.string.all_execution_finished, result.size))
         result
     }
 }
