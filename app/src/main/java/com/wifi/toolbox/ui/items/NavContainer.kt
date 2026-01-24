@@ -35,6 +35,7 @@ fun NavContainer(
     pages: List<NavPage>,
     selectedIndex: Int,
     onIndexChange: (Int) -> Unit,
+    defaultIndex: Int = 0,
     subtitle: String,
     onMenuClick: () -> Unit
 ) {
@@ -52,8 +53,8 @@ fun NavContainer(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     var navBarWidth by remember { mutableFloatStateOf(0f) }
 
-    BackHandler(enabled = localCurrentIndex != 0) {
-        onIndexChange(0)
+    BackHandler(enabled = localCurrentIndex != defaultIndex) {
+        onIndexChange(defaultIndex)
     }
 
     Scaffold(

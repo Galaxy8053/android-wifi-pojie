@@ -56,6 +56,7 @@ android {
 
         buildFeatures {
             buildConfig = true
+            aidl = true
         }
     }
 
@@ -123,9 +124,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
     implementation(libs.core)
     implementation(libs.service)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation("com.github.topjohnwu.libsu:nio:6.0.0")
 }
 
 fun getAndIncrementBuildNumber(): Int {

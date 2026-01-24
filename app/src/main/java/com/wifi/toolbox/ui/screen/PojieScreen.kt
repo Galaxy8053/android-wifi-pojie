@@ -162,6 +162,7 @@ fun PojieScreenContent(
             selectedIndex = selectedPageIndex,
             onIndexChange = onPageIndexChange,
             subtitle = stringResource(R.string.wifi_pojie_name),
+            defaultIndex = 2,
             onMenuClick = onMenuClick
         )
         ResourceSelectSheet(

@@ -11,12 +11,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,7 +28,6 @@ import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.BannerTip
 import com.wifi.toolbox.utils.ApiUtil
 import com.wifi.toolbox.utils.PojieWifiController
-import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
 
 data class StartScanResult(
@@ -314,7 +316,7 @@ fun RunListView(
                 StartScanResult.CODE_SCAN_FAIL -> Icons.Rounded.ErrorOutline
                 StartScanResult.CODE_LOCATION_NOT_ENABLED -> Icons.Rounded.LocationOff
                 StartScanResult.CODE_LOCATION_NOT_ALLOWED -> Icons.Rounded.WrongLocation
-                StartScanResult.CODE_NOT_SET -> Icons.Rounded.Settings
+                StartScanResult.CODE_NOT_SET -> painterResource(id = R.drawable.ic_settings_b_roll)
                 else -> Icons.Rounded.BugReport
             }
             ErrorTip(
@@ -419,7 +421,7 @@ fun RunListView(
 
 @Composable
 fun ErrorTip(
-    icon: ImageVector,
+    icon: Any,
     message: String,
     refreshTrigger: Long = 0L,
     onManualInputClick: () -> Unit,
@@ -440,19 +442,32 @@ fun ErrorTip(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(96.dp),
-                tint = MaterialTheme.colorScheme.outlineVariant
-            )
+            when (icon) {
+                is ImageVector -> {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(96.dp),
+                        tint = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+                is Painter -> {
+                    Icon(
+                        painter = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(96.dp),
+                        tint = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
                 message,
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically

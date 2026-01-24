@@ -74,7 +74,8 @@ fun HomePageContent(
     ) {
         FoldCard(
             title = stringResource(R.string.run_config),
-            icon = Icons.Rounded.SettingsSuggest,
+            icon = Icons.Rounded.BorderColor,
+            iconSize = 18.dp,
             expanded = expandedParamsCard,
             onExpandedChange = {
                 expandedParamsCard = it
@@ -152,9 +153,9 @@ fun HomePagePreview() {
         override fun fetchResults(): ScanResult = ScanResult(
             code = ScanResult.CODE_SUCCESS,
             wifiList = listOf(
-                WifiInfo("ChinaNet-Preview", -40, "","[WPA2-PSK-CCMP]"),
-                WifiInfo("TP-LINK_5G", -60, "","[WPA2-PSK-CCMP]"),
-                WifiInfo("Xiaomi_Router", -75, "","[WPA2-PSK-CCMP]")
+                WifiInfo("ChinaNet-Preview", -40, "", "[WPA2-PSK-CCMP]"),
+                WifiInfo("TP-LINK_5G", -60, "", "[WPA2-PSK-CCMP]"),
+                WifiInfo("Xiaomi_Router", -75, "", "[WPA2-PSK-CCMP]")
             )
         )
 

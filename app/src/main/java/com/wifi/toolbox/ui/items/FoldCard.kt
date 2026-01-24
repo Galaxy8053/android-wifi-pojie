@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 
@@ -35,6 +36,7 @@ fun FoldCard(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    iconSize: Dp? = null,
     content: @Composable () -> Unit
 ) {
     Surface(
@@ -58,6 +60,7 @@ fun FoldCard(
                 if (icon != null) {
                     Icon(
                         imageVector = icon,
+                        modifier = Modifier.size(iconSize ?: 22.dp),
                         contentDescription = null
                     )
                 }
