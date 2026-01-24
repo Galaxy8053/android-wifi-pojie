@@ -53,8 +53,8 @@
     <string name="found_history_tip">Previous progress detected. Resume?</string>
     <string name="ssid_string">SSID: %1$s</string>
     <string name="wifi_pojie_history_progress_number">Last: No. %1$d / %2$d</string>
-    <string name="re_select_password">Reselect Dictionary</string>
-    <string name="use_latest_password">Resume Progress</string>
+    <string name="re_select_password">Reselect</string>
+    <string name="use_latest_password">Resume</string>
     <string name="progress_number_string">Progress: %1$d / %2$d</string>
     <string name="last_try_time_string">Last attempt: %1$s</string>
     <string name="delete">Delete</string>

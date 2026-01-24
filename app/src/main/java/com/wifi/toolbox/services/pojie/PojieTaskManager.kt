@@ -1,6 +1,5 @@
 package com.wifi.toolbox.services.pojie
 
-import android.util.Log
 import androidx.compose.runtime.snapshotFlow
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
@@ -176,6 +175,7 @@ class PojieTaskManager(
             service.getString(R.string.notif_attempting, task.ssid, currentPass)
         )
 
+        val startTime = System.currentTimeMillis()
         val deferredResult = scope.async(Dispatchers.Default) {
             try {
                 worker.performTaskLogic(app, SinglePojieTask(task.ssid, currentPass), settings)
@@ -192,11 +192,12 @@ class PojieTaskManager(
         } catch (_: CancellationException) {
             taskResult = SinglePojieTask.RESULT_CANCEL
             deferredResult.cancel()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             taskResult = SinglePojieTask.RESULT_ERROR
         }
 
-        handleAttemptResult(app, task, currentPass, taskResult, settings)
+        val duration = System.currentTimeMillis() - startTime
+        handleAttemptResult(app, task, currentPass, taskResult, settings, duration)
         currentWorkingSsid = null
         currentWorkerJob = null
     }
@@ -206,10 +207,11 @@ class PojieTaskManager(
         task: PojieRunInfo,
         pass: String,
         result: Int,
-        settings: PojieSettings
+        settings: PojieSettings,
+        duration: Long
     ) {
         val timeTag = worker.getLogTime()
-        val resultStr = service.getString(
+        var resultStr = service.getString(
             when (result) {
                 SinglePojieTask.RESULT_CANCEL -> R.string.result_interrupted
                 SinglePojieTask.RESULT_SUCCESS -> R.string.result_success
@@ -218,6 +220,10 @@ class PojieTaskManager(
                 SinglePojieTask.RESULT_ERROR_TRANSIENT -> R.string.result_rejected
                 else -> R.string.result_error
             }
+        )
+        if (result == SinglePojieTask.RESULT_FAILED) resultStr += app.getString(
+            R.string.fail_time,
+            duration
         )
 
         app.logState.setLine(
@@ -251,6 +257,7 @@ class PojieTaskManager(
         if (result == SinglePojieTask.RESULT_CANCEL) return
 
         when (result) {
+            //连接成功：记录历史并停止任务
             SinglePojieTask.RESULT_SUCCESS -> {
                 service.log("${service.getString(R.string.result_success)}: (${task.ssid}, $pass)")
                 app.pojieHistory.addOrUpdateHistory(
@@ -265,13 +272,33 @@ class PojieTaskManager(
                 app.pojieTask.stop(task.ssid)
             }
 
+            //达到失败标志：记录用时、准备下一个
             SinglePojieTask.RESULT_FAILED -> {
                 processTaskCompletion(app, task.ssid)
-                app.pojieTask.edit(task.ssid) { it.copy(retryCount = 0) }
+                app.pojieTask.edit(task.ssid) {
+                    val newList = it.costList.toMutableList().apply {
+                        add(duration)
+                        if (size > 20) removeAt(0)
+                    }
+                    it.copy(
+                        costList = newList,
+                        retryCount = 0
+                    )
+                }
             }
 
+            //超时、路由器拒绝接入：重试、记录时间
             SinglePojieTask.RESULT_TIMEOUT, SinglePojieTask.RESULT_ERROR_TRANSIENT -> {
-                app.pojieTask.edit(task.ssid) { it.copy(retryCount = it.retryCount + 1) }
+                app.pojieTask.edit(task.ssid) {
+                    val newList = it.costList.toMutableList()
+                    if (newList.isNotEmpty()) {
+                        newList[newList.size - 1] += duration
+                    }
+                    it.copy(
+                        costList = newList,
+                        retryCount = it.retryCount + 1
+                    )
+                }
                 getTask(app, task.ssid)?.let { updated ->
                     if (app.pojieConfig.retryCountType <= 5 && updated.retryCount > app.pojieConfig.retryCountType) {
                         app.pojieTask.edit(task.ssid) { it.copy(retryCount = 0) }

@@ -82,6 +82,7 @@ class MainActivity : AppCompatActivity() {
             2 -> LocaleListCompat.forLanguageTags("zh-TW")
             3 -> LocaleListCompat.forLanguageTags("lzh-CN")
             4 -> LocaleListCompat.forLanguageTags("en")
+            5 -> LocaleListCompat.forLanguageTags("lzh-EN")
             else -> LocaleListCompat.getEmptyLocaleList()
         }
 

@@ -83,7 +83,8 @@ fun SettingsScreen(
         "中文（简体）",
         "中文（繁體）",
         "文言（華夏）",
-        "English"
+        "English",
+        "Chinglish"
     )
 
     val providerComponent = remember {
@@ -271,6 +272,7 @@ fun SettingsScreen(
                                 2 -> LocaleListCompat.forLanguageTags("zh-TW")
                                 3 -> LocaleListCompat.forLanguageTags("lzh-CN")
                                 4 -> LocaleListCompat.forLanguageTags("en")
+                                5 -> LocaleListCompat.forLanguageTags("lzh-EN")
                                 else -> LocaleListCompat.getEmptyLocaleList()
                             }
                             AppCompatDelegate.setApplicationLocales(appLocale)

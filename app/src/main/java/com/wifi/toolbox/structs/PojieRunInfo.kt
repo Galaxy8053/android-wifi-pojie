@@ -9,5 +9,6 @@ data class PojieRunInfo(
     val tryIndex: Int = 0,
     val lastTryTime: Long = 0,
     val retryCount: Int = 0,
-    val textTip: String = ToolboxApp.instance.getString(R.string.task_preparing)
+    val textTip: String = ToolboxApp.instance.getString(R.string.task_preparing),
+    val costList: List<Long> = emptyList()
 )

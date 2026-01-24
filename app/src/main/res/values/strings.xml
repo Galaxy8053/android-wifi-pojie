@@ -293,9 +293,8 @@
     <string name="btn_start">开始</string>
     <string name="btn_stop">停止</string>
     <string name="status_running">运行中</string>
-    <string name="progress_format">%1$d / %2$d</string>
+    <string name="progress_format">%1$d / %2$d (%3$.1f%%)</string>
     <string name="progress_unknown">-/-</string>
-    <string name="percentage_format">%1$.1f%%</string>
     <string name="percentage_unknown">-%</string>
     <string name="tooltip_more_actions">更多操作</string>
     <string name="acc_close_menu">关闭菜单</string>
@@ -324,4 +323,6 @@
     <string name="executing_resource">执行第[%1$d]个：%2$s(%3$s)</string>
     <string name="execution_finished_item">第[%1$d]个执行完毕，共%2$d条</string>
     <string name="all_execution_finished">全部执行完毕，共%1$d条</string>
+    <string name="fail_time">(%1$d ms)</string>
+    <string name="run_speed_minute">%1$d/m</string>
 </resources>

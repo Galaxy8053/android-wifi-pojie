@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.WifiIcon
 
@@ -82,7 +83,10 @@ private fun WifiItemMainHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(text = wifi.ssid, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
             Text(
-                text = if (wifi.level == 0) stringResource(R.string.unknown) else stringResource(R.string.dbm_string, wifi.level),
+                text = if (wifi.level == 0) stringResource(R.string.unknown) else stringResource(
+                    R.string.dbm_string,
+                    wifi.level
+                ),
                 style = MaterialTheme.typography.bodySmall
             )
             AnimatedVisibility(
@@ -179,12 +183,23 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        if (total > 0) stringResource(R.string.progress_format, current, total) else stringResource(R.string.progress_unknown),
+                        if (total > 0) stringResource(
+                            R.string.progress_format,
+                            current,
+                            total,
+                            progress * 100
+                        )
+                        else stringResource(R.string.progress_unknown),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
+                    val speed = calculateAverageSpeed(it)
                     Text(
-                        if (total > 0) stringResource(R.string.percentage_format, progress * 100) else stringResource(R.string.percentage_unknown),
+                        text = if (speed != null) {
+                            stringResource(R.string.run_speed_minute, speed.toInt())
+                        } else {
+                            "-/m"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
@@ -198,4 +213,14 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
             }
         }
     }
+}
+
+fun calculateAverageSpeed(task: PojieRunInfo): Double? {
+    val costs = task.costList
+    if (costs.size < 5) return null
+
+    val avgMs = costs.average()
+    if (avgMs <= 0) return null
+
+    return 60000.0 / avgMs
 }
