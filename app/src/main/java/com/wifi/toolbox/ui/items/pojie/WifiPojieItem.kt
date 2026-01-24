@@ -133,6 +133,9 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
             val total = it.tryList.size
             val current = it.tryIndex
             val progress = if (total > 0) current.toFloat() / total else 0f
+            val avgMs = calculateAverageSpeed(it)
+            val speed = if (avgMs != null && avgMs > 0) 60000.0 / avgMs else null
+
 
             Column(
                 modifier = Modifier
@@ -154,8 +157,7 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                         stringResource(R.string.status_running),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight(600),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.weight(1f)
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
                 if (total == 0) {
@@ -193,7 +195,6 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
-                    val speed = calculateAverageSpeed(it)
                     Text(
                         text = if (speed != null) {
                             stringResource(R.string.run_speed_minute, speed.toInt())
@@ -204,23 +205,51 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
-                Text(
-                    text = it.textTip,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
-                    maxLines = 1
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ){
+                    Text(
+                        text = it.textTip,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = avgMs?.let { ms ->
+                            "预计剩余 ${formatDuration(ms * (it.tryList.size - it.tryIndex))}"
+                        } ?: "计算剩余时间…",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                    )
+                }
             }
         }
     }
 }
 
-fun calculateAverageSpeed(task: PojieRunInfo): Double? {
+fun calculateAverageSpeed(task: PojieRunInfo): Long? {
     val costs = task.costList
     if (costs.size < 5) return null
 
     val avgMs = costs.average()
     if (avgMs <= 0) return null
 
-    return 60000.0 / avgMs
+    return avgMs.toLong()
+}
+
+fun formatDuration(ms: Long): String {
+    val totalMinutes = ms / 60000
+    if (totalMinutes < 1) return "<1m"
+
+    val days = totalMinutes / (24 * 60)
+    val hours = (totalMinutes % (24 * 60)) / 60
+    val minutes = totalMinutes % 60
+
+    val result = mutableListOf<String>()
+    if (days > 0) result.add("${days}d")
+    if (hours > 0 || days > 0) result.add("${hours}h")
+    result.add("${minutes}m")
+
+    return result.joinToString(" ")
 }

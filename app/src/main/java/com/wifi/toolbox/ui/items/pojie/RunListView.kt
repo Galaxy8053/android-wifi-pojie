@@ -24,6 +24,7 @@ import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.BannerTip
 import com.wifi.toolbox.utils.ApiUtil
 import com.wifi.toolbox.utils.PojieWifiController
+import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
 
 data class StartScanResult(
@@ -54,10 +55,22 @@ data class ScanResult(
 
 sealed class PojieListItem {
     abstract val key: String
-    data object WifiConnectedBanner : PojieListItem() { override val key = "item-top1" }
-    data object SendFailedBanner : PojieListItem() { override val key = "item-top2" }
-    data class WifiItem(val wifi: WifiInfo) : PojieListItem() { override val key = "item-${wifi.ssid}" }
-    data object ManualInputBanner : PojieListItem() { override val key = "item-bottom" }
+
+    data object WifiConnectedBanner : PojieListItem() {
+        override val key = "item-top1"
+    }
+
+    data object SendFailedBanner : PojieListItem() {
+        override val key = "item-top2"
+    }
+
+    data class WifiItem(val wifi: WifiInfo) : PojieListItem() {
+        override val key = "item-${wifi.ssid}"
+    }
+
+    data object ManualInputBanner : PojieListItem() {
+        override val key = "item-bottom"
+    }
 }
 
 sealed class ScreenState : Parcelable {
@@ -205,7 +218,10 @@ fun RunListView(
                     0 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                         ContainedLoadingIndicator(Modifier.size(60.dp))
                     }
-                    1 -> { /* 空列表 UI */ }
+
+                    1 -> { /* 空列表 UI */
+                    }
+
                     2 -> Column(Modifier.fillMaxSize()) {
                         AnimatedVisibility(
                             visible = controller.isScanning,
@@ -233,6 +249,7 @@ fun RunListView(
                                             onBannerClick = { controller.disconnectWifi() }
                                         )
                                     }
+
                                     is PojieListItem.SendFailedBanner -> {
                                         BannerTip(
                                             text = stringResource(R.string.scan_failed_old_data),
@@ -241,6 +258,7 @@ fun RunListView(
                                                 .animateItem()
                                         )
                                     }
+
                                     is PojieListItem.WifiItem -> {
                                         WifiPojieItem(
                                             modifier = Modifier.animateItem(),
@@ -251,6 +269,7 @@ fun RunListView(
                                             finishedInfo = controller.finishedInfo[item.wifi.ssid]
                                         )
                                     }
+
                                     is PojieListItem.ManualInputBanner -> {
                                         BannerTip(
                                             title = stringResource(R.string.manual_input_tip_title),
@@ -278,31 +297,59 @@ fun RunListView(
                 StartScanResult.CODE_LOCATION_NOT_ALLOWED -> Icons.Rounded.WrongLocation
                 else -> Icons.Rounded.BugReport
             }
-            ErrorTip(icon, s.message) {
+            ErrorTip(
+                icon = icon,
+                message = s.message,
+                refreshTrigger =controller.refreshErrorKey,
+                onManualInputClick = { showManualInput = true }) {
                 when (s.type) {
                     StartScanResult.CODE_WIFI_NOT_ENABLED -> {
                         Button(onClick = { controller.enableWifi() }) {
+                            Icon(Icons.Rounded.Wifi, null, Modifier.size(ButtonDefaults.IconSize))
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.enable_wifi))
                         }
                     }
+
                     StartScanResult.CODE_LOCATION_NOT_ENABLED -> {
                         Button(onClick = { controller.enableLocation() }) {
+                            Icon(
+                                Icons.Rounded.LocationOn,
+                                null,
+                                Modifier.size(ButtonDefaults.IconSize)
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.enable_location))
                         }
                     }
+
                     StartScanResult.CODE_LOCATION_NOT_ALLOWED -> {
                         Button(onClick = { controller.applyLocation() }) {
+                            Icon(
+                                Icons.Rounded.VerifiedUser,
+                                null,
+                                Modifier.size(ButtonDefaults.IconSize)
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.apply_permission))
                         }
                     }
+
                     else -> {
                         Button(onClick = { controller.reload() }) {
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                null,
+                                Modifier.size(ButtonDefaults.IconSize)
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.retry))
                         }
                     }
                 }
             }
         }
+
         else -> {}
     }
 
@@ -321,7 +368,7 @@ fun RunListView(
                 )
             },
             confirmButton = {
-                TextButton(
+                Button(
                     enabled = manualSsid.isNotBlank(),
                     onClick = {
                         onStartClick(manualSsid)
@@ -331,32 +378,60 @@ fun RunListView(
                 ) { Text(stringResource(R.string.btn_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showManualInput = false }) { Text(stringResource(R.string.btn_cancel)) }
+                TextButton(onClick = {
+                    showManualInput = false
+                }) { Text(stringResource(R.string.btn_cancel)) }
             }
         )
     }
 }
 
 @Composable
-fun ErrorTip(icon: ImageVector, message: String, button: @Composable (() -> Unit)? = null) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            Modifier.size(96.dp),
-            tint = MaterialTheme.colorScheme.outlineVariant
-        )
-        Text(
-            message, style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        if (button != null) {
-            Spacer(Modifier.height(8.dp))
-            button()
+fun ErrorTip(
+    icon: ImageVector,
+    message: String,
+    refreshTrigger: Long = 0L,
+    onManualInputClick: () -> Unit,
+    button: @Composable (RowScope.() -> Unit)? = null
+) {
+    AnimatedContent(
+        targetState = refreshTrigger,
+        transitionSpec = {
+            (fadeIn(animationSpec = tween(300)) +
+                    slideInVertically(animationSpec = tween(400, easing = LinearOutSlowInEasing)) { 40 })
+                .togetherWith(fadeOut(animationSpec = snap()))
+        },
+        label = "ErrorTipAnimation"
+    ) { _ ->
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(96.dp),
+                tint = MaterialTheme.colorScheme.outlineVariant
+            )
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
+            Spacer(Modifier.height(24.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(onClick = onManualInputClick) {
+                    Icon(Icons.Rounded.Edit, null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(stringResource(R.string.manual_input))
+                }
+                button?.invoke(this)
+            }
         }
     }
 }

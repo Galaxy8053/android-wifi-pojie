@@ -100,7 +100,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                 logState.addLog(context.getString(R.string.permission_always_refuse))
             } else {
                 Shizuku.requestPermission(REQUEST_PERMISSION_CODE)
-                logState.addLog(context.getString(R.string.apply_sent))
+                logState.addLog(context.getString(R.string.request_sent))
             }
         } catch (e: IllegalStateException) {
             logState.addLog(context.getString(R.string.apply_permission_failed_tip, e.message))
@@ -144,14 +144,14 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                             context,
                             logState,
                             context.getString(R.string.enable_wifi_failed)
-                        ) { ShizukuUtil.setWifiEnabled(true); logState.addLog(context.getString(R.string.apply_sent)) }
+                        ) { ShizukuUtil.setWifiEnabled(true); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                     ActionChip(stringResource(R.string.disable_wifi), Icons.Filled.WifiOff) {
                         shizukuAction(
                             context,
                             logState,
                             context.getString(R.string.disable_wifi_failed)
-                        ) { ShizukuUtil.setWifiEnabled(false); logState.addLog(context.getString(R.string.apply_sent)) }
+                        ) { ShizukuUtil.setWifiEnabled(false); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                     ActionChip(stringResource(R.string.scan_wifi), Icons.Filled.Radar) {
                         scope.launch {
@@ -196,21 +196,21 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                             context,
                             logState,
                             context.getString(R.string.disconnect_failed)
-                        ) { ShizukuUtil.disconnectWifi(); logState.addLog(context.getString(R.string.apply_sent)) }
+                        ) { ShizukuUtil.disconnectWifi(); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                     ActionChip(stringResource(R.string.lock_screen), Icons.Filled.Lock) {
                         shizukuAction(
                             context,
                             logState,
                             context.getString(R.string.lock_screen_failed)
-                        ) { ShizukuUtil.lookScreen(); logState.addLog(context.getString(R.string.apply_sent)) }
+                        ) { ShizukuUtil.lookScreen(); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                     ActionChip(stringResource(R.string.max_volume), Icons.AutoMirrored.Filled.VolumeUp) {
                         shizukuAction(
                             context,
                             logState,
                             context.getString(R.string.set_volume_failed)
-                        ) { ShizukuUtil.setMediaVolumeMax(); logState.addLog(context.getString(R.string.apply_sent)) }
+                        ) { ShizukuUtil.setMediaVolumeMax(); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                 }
 
@@ -267,7 +267,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                                 context.getString(R.string.connect_wifi_failed_general)
                             ) {
                                 ShizukuUtil.connectToWifi(name, password)
-                                logState.addLog(context.getString(R.string.apply_sent))
+                                logState.addLog(context.getString(R.string.request_sent))
                             }
                         },
                         modifier = Modifier

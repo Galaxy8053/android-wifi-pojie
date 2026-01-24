@@ -212,7 +212,7 @@
     <string name="resource_normal">Normal</string>
     <string name="resource_normal_desc">General format, one password per line</string>
     <string name="resource_script_desc">Dynamic password generation via JS</string>
-    <string name="import_external">Import External</string>
+    <string name="import_external">Import</string>
     <string name="continue_text">Continue</string>
     <string name="new_resource">New Resource</string>
     <string name="edit_resource">Edit Resource</string>

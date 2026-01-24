@@ -186,7 +186,6 @@
     <string name="shizuku_pre_v11_not_supported">E: 不支持Shizuku pre-v11</string>
     <string name="permission_already_granted_tip">权限已经授予，无需重复申请</string>
     <string name="permission_always_refuse">当前已被始终拒绝</string>
-    <string name="apply_sent">申请已发送</string>
     <string name="apply_permission_failed_tip">E: 申请权限失败: %1$s</string>
     <string name="permission">权限</string>
     <string name="check_status">检查状态</string>/
@@ -217,7 +216,7 @@
     <string name="resource_normal">普通</string>
     <string name="resource_normal_desc">通用格式，一行一个密码</string>
     <string name="resource_script_desc">使用JS脚本动态生成密码本</string>
-    <string name="import_external">导入外部</string>
+    <string name="import_external">导入</string>
     <string name="continue_text">继续</string>
     <string name="new_resource">新建资源</string>
     <string name="edit_resource">编辑资源</string>
@@ -325,4 +324,6 @@
     <string name="all_execution_finished">全部执行完毕，共%1$d条</string>
     <string name="fail_time">(%1$d ms)</string>
     <string name="run_speed_minute">%1$d/m</string>
+    <string name="manual_input">手动输入</string>
+
 </resources>

@@ -236,6 +236,31 @@ fun SettingsScreen(
                         icon = { Icon(Icons.Filled.Api, null) }
                     )
 
+                    PreferenceCategory(title = { Text(stringResource(R.string.language_settings)) })
+
+                    ListPreference(
+                        value = settings.language,
+                        onValueChange = { index ->
+                            app.settings.update { it.copy(language = index) }
+
+                            val appLocale: LocaleListCompat = when (index) {
+                                1 -> LocaleListCompat.forLanguageTags("zh-CN")
+                                2 -> LocaleListCompat.forLanguageTags("zh-TW")
+                                3 -> LocaleListCompat.forLanguageTags("lzh-CN")
+                                4 -> LocaleListCompat.forLanguageTags("en")
+                                5 -> LocaleListCompat.forLanguageTags("lzh-EN")
+                                else -> LocaleListCompat.getEmptyLocaleList()
+                            }
+                            AppCompatDelegate.setApplicationLocales(appLocale)
+                        },
+                        values = languageValues.indices.toList(),
+                        valueToText = { AnnotatedString(languageValues[it]) },
+                        title = { Text(stringResource(R.string.language)) },
+                        summary = { Text(languageValues[settings.language]) },
+                        type = ListPreferenceType.ALERT_DIALOG,
+                        icon = { Icon(Icons.Default.Language, null) }
+                    )
+
                     PreferenceCategory(title = { Text(stringResource(R.string.debug)) })
 
                     SwitchPreference(
@@ -258,31 +283,6 @@ fun SettingsScreen(
                         title = { Text(stringResource(R.string.show_file_in_system)) },
                         summary = { Text(stringResource(R.string.show_file_in_system_tip)) },
                         icon = { Icon(Icons.Default.FolderOpen, null) }
-                    )
-
-                    PreferenceCategory(title = { Text(stringResource(R.string.language_settings)) })
-
-                    ListPreference(
-                        value = settings.language,
-                        onValueChange = { index ->
-                            app.settings.update { it.copy(language = index) }
-
-                            val appLocale: LocaleListCompat = when (index) {
-                                1 -> LocaleListCompat.forLanguageTags("zh-CN")
-                                2 -> LocaleListCompat.forLanguageTags("zh-TW")
-                                3 -> LocaleListCompat.forLanguageTags("lzh-CN")
-                                4 -> LocaleListCompat.forLanguageTags("en")
-                                5 -> LocaleListCompat.forLanguageTags("lzh-EN")
-                                else -> LocaleListCompat.getEmptyLocaleList()
-                            }
-                            AppCompatDelegate.setApplicationLocales(appLocale)
-                        },
-                        values = languageValues.indices.toList(),
-                        valueToText = { AnnotatedString(languageValues[it]) },
-                        title = { Text(stringResource(R.string.language)) },
-                        summary = { Text(languageValues[settings.language]) },
-                        type = ListPreferenceType.DROPDOWN_MENU,
-                        icon = { Icon(Icons.Default.Language, null) }
                     )
                 }
             }

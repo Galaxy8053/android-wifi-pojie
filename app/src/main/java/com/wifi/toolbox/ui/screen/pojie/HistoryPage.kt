@@ -120,7 +120,6 @@ fun HistoryItem(
                     )
                 }
             }
-            if (item.password != null) Spacer(Modifier.height(2.dp))
             Text(
                 text = stringResource(
                     R.string.progress_number_string,
