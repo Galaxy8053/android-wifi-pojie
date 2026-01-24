@@ -31,18 +31,22 @@ import com.wifi.toolbox.R
 fun PojieScreen(onMenuClick: () -> Unit) {
     val context = LocalContext.current
     val app = remember { context.applicationContext as? ToolboxApp }
-
+    var selectedPageIndex by rememberSaveable { mutableIntStateOf(2) }
     var pojieSettings by rememberPojieSettings(context)
 
     val controller = if (app != null) {
-        rememberPojieWifiController(context, app, pojieSettings)
+        rememberPojieWifiController(
+            context = context, app = app,
+            settings = pojieSettings,
+            onChangePage = { selectedPageIndex = it },
+        )
     } else {
         remember {
             object : PojieWifiController {
                 override val uiState = ScreenState.Success(true)
                 override val isScanning = false
                 override val trigger = 0
-                override val refreshErrorKey=0L
+                override val refreshErrorKey = 0L
                 override val runningTasks = emptyList<PojieRunInfo>()
                 override val finishedInfo = SnapshotStateMap<String, String>()
                 override fun reload() {}
@@ -51,6 +55,7 @@ fun PojieScreen(onMenuClick: () -> Unit) {
                 override fun applyLocation() {}
                 override fun enableLocation() {}
                 override fun disconnectWifi() {}
+                override fun gotoSettings() {}
             }
         }
     }
@@ -60,7 +65,9 @@ fun PojieScreen(onMenuClick: () -> Unit) {
         app = app,
         pojieSettings = pojieSettings,
         pojieWifiController = controller,
-        onSettingsUpdate = { pojieSettings = it }
+        onSettingsUpdate = { pojieSettings = it },
+        selectedPageIndex = selectedPageIndex,
+        onPageIndexChange = { selectedPageIndex = it },
     )
 }
 
@@ -71,7 +78,9 @@ fun PojieScreenContent(
     app: ToolboxApp?,
     pojieSettings: PojieSettings,
     pojieWifiController: PojieWifiController,
-    onSettingsUpdate: (PojieSettings) -> Unit
+    onSettingsUpdate: (PojieSettings) -> Unit,
+    selectedPageIndex: Int,
+    onPageIndexChange: (Int) -> Unit,
 ) {
     val context = LocalContext.current
     var currentTargetSsid by rememberSaveable { mutableStateOf("") }
@@ -81,9 +90,10 @@ fun PojieScreenContent(
 
     var showHistoryConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
-    val historyItem = remember(currentTargetSsid, app?.pojieHistory?.historyFlow?.collectAsState()?.value) {
-        app?.pojieHistory?.historyFlow?.value?.find { it.ssid == currentTargetSsid }
-    }
+    val historyItem =
+        remember(currentTargetSsid, app?.pojieHistory?.historyFlow?.collectAsState()?.value) {
+            app?.pojieHistory?.historyFlow?.value?.find { it.ssid == currentTargetSsid }
+        }
 
     val pages = remember(pojieSettings, pojieWifiController, showResourcesFabDialog) {
         listOf(
@@ -98,13 +108,13 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name =  context.getString(R.string.hitsory)
+                override val name = context.getString(R.string.hitsory)
                 override val selectedIcon = Icons.Filled.History
                 override val unselectedIcon = Icons.Outlined.History
                 override val content = @Composable { HistoryPage() }
             },
             object : NavPage {
-                override val name =  context.getString(R.string.run)
+                override val name = context.getString(R.string.run)
                 override val selectedIcon = Icons.Filled.Home
                 override val unselectedIcon = Icons.Outlined.Home
                 override val content = @Composable {
@@ -115,7 +125,8 @@ fun PojieScreenContent(
                                 onStartClick = { ssid ->
                                     currentTargetSsid = ssid
                                     // 如果历史记录中有这个 SSID 且还没跑完
-                                    val hasHistory = app?.pojieHistory?.historyFlow?.value?.any { it.ssid == ssid } == true
+                                    val hasHistory =
+                                        app?.pojieHistory?.historyFlow?.value?.any { it.ssid == ssid } == true
                                     if (hasHistory) {
                                         showHistoryConfirmDialog = true
                                     } else {
@@ -129,7 +140,7 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name =  context.getString(R.string.settings)
+                override val name = context.getString(R.string.settings)
                 override val selectedIcon = Icons.Filled.Settings
                 override val unselectedIcon = Icons.Outlined.Settings
                 override val content = @Composable {
@@ -137,7 +148,7 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name =  context.getString(R.string.help)
+                override val name = context.getString(R.string.help)
                 override val selectedIcon = Icons.Filled.Info
                 override val unselectedIcon = Icons.Outlined.Info
                 override val content = @Composable { HelpPage() }
@@ -146,13 +157,19 @@ fun PojieScreenContent(
     }
 
     Box(Modifier.fillMaxSize()) {
-        NavContainer(pages, 2, stringResource(R.string.wifi_pojie_name), onMenuClick)
+        NavContainer(
+            pages = pages,
+            selectedIndex = selectedPageIndex,
+            onIndexChange = onPageIndexChange,
+            subtitle = stringResource(R.string.wifi_pojie_name),
+            onMenuClick = onMenuClick
+        )
         ResourceSelectSheet(
             show = showResourceSheet,
             onDismiss = { showResourceSheet = false },
             wifiInfo = WifiInfo(
                 ssid = currentTargetSsid,
-                bssid="",
+                bssid = "",
                 level = 0,
                 capabilities = ""
             ),
@@ -201,7 +218,13 @@ fun HistoryRecoveryDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Outlined.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        icon = {
+            Icon(
+                Icons.Outlined.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
         title = { Text(stringResource(R.string.found_history)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -215,10 +238,15 @@ fun HistoryRecoveryDialog(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Column(modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth()) {
-                        Text(stringResource(R.string.ssid_string, item.ssid), style = MaterialTheme.typography.labelLarge)
+                    Column(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            stringResource(R.string.ssid_string, item.ssid),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                         Text(
                             stringResource(
                                 R.string.wifi_pojie_history_progress_number,

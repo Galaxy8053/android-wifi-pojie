@@ -1,7 +1,5 @@
 package com.wifi.toolbox.utils
 
-//TODO:这座屎山得拆了
-
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -31,13 +29,15 @@ interface PojieWifiController {
     fun fetchResults(): ScanResult
     fun enableWifi()
     fun applyLocation()
+    fun gotoSettings()
     fun enableLocation()
     fun disconnectWifi()
 }
 
 @Composable
 fun rememberPojieWifiController(
-    context: Context, app: ToolboxApp, settings: PojieSettings
+    context: Context, app: ToolboxApp, settings: PojieSettings,
+    onChangePage: (Int) -> Unit
 ): PojieWifiController {
     val scope = rememberCoroutineScope()
     var uiState by rememberSaveable { mutableStateOf<ScreenState>(ScreenState.Idle) }
@@ -70,6 +70,123 @@ fun rememberPojieWifiController(
         }
     }
 
+    val MIN_SCAN_TIME = 500
+    val MAX_SCAN_TIME = 3000
+    val SCAN_INTERVAL = 250
+
+    val scanInternal: () -> StartScanResult = {
+        if (settings.scanMode == 0) StartScanResult(
+            code = StartScanResult.CODE_NOT_SET,
+            errorMessage = context.getString(R.string.error_scan_impl_empty)
+        )
+        else if (!ApiUtil.isWifiEnabled(context)) StartScanResult(
+            code = StartScanResult.CODE_WIFI_NOT_ENABLED
+        )
+        else {
+            try {
+                when (settings.scanMode) {
+                    1 -> {
+                        if (checkShizukuUI(app, onGranted = { trigger++ })) {
+                            if (ShizukuUtil.startWifiScan(settings.allowScanUseCommand)) StartScanResult(
+                                code = StartScanResult.CODE_SUCCESS
+                            )
+                            else StartScanResult(code = StartScanResult.CODE_SEND_FAIL)
+                        } else StartScanResult(
+                            code = StartScanResult.CODE_SCAN_FAIL,
+                            errorMessage = context.getString(R.string.error_shizuku_no_permission)
+                        )
+                    }
+
+                    2 -> {
+                        if (ApiUtil.hasLocationPermission(context)) {
+                            if (ApiUtil.isLocationEnabled(context)) {
+                                if (ApiUtil.startScan(context)) StartScanResult(code = StartScanResult.CODE_SUCCESS)
+                                else StartScanResult(code = StartScanResult.CODE_SEND_FAIL)
+                            } else StartScanResult(code = StartScanResult.CODE_LOCATION_NOT_ENABLED)
+                        } else StartScanResult(code = StartScanResult.CODE_LOCATION_NOT_ALLOWED)
+                    }
+
+                    else -> StartScanResult(
+                        code = StartScanResult.CODE_UNKNOWN,
+                        errorMessage = context.getString(R.string.tip_not_completed) + "\n(scanMode=${settings.scanMode})"
+                    )
+                }
+            } catch (e: Exception) {
+                StartScanResult(StartScanResult.CODE_UNKNOWN, e.message)
+            }
+        }
+    }
+
+    val performReload: () -> Unit = {
+        refreshJob?.cancel()
+        refreshJob = scope.launch {
+            val start = scanInternal()
+            when (start.code) {
+                StartScanResult.CODE_SUCCESS, StartScanResult.CODE_SEND_FAIL -> {
+                    val sendSucceed = start.code == StartScanResult.CODE_SUCCESS
+                    uiState = ScreenState.Success(sendSucceed)
+                    if (sendSucceed) {
+                        showScanResult = false
+                        repeat(MIN_SCAN_TIME / SCAN_INTERVAL) {
+                            trigger++
+                            delay(SCAN_INTERVAL.toLong())
+                        }
+                        showScanResult = true
+                        repeat((MAX_SCAN_TIME - MIN_SCAN_TIME) / SCAN_INTERVAL) {
+                            trigger++
+                            delay(SCAN_INTERVAL.toLong())
+                        }
+                    } else {
+                        trigger++
+                        showScanResult = false
+                        delay(MIN_SCAN_TIME.toLong())
+                        showScanResult = true
+                        trigger++
+                    }
+                    refreshJob = null
+                }
+
+                StartScanResult.CODE_SCAN_FAIL -> uiState = ScreenState.Error(
+                    start.errorMessage ?: context.getString(R.string.error_scan_fail),
+                    StartScanResult.CODE_SCAN_FAIL
+                )
+
+                StartScanResult.CODE_WIFI_NOT_ENABLED -> uiState = ScreenState.Error(
+                    context.getString(R.string.error_wifi_not_enabled),
+                    StartScanResult.CODE_WIFI_NOT_ENABLED
+                )
+
+                StartScanResult.CODE_LOCATION_NOT_ENABLED -> uiState = ScreenState.Error(
+                    context.getString(R.string.error_location_not_enabled),
+                    StartScanResult.CODE_LOCATION_NOT_ENABLED,
+                )
+
+                StartScanResult.CODE_LOCATION_NOT_ALLOWED -> uiState = ScreenState.Error(
+                    context.getString(R.string.error_location_not_allowed),
+                    StartScanResult.CODE_LOCATION_NOT_ALLOWED,
+                )
+
+                StartScanResult.CODE_NOT_SET -> uiState = ScreenState.Error(
+                    start.errorMessage ?: "",
+                    StartScanResult.CODE_NOT_SET,
+                )
+
+                else -> uiState = ScreenState.Error(
+                    context.getString(
+                        R.string.error_unknown_with_message,
+                        start.errorMessage ?: ""
+                    ),
+                    StartScanResult.CODE_UNKNOWN,
+                )
+            }
+            refreshErrorKey++
+        }
+    }
+
+    LaunchedEffect(settings.scanMode) {
+        performReload()
+    }
+
     return remember(
         settings,
         uiState,
@@ -88,133 +205,14 @@ fun rememberPojieWifiController(
             override val runningTasks = currentRunningTasks
             override val finishedInfo = currentFinishedTasks
 
-            val MIN_SCAN_TIME = 500
-            val MAX_SCAN_TIME = 3000
-            val SCAN_INTERVAL = 250
-
-            override fun reload() {
-                refreshJob?.cancel()
-                refreshJob = scope.launch {
-                    val start = scanInternal()
-                    when (start.code) {
-                        StartScanResult.CODE_SUCCESS, StartScanResult.CODE_SEND_FAIL -> {
-                            val sendSucceed = start.code == StartScanResult.CODE_SUCCESS
-                            uiState = ScreenState.Success(sendSucceed)
-                            if (sendSucceed) {
-                                showScanResult = false
-                                repeat(MIN_SCAN_TIME / SCAN_INTERVAL) {
-                                    trigger++
-                                    delay(SCAN_INTERVAL.toLong())
-                                }
-                                showScanResult = true
-                                repeat((MAX_SCAN_TIME - MIN_SCAN_TIME) / SCAN_INTERVAL) {
-                                    trigger++
-                                    delay(SCAN_INTERVAL.toLong())
-                                }
-                            } else {
-                                trigger++
-                                showScanResult = false
-                                delay(MIN_SCAN_TIME.toLong())
-                                showScanResult = true
-                                trigger++
-                            }
-                            refreshJob = null
-                        }
-
-                        StartScanResult.CODE_SCAN_FAIL -> uiState = ScreenState.Error(
-                            start.errorMessage ?: context.getString(R.string.error_scan_fail), StartScanResult.CODE_SCAN_FAIL
-                        )
-
-                        StartScanResult.CODE_WIFI_NOT_ENABLED -> uiState = ScreenState.Error(
-                            context.getString(R.string.error_wifi_not_enabled), StartScanResult.CODE_WIFI_NOT_ENABLED
-                        )
-
-                        StartScanResult.CODE_LOCATION_NOT_ENABLED -> uiState = ScreenState.Error(
-                            context.getString(R.string.error_location_not_enabled),
-                            StartScanResult.CODE_LOCATION_NOT_ENABLED,
-                        )
-
-                        StartScanResult.CODE_LOCATION_NOT_ALLOWED -> uiState = ScreenState.Error(
-                            context.getString(R.string.error_location_not_allowed),
-                            StartScanResult.CODE_LOCATION_NOT_ALLOWED,
-                        )
-
-
-                        else -> uiState = ScreenState.Error(
-                            context.getString(R.string.error_unknown_with_message, start.errorMessage ?: ""),
-                            StartScanResult.CODE_UNKNOWN,
-                        )
-                    }
-                    refreshErrorKey++
-                }
-            }
-
-            private fun scanInternal(): StartScanResult {
-                if (settings.scanMode == 0) return StartScanResult(
-                    code = StartScanResult.CODE_SCAN_FAIL,
-                    errorMessage = context.getString(R.string.error_scan_impl_empty)
-                )
-                if (!ApiUtil.isWifiEnabled(context)) return StartScanResult(
-                    code = StartScanResult.CODE_WIFI_NOT_ENABLED
-                )
-                return try {
-                    when (settings.scanMode) {
-                        1 -> {
-                            if (checkShizukuUI(app, onGranted = {
-                                    reload()
-                                })) {
-                                if (ShizukuUtil.startWifiScan(settings.allowScanUseCommand)) StartScanResult(
-                                    code = StartScanResult.CODE_SUCCESS
-                                )
-                                else StartScanResult(
-                                    code = StartScanResult.CODE_SEND_FAIL
-                                )
-                            } else StartScanResult(
-                                code = StartScanResult.CODE_SCAN_FAIL,
-                                errorMessage = context.getString(R.string.error_shizuku_no_permission)
-                            )
-                        }
-
-                        2 -> {
-                            if (ApiUtil.hasLocationPermission(context)) {
-                                if (ApiUtil.isLocationEnabled(context)) {
-                                    if (ApiUtil.startScan(context)) StartScanResult(
-                                        code = StartScanResult.CODE_SUCCESS
-                                    )
-                                    else StartScanResult(
-                                        code = StartScanResult.CODE_SEND_FAIL
-                                    )
-                                } else {
-                                    StartScanResult(
-                                        code = StartScanResult.CODE_LOCATION_NOT_ENABLED
-                                    )
-                                }
-                            } else {
-                                StartScanResult(
-                                    code = StartScanResult.CODE_LOCATION_NOT_ALLOWED
-                                )
-                            }
-                        }
-
-                        else -> {
-                            StartScanResult(
-                                code = StartScanResult.CODE_UNKNOWN,
-                                errorMessage = context.getString(R.string.tip_not_completed) + "\n(scanMode=${settings.scanMode})"
-                            )
-                        }
-                    }
-
-                } catch (e: Exception) {
-                    StartScanResult(StartScanResult.CODE_UNKNOWN, e.message)
-                }
-            }
+            override fun reload() = performReload()
 
             override fun fetchResults(): ScanResult {
                 if (!showScanResult) return ScanResult()
                 return try {
                     when (settings.scanMode) {
                         0 -> ScanResult(
-                            code = StartScanResult.CODE_SCAN_FAIL,
+                            code = StartScanResult.CODE_NOT_SET,
                             errorMessage = context.getString(R.string.error_scan_impl_empty)
                         )
 
@@ -234,9 +232,7 @@ fun rememberPojieWifiController(
                             code = StartScanResult.CODE_UNKNOWN,
                             errorMessage = context.getString(R.string.tip_not_completed) + "\n(scanMode=${settings.scanMode})"
                         )
-
                     }
-
                 } catch (e: Exception) {
                     ScanResult(errorMessage = e.message)
                 }
@@ -249,15 +245,13 @@ fun rememberPojieWifiController(
                 }
                 onWifiEnabledAction = { reload() }
                 when (settings.enableMode) {
-                    0 -> app.alert(context.getString(R.string.error_missing_params), context.getString(R.string.error_enable_wifi_impl_empty))
-                    1 -> checkShizukuUI(app) {
-                        ShizukuUtil.setWifiEnabled(true)
-                    }
+                    0 -> app.alert(
+                        context.getString(R.string.error_missing_params),
+                        context.getString(R.string.error_enable_wifi_impl_empty)
+                    )
 
-                    2 -> {
-                        ApiUtil.setWifiEnabled(context, true)
-                    }
-
+                    1 -> checkShizukuUI(app) { ShizukuUtil.setWifiEnabled(true) }
+                    2 -> ApiUtil.setWifiEnabled(context, true)
                     else -> app.alert(
                         context.getString(R.string.error_missing_params),
                         context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
@@ -266,20 +260,22 @@ fun rememberPojieWifiController(
             }
 
             override fun applyLocation() {
-                if (ApiUtil.requestLocationPermission(context as Activity) {
-                        reload()
-                    }) reload()
+                if (ApiUtil.requestLocationPermission(context as Activity) { reload() }) reload()
             }
 
+            override fun gotoSettings() = onChangePage(3)
+
             override fun enableLocation() {
-                if (ApiUtil.enableLocation(context) {
-                        reload()
-                    }) reload()
+                if (ApiUtil.enableLocation(context) { reload() }) reload()
             }
 
             override fun disconnectWifi() {
                 when (settings.enableMode) {
-                    0 -> app.alert(context.getString(R.string.error_missing_params), context.getString(R.string.error_manage_saved_wifi_impl_empty))
+                    0 -> app.alert(
+                        context.getString(R.string.error_missing_params),
+                        context.getString(R.string.error_manage_saved_wifi_impl_empty)
+                    )
+
                     1 -> {
                         ShizukuUtil.disconnectWifi()
                         trigger++

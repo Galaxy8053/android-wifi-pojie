@@ -3,8 +3,9 @@ aboutlibrariesCore = "11.2.3"
 agp = "8.13.2"
 coilCompose = "3.3.0"
 composeBomVersion = "2026.01.00"
+core = "6.0.0"
 desugar_jdk_libs = "2.1.5"
-editorBom = "0.24.3"
+editorBom = "0.24.4"
 fragmentKtx = "1.8.9"
 gson = "2.13.2"
 hiddenapibypass = "6.1"
@@ -40,6 +41,7 @@ androidx-compose-material-icons-extended = { module = "androidx.compose.material
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 api = { module = "dev.rikka.shizuku:api", version.ref = "shizukuVersion" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+core = { module = "com.github.topjohnwu.libsu:core", version.ref = "core" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 editor = { module = "io.github.rosemoe:editor" }
 editor-bom = { module = "io.github.rosemoe:editor-bom", version.ref = "editorBom" }
@@ -70,6 +72,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+service = { module = "com.github.topjohnwu.libsu:service", version.ref = "core" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

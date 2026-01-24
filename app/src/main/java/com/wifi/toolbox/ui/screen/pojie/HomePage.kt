@@ -160,6 +160,7 @@ fun HomePagePreview() {
 
         override fun enableWifi() {}
         override fun applyLocation() {}
+        override fun gotoSettings() {}
         override fun enableLocation() {}
         override fun disconnectWifi() {}
     }

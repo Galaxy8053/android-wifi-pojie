@@ -3,30 +3,29 @@ package com.wifi.toolbox.ui.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.res.stringResource
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageScreen(onMenuClick: () -> Unit) {
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+
     Box(Modifier.fillMaxSize()) {
         NavContainer(
-
-            listOf(
+            pages = listOf(
                 object : NavPage {
                     override val name = stringResource(R.string.scan)
                     override val selectedIcon = Icons.Filled.Radar
                     override val unselectedIcon = Icons.Outlined.Radar
                     override val content = @Composable {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(stringResource(R.string.tip_not_completed))
@@ -39,8 +38,7 @@ fun ManageScreen(onMenuClick: () -> Unit) {
                     override val unselectedIcon = Icons.Outlined.Dns
                     override val content = @Composable {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(stringResource(R.string.tip_not_completed))
@@ -53,14 +51,18 @@ fun ManageScreen(onMenuClick: () -> Unit) {
                     override val unselectedIcon = Icons.Outlined.Settings
                     override val content = @Composable {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(stringResource(R.string.tip_not_completed))
                         }
                     }
                 }
-            ), 0, stringResource(R.string.wifi_manager), onMenuClick)
+            ),
+            selectedIndex = selectedIndex,
+            onIndexChange = { selectedIndex = it },
+            subtitle = stringResource(R.string.wifi_manager),
+            onMenuClick = onMenuClick
+        )
     }
 }

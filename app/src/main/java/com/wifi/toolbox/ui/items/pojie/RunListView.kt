@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -28,8 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
 
 data class StartScanResult(
-    val code: Int = CODE_UNKNOWN,
-    val errorMessage: String? = null
+    val code: Int = CODE_UNKNOWN, val errorMessage: String? = null
 ) {
     companion object {
         const val CODE_SUCCESS = 0
@@ -38,7 +38,8 @@ data class StartScanResult(
         const val CODE_LOCATION_NOT_ENABLED = -3
         const val CODE_LOCATION_NOT_ALLOWED = -4
         const val CODE_SEND_FAIL = -5
-        const val CODE_UNKNOWN = -6
+        const val CODE_NOT_SET = -6
+        const val CODE_UNKNOWN = -7
     }
 }
 
@@ -117,49 +118,44 @@ fun RunListView(
             modifier = Modifier.weight(1f)
         )
 
-        SplitButtonLayout(
-            leadingButton = {
-                SplitButtonDefaults.LeadingButton(
-                    onClick = { controller.reload() },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                ) {
-                    Icon(
-                        Icons.Rounded.Autorenew,
-                        contentDescription = null,
-                        modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize)
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.refresh))
-                }
-            },
-            trailingButton = {
-                SplitButtonDefaults.TrailingButton(
-                    checked = expanded,
-                    onCheckedChange = { expanded = it },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                ) {
-                    val rotation by animateFloatAsState(if (expanded) 180f else 0f)
-                    Icon(
-                        Icons.Filled.KeyboardArrowDown,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(SplitButtonDefaults.TrailingIconSize)
-                            .graphicsLayer { rotationZ = rotation }
-                    )
-                }
-                DropdownMenu(expanded, { expanded = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.tip_not_completed)) },
-                        onClick = { expanded = false })
-                }
+        SplitButtonLayout(leadingButton = {
+            SplitButtonDefaults.LeadingButton(
+                onClick = { controller.reload() }, colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Icon(
+                    Icons.Rounded.Autorenew,
+                    contentDescription = null,
+                    modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize)
+                )
+                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                Text(stringResource(R.string.refresh))
             }
-        )
+        }, trailingButton = {
+            SplitButtonDefaults.TrailingButton(
+                checked = expanded,
+                onCheckedChange = { expanded = it },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+            ) {
+                val rotation by animateFloatAsState(if (expanded) 180f else 0f)
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(SplitButtonDefaults.TrailingIconSize)
+                        .graphicsLayer { rotationZ = rotation })
+            }
+            DropdownMenu(expanded, { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.tip_not_completed)) },
+                    onClick = { expanded = false })
+            }
+        })
     }
 
     val s = controller.uiState
@@ -175,15 +171,14 @@ fun RunListView(
                     val realTimeInfo = scannedList.find { it.ssid == task.ssid }
                     WifiInfo(
                         ssid = task.ssid,
-                        bssid="",
+                        bssid = "",
                         level = realTimeInfo?.level ?: 0,
                         capabilities = realTimeInfo?.capabilities ?: ""
                     )
                 }
 
-                val partScanned = scannedList
-                    .filter { it.ssid !in runningSsids }
-                    .sortedByDescending { it.level }
+                val partScanned =
+                    scannedList.filter { it.ssid !in runningSsids }.sortedByDescending { it.level }
 
                 partRunning + partScanned
             }
@@ -245,8 +240,7 @@ fun RunListView(
                             modifier = Modifier
                                 .padding(8.dp)
                                 .fillMaxWidth(),
-                            onBannerClick = { showManualInput = true }
-                        )
+                            onBannerClick = { showManualInput = true })
                     }
 
                     2 -> Column(Modifier.fillMaxSize()) {
@@ -273,8 +267,7 @@ fun RunListView(
                                             modifier = Modifier
                                                 .padding(4.dp)
                                                 .animateItem(),
-                                            onBannerClick = { controller.disconnectWifi() }
-                                        )
+                                            onBannerClick = { controller.disconnectWifi() })
                                     }
 
                                     is PojieListItem.SendFailedBanner -> {
@@ -305,8 +298,7 @@ fun RunListView(
                                             modifier = Modifier
                                                 .padding(8.dp)
                                                 .animateItem(),
-                                            onBannerClick = { showManualInput = true }
-                                        )
+                                            onBannerClick = { showManualInput = true })
                                     }
                                 }
                             }
@@ -322,17 +314,22 @@ fun RunListView(
                 StartScanResult.CODE_SCAN_FAIL -> Icons.Rounded.ErrorOutline
                 StartScanResult.CODE_LOCATION_NOT_ENABLED -> Icons.Rounded.LocationOff
                 StartScanResult.CODE_LOCATION_NOT_ALLOWED -> Icons.Rounded.WrongLocation
+                StartScanResult.CODE_NOT_SET -> Icons.Rounded.Settings
                 else -> Icons.Rounded.BugReport
             }
             ErrorTip(
                 icon = icon,
                 message = s.message,
-                refreshTrigger =controller.refreshErrorKey,
+                refreshTrigger = controller.refreshErrorKey,
                 onManualInputClick = { showManualInput = true }) {
                 when (s.type) {
                     StartScanResult.CODE_WIFI_NOT_ENABLED -> {
                         Button(onClick = { controller.enableWifi() }) {
-                            Icon(Icons.Rounded.Wifi, null, Modifier.size(ButtonDefaults.IconSize))
+                            Icon(
+                                Icons.Rounded.ToggleOn,
+                                null,
+                                Modifier.size(ButtonDefaults.IconSize)
+                            )
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.enable_wifi))
                         }
@@ -362,12 +359,22 @@ fun RunListView(
                         }
                     }
 
+                    StartScanResult.CODE_NOT_SET -> {
+                        Button(onClick = { controller.gotoSettings() }) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                null,
+                                Modifier.size(ButtonDefaults.IconSize)
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("去设置")
+                        }
+                    }
+
                     else -> {
                         Button(onClick = { controller.reload() }) {
                             Icon(
-                                Icons.Rounded.Refresh,
-                                null,
-                                Modifier.size(ButtonDefaults.IconSize)
+                                Icons.Rounded.Refresh, null, Modifier.size(ButtonDefaults.IconSize)
                             )
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.retry))
@@ -396,20 +403,17 @@ fun RunListView(
             },
             confirmButton = {
                 Button(
-                    enabled = manualSsid.isNotBlank(),
-                    onClick = {
+                    enabled = manualSsid.isNotBlank(), onClick = {
                         onStartClick(manualSsid)
                         manualSsid = ""
                         showManualInput = false
-                    }
-                ) { Text(stringResource(R.string.btn_ok)) }
+                    }) { Text(stringResource(R.string.btn_ok)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showManualInput = false
                 }) { Text(stringResource(R.string.btn_cancel)) }
-            }
-        )
+            })
     }
 }
 
@@ -422,13 +426,14 @@ fun ErrorTip(
     button: @Composable (RowScope.() -> Unit)? = null
 ) {
     AnimatedContent(
-        targetState = refreshTrigger,
-        transitionSpec = {
-            (fadeIn(animationSpec = tween(300)) +
-                    slideInVertically(animationSpec = tween(400, easing = LinearOutSlowInEasing)) { 40 })
-                .togetherWith(fadeOut(animationSpec = snap()))
-        },
-        label = "ErrorTipAnimation"
+        targetState = refreshTrigger, transitionSpec = {
+            (fadeIn(animationSpec = tween(300)) + slideInVertically(
+                animationSpec = tween(
+                    400,
+                    easing = LinearOutSlowInEasing
+                )
+            ) { 40 }).togetherWith(fadeOut(animationSpec = snap()))
+        }, label = "ErrorTipAnimation"
     ) { _ ->
         Column(
             modifier = Modifier.fillMaxSize(),

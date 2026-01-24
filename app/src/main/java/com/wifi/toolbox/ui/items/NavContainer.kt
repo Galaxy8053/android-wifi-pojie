@@ -33,20 +33,27 @@ interface NavPage {
 @Composable
 fun NavContainer(
     pages: List<NavPage>,
-    defaultIndex: Int,
+    selectedIndex: Int,
+    onIndexChange: (Int) -> Unit,
     subtitle: String,
     onMenuClick: () -> Unit
 ) {
-    var currentIndex by rememberSaveable { mutableIntStateOf(defaultIndex) }
-    var previousIndex by rememberSaveable { mutableIntStateOf(defaultIndex) }
+    var previousIndex by rememberSaveable { mutableIntStateOf(selectedIndex) }
+    var localCurrentIndex by rememberSaveable { mutableIntStateOf(selectedIndex) }
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex != localCurrentIndex) {
+            previousIndex = localCurrentIndex
+            localCurrentIndex = selectedIndex
+        }
+    }
 
     val view = LocalView.current
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     var navBarWidth by remember { mutableFloatStateOf(0f) }
 
-    BackHandler(enabled = currentIndex != defaultIndex) {
-        previousIndex = currentIndex
-        currentIndex = defaultIndex
+    BackHandler(enabled = localCurrentIndex != 0) {
+        onIndexChange(0)
     }
 
     Scaffold(
@@ -60,7 +67,7 @@ fun NavContainer(
                 title = {
                     Column(modifier = Modifier.padding(0.dp, 8.dp)) {
                         Text(
-                            text = pages[currentIndex].name,
+                            text = pages[localCurrentIndex].name,
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(
@@ -87,19 +94,17 @@ fun NavContainer(
                             onDragStart = { offset ->
                                 val index = (offset.x / (navBarWidth / pages.size)).toInt()
                                     .coerceIn(0, pages.size - 1)
-                                if (currentIndex != index) {
+                                if (localCurrentIndex != index) {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    previousIndex = currentIndex
-                                    currentIndex = index
+                                    onIndexChange(index)
                                 }
                             },
                             onDrag = { change, _ ->
                                 val index = (change.position.x / (navBarWidth / pages.size)).toInt()
                                     .coerceIn(0, pages.size - 1)
-                                if (currentIndex != index) {
+                                if (localCurrentIndex != index) {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    previousIndex = currentIndex
-                                    currentIndex = index
+                                    onIndexChange(index)
                                 }
                             }
                         )
@@ -109,17 +114,16 @@ fun NavContainer(
                             onPress = { offset ->
                                 val index = (offset.x / (navBarWidth / pages.size)).toInt()
                                     .coerceIn(0, pages.size - 1)
-                                if (currentIndex != index) {
+                                if (localCurrentIndex != index) {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    previousIndex = currentIndex
-                                    currentIndex = index
+                                    onIndexChange(index)
                                 }
                             }
                         )
                     }
             ) {
                 pages.forEachIndexed { index, page ->
-                    val selected = currentIndex == index
+                    val selected = localCurrentIndex == index
                     NavigationBarItem(
                         icon = {
                             Icon(
@@ -131,10 +135,9 @@ fun NavContainer(
                         selected = selected,
                         alwaysShowLabel = pages.size < 5,
                         onClick = {
-                            if (currentIndex != index) {
+                            if (localCurrentIndex != index) {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                previousIndex = currentIndex
-                                currentIndex = index
+                                onIndexChange(index)
                             }
                         }
                     )
@@ -149,8 +152,8 @@ fun NavContainer(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             pages.forEachIndexed { index, page ->
-                val isVisible = index == currentIndex
-                val isForward = currentIndex > previousIndex
+                val isVisible = index == localCurrentIndex
+                val isForward = localCurrentIndex > previousIndex
 
                 AnimatedVisibility(
                     visible = isVisible,
