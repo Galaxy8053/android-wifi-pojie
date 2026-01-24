@@ -56,7 +56,7 @@
     <string name="run_output">run output</string>
     <string name="resources_nothing">¯\\_(ツ)_/¯\nno resource, click + add</string>
     <string name="save_failed">save fail</string>
-    <string name="no_choose_tip">--please choose--</string>
+    <string name="no_choose_tip_list">--please choose--</string>
     <string name="item_free">idle</string>
     <string name="run_method">run method</string>
     <string name="read_log_mode">read network log</string>

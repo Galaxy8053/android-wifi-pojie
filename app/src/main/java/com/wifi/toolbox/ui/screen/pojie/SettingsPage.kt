@@ -31,12 +31,12 @@ fun SettingsPage(
     val context = LocalContext.current
 
     val readLogValues = listOf(
-        stringResource(R.string.no_choose_tip),
+        stringResource(R.string.no_choose_tip_list),
         stringResource(R.string.command_logcat),
         stringResource(R.string.api_broadcastreceiver)
     )
     val connectValues = listOf(
-        stringResource(R.string.no_choose_tip),
+        stringResource(R.string.no_choose_tip_list),
         stringResource(R.string.shizuku_iwifimanager),
         stringResource(R.string.api_wifimanager),
         stringResource(R.string.api_connect_device),
@@ -55,7 +55,7 @@ fun SettingsPage(
         stringResource(R.string.command_not_completed)
     )
     val commandMethodValues = listOf(
-        stringResource(R.string.no_choose_tip),
+        stringResource(R.string.no_choose_tip_list),
         stringResource(R.string.shizuku_newprocess),
         stringResource(R.string.root_su_file_not_completed)
     )

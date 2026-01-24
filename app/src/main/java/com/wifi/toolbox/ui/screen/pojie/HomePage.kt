@@ -3,6 +3,8 @@ package com.wifi.toolbox.ui.screen.pojie
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
@@ -72,6 +74,7 @@ fun HomePageContent(
     ) {
         FoldCard(
             title = stringResource(R.string.run_config),
+            icon = Icons.Rounded.SettingsSuggest,
             expanded = expandedParamsCard,
             onExpandedChange = {
                 expandedParamsCard = it
@@ -103,6 +106,7 @@ fun HomePageContent(
 
         FoldCard(
             title = stringResource(R.string.run_output),
+            icon = Icons.Rounded.Terminal,
             expanded = expandedOutputCard,
             onExpandedChange = {
                 expandedOutputCard = it
@@ -128,6 +132,7 @@ fun HomePagePreview() {
         override val uiState: ScreenState = ScreenState.Success(true)
         override val isScanning: Boolean = false
         override val trigger: Int = 0
+        override val refreshErrorKey: Long = 0L
         override val runningTasks: List<PojieRunInfo> = listOf(
             PojieRunInfo(
                 ssid = "ChinaNet-Preview",
@@ -138,18 +143,21 @@ fun HomePagePreview() {
                 textTip = "加载中",
             )
         )
-        override val finishedInfo: SnapshotStateMap<String, String> = SnapshotStateMap<String, String>().apply {
-            put("TP-LINK_5G", "已完成")
-        }
+        override val finishedInfo: SnapshotStateMap<String, String> =
+            SnapshotStateMap<String, String>().apply {
+                put("TP-LINK_5G", "已完成")
+            }
+
         override fun reload() {}
         override fun fetchResults(): ScanResult = ScanResult(
             code = ScanResult.CODE_SUCCESS,
             wifiList = listOf(
-                WifiInfo("ChinaNet-Preview", -40, "[WPA2-PSK-CCMP]"),
-                WifiInfo("TP-LINK_5G", -60, "[WPA2-PSK-CCMP]"),
-                WifiInfo("Xiaomi_Router", -75, "[WPA2-PSK-CCMP]")
+                WifiInfo("ChinaNet-Preview", -40, "","[WPA2-PSK-CCMP]"),
+                WifiInfo("TP-LINK_5G", -60, "","[WPA2-PSK-CCMP]"),
+                WifiInfo("Xiaomi_Router", -75, "","[WPA2-PSK-CCMP]")
             )
         )
+
         override fun enableWifi() {}
         override fun applyLocation() {}
         override fun enableLocation() {}

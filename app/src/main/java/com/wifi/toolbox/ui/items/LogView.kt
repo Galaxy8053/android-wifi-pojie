@@ -90,8 +90,7 @@ fun LogView(
             logState = logState,
             context = context,
             verticalScrollState = verticalScrollState,
-            fabVisible = true,
-            modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+            fabVisible = true
         )
     }
 }

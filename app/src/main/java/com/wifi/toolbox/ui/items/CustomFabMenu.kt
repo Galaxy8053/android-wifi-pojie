@@ -7,6 +7,7 @@ import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.key.*
@@ -66,7 +67,9 @@ fun BoxScope.CustomFabMenu(
                     Icon(
                         painter = rememberVectorPainter(imageVector),
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp).animateIcon({ checkedProgress }),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .animateIcon({ checkedProgress }),
                     )
                 }
             }
@@ -74,6 +77,7 @@ fun BoxScope.CustomFabMenu(
     ) {
         val closeMenuActionLabel = stringResource(R.string.acc_close_menu)
         items.forEachIndexed { i, item ->
+            if (i == 0) Spacer(Modifier.height(4.dp))
             FloatingActionButtonMenuItem(
                 modifier = Modifier
                     .height(42.dp)
@@ -106,11 +110,19 @@ fun BoxScope.CustomFabMenu(
                 },
                 containerColor = if (item.isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = if (item.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                icon = {
+                    Icon(
+                        item.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
                 text = {
                     Text(
                         text = item.label,
-                        style = if (item.isSelected) MaterialTheme.typography.labelLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        style = if (item.isSelected) MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
                         else MaterialTheme.typography.labelLarge
                     )
                 },

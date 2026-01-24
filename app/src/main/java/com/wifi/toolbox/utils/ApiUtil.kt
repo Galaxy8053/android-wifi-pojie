@@ -179,6 +179,7 @@ object ApiUtil {
                 com.wifi.toolbox.structs.WifiInfo(
                     ssid = it.SSID,
                     level = it.level,
+                    bssid="",
                     capabilities = it.capabilities
                 )
             }.sortedByDescending { it.level }

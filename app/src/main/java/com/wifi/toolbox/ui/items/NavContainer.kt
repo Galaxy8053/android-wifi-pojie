@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
@@ -153,10 +154,17 @@ fun NavContainer(
 
                 AnimatedVisibility(
                     visible = isVisible,
-                    enter = slideInHorizontally(tween(300)) { if (isForward) it else -it } + fadeIn(),
-                    exit = slideOutHorizontally(tween(300)) { if (isForward) -it else it } + fadeOut()
+                    enter = slideInHorizontally(tween(300)) { if (isForward) it else -it },
+                    exit = slideOutHorizontally(tween(300)) { if (isForward) -it else it }
                 ) {
-                    Box(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                clip = true
+                                renderEffect = null
+                            }
+                    ) {
                         key(page.name) {
                             page.content()
                         }

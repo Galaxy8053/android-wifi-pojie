@@ -66,7 +66,8 @@
     <string name="run_output">Output</string>
     <string name="resources_nothing">¯\\_(ツ)_/¯\nNo resources, tap + to add</string>
     <string name="save_failed">Save Failed</string>
-    <string name="no_choose_tip">-- Please Select --</string>
+    <string name="no_choose_tip">Please Select</string>
+    <string name="no_choose_tip_list">-- Please Select --</string>
     <string name="item_free">Idle</string>
     <string name="command_logcat">[Shell] logcat</string>
     <string name="api_broadcastreceiver">[API] BroadcastReceiver</string>
@@ -314,4 +315,22 @@
     <string name="executing_resource">Executing [%1$d]: %2$s(%3$s)</string>
     <string name="execution_finished_item">Finished [%1$d], %2$d items found</string>
     <string name="all_execution_finished">All tasks finished, total %1$d items</string>
+    <string name="manual_input">Manual Input</string>
+    <string name="error_scan_fail">Scan failed</string>
+    <string name="error_wifi_not_enabled">Wi-Fi is not enabled</string>
+    <string name="error_location_not_enabled">Location service is not enabled</string>
+    <string name="error_location_not_allowed">Location permission not granted</string>
+    <string name="error_unknown_with_message">Unknown error (%1$s)</string>
+    <string name="error_scan_impl_empty">Scan implementation is empty, please select it in settings</string>
+    <string name="error_shizuku_no_permission">Shizuku permission not obtained</string>
+    <string name="error_missing_params">Missing parameters</string>
+    <string name="error_enable_wifi_impl_empty">Wi-Fi toggle implementation is empty</string>
+    <string name="error_manage_saved_wifi_impl_empty">Saved network management implementation is empty</string>
+    <string name="calculating_time">Calculating remaining time…</string>
+    <string name="remaining_time_format">Est. remaining %1$s</string>
+    <string name="time_unit_day">%1$sd</string>
+    <string name="time_unit_hour">%1$sh</string>
+    <string name="time_unit_minute">%1$sm</string>
+    <string name="time_unit_less_than_minute">&lt;1m</string>
+    <string name="local_path">Local Path</string>
 </resources>

@@ -42,6 +42,7 @@ fun PojieScreen(onMenuClick: () -> Unit) {
                 override val uiState = ScreenState.Success(true)
                 override val isScanning = false
                 override val trigger = 0
+                override val refreshErrorKey=0L
                 override val runningTasks = emptyList<PojieRunInfo>()
                 override val finishedInfo = SnapshotStateMap<String, String>()
                 override fun reload() {}
@@ -151,6 +152,7 @@ fun PojieScreenContent(
             onDismiss = { showResourceSheet = false },
             wifiInfo = WifiInfo(
                 ssid = currentTargetSsid,
+                bssid="",
                 level = 0,
                 capabilities = ""
             ),

@@ -54,14 +54,13 @@ object PojieStore {
             }
         }
     }
-
     fun get(context: Context, id: String): PojieResource? {
         val dir = getDir(context)
         val jsonFile = File(dir, "$id.json")
         val jsFile = File(dir, "$id.js")
 
-        // 优先从 Files 加载
         if (jsonFile.exists() || jsFile.exists()) {
+            val targetFile = if (jsonFile.exists()) jsonFile else jsFile
             val res = try {
                 if (jsonFile.exists()) PojieResource.parseJSON(jsonFile.readText())
                 else PojieResource.parseScript(jsFile.readText())
@@ -70,13 +69,13 @@ object PojieStore {
             }
 
             if (res != null) {
+                res.localPath = targetFile.absolutePath
                 val assetsList = context.assets.list(DIR_NAME) ?: emptyArray()
                 res.isBuiltin = if (assetsList.any { it.startsWith("$id.") }) 2 else 0
                 return res
             }
         }
 
-        // 从 Assets 加载
         return try {
             val assetsList = context.assets.list(DIR_NAME) ?: emptyArray()
             if (assetsList.contains("$id.json")) {
@@ -127,6 +126,7 @@ object PojieStore {
         } else {
             file.writeText(res.content)
         }
+        res.localPath = file.absolutePath
     }
 
     fun update(context: Context, oldId: String, res: PojieResource) {

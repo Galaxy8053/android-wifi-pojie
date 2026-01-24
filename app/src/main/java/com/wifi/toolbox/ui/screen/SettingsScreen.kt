@@ -57,7 +57,7 @@ import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.ColorPicker
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.extra.SuperDialog
-import androidx.core.os.LocaleListCompat
+import com.wifi.toolbox.utils.LocaleConfigs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,14 +78,12 @@ fun SettingsScreen(
         stringResource(R.string.always_on), stringResource(R.string.always_off)
     )
 
-    val languageValues = listOf(
-        stringResource(R.string.follow_system),
-        "中文（简体）",
-        "中文（繁體）",
-        "文言（華夏）",
-        "English",
-        "Chinglish"
-    )
+    val languageValues = remember { LocaleConfigs.list.map { it.displayName } }
+    val visibleLanguageIndices = remember(settings.language) {
+        LocaleConfigs.list.mapIndexedNotNull { index, config ->
+            if (config.show || index == settings.language) index else null
+        }
+    }
 
     val providerComponent = remember {
         android.content.ComponentName(context, "com.wifi.toolbox.services.AppFileProvider")
@@ -242,21 +240,17 @@ fun SettingsScreen(
                         value = settings.language,
                         onValueChange = { index ->
                             app.settings.update { it.copy(language = index) }
-
-                            val appLocale: LocaleListCompat = when (index) {
-                                1 -> LocaleListCompat.forLanguageTags("zh-CN")
-                                2 -> LocaleListCompat.forLanguageTags("zh-TW")
-                                3 -> LocaleListCompat.forLanguageTags("lzh-CN")
-                                4 -> LocaleListCompat.forLanguageTags("en")
-                                5 -> LocaleListCompat.forLanguageTags("lzh-EN")
-                                else -> LocaleListCompat.getEmptyLocaleList()
-                            }
+                            val appLocale = LocaleConfigs.getLocaleListCompat(index)
                             AppCompatDelegate.setApplicationLocales(appLocale)
                         },
-                        values = languageValues.indices.toList(),
-                        valueToText = { AnnotatedString(languageValues[it]) },
+                        values = visibleLanguageIndices, // 使用过滤后的索引列表
+                        valueToText = { index ->
+                            AnnotatedString(LocaleConfigs.list[index].displayName)
+                        },
                         title = { Text(stringResource(R.string.language)) },
-                        summary = { Text(languageValues[settings.language]) },
+                        summary = {
+                            Text(LocaleConfigs.list.getOrNull(settings.language)?.displayName ?: languageValues[0])
+                        },
                         type = ListPreferenceType.ALERT_DIALOG,
                         icon = { Icon(Icons.Default.Language, null) }
                     )

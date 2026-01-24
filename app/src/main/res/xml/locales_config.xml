@@ -2,7 +2,7 @@
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="zh-CN" />
     <locale android:name="zh-TW" />
-    <locale android:name="lzh-CN" /> <!--文言 (華夏)-->
+    <locale android:name="lzh-CN" />
     <locale android:name="en" />
-    <locale android:name="lzh-EN" /> <!--Chinglish-->
+    <locale android:name="lzh-EN" />
 </locale-config>

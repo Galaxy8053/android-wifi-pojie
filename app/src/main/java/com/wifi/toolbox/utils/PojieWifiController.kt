@@ -90,7 +90,7 @@ fun rememberPojieWifiController(
 
             val MIN_SCAN_TIME = 500
             val MAX_SCAN_TIME = 3000
-            val SCAN_INTERVAL = 100
+            val SCAN_INTERVAL = 250
 
             override fun reload() {
                 refreshJob?.cancel()
@@ -122,26 +122,26 @@ fun rememberPojieWifiController(
                         }
 
                         StartScanResult.CODE_SCAN_FAIL -> uiState = ScreenState.Error(
-                            start.errorMessage ?: "扫描失败", StartScanResult.CODE_SCAN_FAIL
+                            start.errorMessage ?: context.getString(R.string.error_scan_fail), StartScanResult.CODE_SCAN_FAIL
                         )
 
                         StartScanResult.CODE_WIFI_NOT_ENABLED -> uiState = ScreenState.Error(
-                            "wifi未开启", StartScanResult.CODE_WIFI_NOT_ENABLED
+                            context.getString(R.string.error_wifi_not_enabled), StartScanResult.CODE_WIFI_NOT_ENABLED
                         )
 
                         StartScanResult.CODE_LOCATION_NOT_ENABLED -> uiState = ScreenState.Error(
-                            "定位服务未开启",
+                            context.getString(R.string.error_location_not_enabled),
                             StartScanResult.CODE_LOCATION_NOT_ENABLED,
                         )
 
                         StartScanResult.CODE_LOCATION_NOT_ALLOWED -> uiState = ScreenState.Error(
-                            "未获取定位权限",
+                            context.getString(R.string.error_location_not_allowed),
                             StartScanResult.CODE_LOCATION_NOT_ALLOWED,
                         )
 
 
                         else -> uiState = ScreenState.Error(
-                            "未知错误(${start.errorMessage})",
+                            context.getString(R.string.error_unknown_with_message, start.errorMessage ?: ""),
                             StartScanResult.CODE_UNKNOWN,
                         )
                     }
@@ -152,7 +152,7 @@ fun rememberPojieWifiController(
             private fun scanInternal(): StartScanResult {
                 if (settings.scanMode == 0) return StartScanResult(
                     code = StartScanResult.CODE_SCAN_FAIL,
-                    errorMessage = "扫描实现为空，请先在设置中选择"
+                    errorMessage = context.getString(R.string.error_scan_impl_empty)
                 )
                 if (!ApiUtil.isWifiEnabled(context)) return StartScanResult(
                     code = StartScanResult.CODE_WIFI_NOT_ENABLED
@@ -171,7 +171,7 @@ fun rememberPojieWifiController(
                                 )
                             } else StartScanResult(
                                 code = StartScanResult.CODE_SCAN_FAIL,
-                                errorMessage = "未获取到Shizuku权限"
+                                errorMessage = context.getString(R.string.error_shizuku_no_permission)
                             )
                         }
 
@@ -215,7 +215,7 @@ fun rememberPojieWifiController(
                     when (settings.scanMode) {
                         0 -> ScanResult(
                             code = StartScanResult.CODE_SCAN_FAIL,
-                            errorMessage = "扫描实现为空，请先在设置中选择"
+                            errorMessage = context.getString(R.string.error_scan_impl_empty)
                         )
 
                         1 -> ScanResult(
@@ -249,7 +249,7 @@ fun rememberPojieWifiController(
                 }
                 onWifiEnabledAction = { reload() }
                 when (settings.enableMode) {
-                    0 -> app.alert("缺失参数", "开关wifi实现为空")
+                    0 -> app.alert(context.getString(R.string.error_missing_params), context.getString(R.string.error_enable_wifi_impl_empty))
                     1 -> checkShizukuUI(app) {
                         ShizukuUtil.setWifiEnabled(true)
                     }
@@ -259,7 +259,7 @@ fun rememberPojieWifiController(
                     }
 
                     else -> app.alert(
-                        "缺失参数",
+                        context.getString(R.string.error_missing_params),
                         context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
                     )
                 }
@@ -279,14 +279,14 @@ fun rememberPojieWifiController(
 
             override fun disconnectWifi() {
                 when (settings.enableMode) {
-                    0 -> app.alert("缺失参数", "管理已保存网络实现为空")
+                    0 -> app.alert(context.getString(R.string.error_missing_params), context.getString(R.string.error_manage_saved_wifi_impl_empty))
                     1 -> {
                         ShizukuUtil.disconnectWifi()
                         trigger++
                     }
 
                     else -> app.alert(
-                        "缺失参数",
+                        context.getString(R.string.error_missing_params),
                         context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
                     )
                 }

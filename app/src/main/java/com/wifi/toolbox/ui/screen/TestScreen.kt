@@ -3,6 +3,7 @@ package com.wifi.toolbox.ui.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -81,6 +82,7 @@ fun TestScreen(onMenuClick: () -> Unit) {
 
             FoldCard(
                 title = stringResource(R.string.run_output),
+                icon = Icons.Rounded.Terminal,
                 expanded = logCardExpanded,
                 onExpandedChange = { logCardExpanded = it },
                 modifier = Modifier

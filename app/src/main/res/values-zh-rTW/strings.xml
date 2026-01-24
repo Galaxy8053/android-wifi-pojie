@@ -13,7 +13,6 @@
     <string name="thanks_project_tip">感謝為本專案提供靈感與技術支援的開源專案</string>
     <string name="license">第三方開源許可</string>
     <string name="license_tip">查看第三方函式庫授權協議</string>
-    <string name="copyright">© 2025-%1$s WiFi Toolbox - Apache 2.0</string>
     <string name="btn_disappear">知道了</string>
     <string name="btn_close">關閉</string>
     <string name="thank_project_dialog_tip">專業名詞解釋</string>
@@ -70,7 +69,8 @@
     <string name="run_output">執行輸出</string>
     <string name="resources_nothing">¯\\_(ツ)_/¯\n暫無資源，點擊 + 號添加</string>
     <string name="save_failed">儲存失敗</string>
-    <string name="no_choose_tip">--請選擇--</string>
+    <string name="no_choose_tip">請選擇</string>
+    <string name="no_choose_tip_list">--請選擇--</string>
     <string name="item_free">空閒</string>
     <string name="command_logcat">[命令列] logcat</string>
     <string name="api_broadcastreceiver">[應用 API] BroadcastReceiver</string>
@@ -320,4 +320,22 @@
     <string name="executing_resource">執行第[%1$d]個：%2$s(%3$s)</string>
     <string name="execution_finished_item">第[%1$d]個執行完畢，共%2$d條</string>
     <string name="all_execution_finished">全部執行完畢，共%1$d條</string>
+    <string name="manual_input">手動輸入</string>
+    <string name="error_scan_fail">掃描失敗</string>
+    <string name="error_wifi_not_enabled">Wi-Fi未開啟</string>
+    <string name="error_location_not_enabled">定位服務未開啟</string>
+    <string name="error_location_not_allowed">未獲取定位權限</string>
+    <string name="error_unknown_with_message">未知錯誤（%1$s）</string>
+    <string name="error_scan_impl_empty">掃描實現為空，請先在設置中選擇</string>
+    <string name="error_shizuku_no_permission">未獲取到Shizuku權限</string>
+    <string name="error_missing_params">缺失參數</string>
+    <string name="error_enable_wifi_impl_empty">開關Wi-Fi實現為空</string>
+    <string name="error_manage_saved_wifi_impl_empty">管理已儲存網絡實現為空</string>
+    <string name="calculating_time">計算剩餘時間…</string>
+    <string name="remaining_time_format">預計剩餘 %1$s</string>
+    <string name="time_unit_day">%1$sd</string>
+    <string name="time_unit_hour">%1$sh</string>
+    <string name="time_unit_minute">%1$sm</string>
+    <string name="time_unit_less_than_minute">&lt;1m</string>
+    <string name="local_path">本地路徑</string>
 </resources>

@@ -1,7 +1,9 @@
 package com.wifi.toolbox.ui.screen
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Keep
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -12,6 +14,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -94,8 +97,12 @@ import com.wifi.toolbox.ui.items.TagType
 import com.wifi.toolbox.ui.pages.LicensePage
 import kotlinx.parcelize.Parcelize
 import androidx.compose.runtime.produceState
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import com.wifi.toolbox.utils.LocaleConfigs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -113,10 +120,15 @@ fun AboutScreen(onMenuClick: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     var showCreditsDialog by rememberSaveable { mutableStateOf(false) }
 
+    val clickTimestamps = remember { mutableListOf<Long>() }
+    var hasAccessibilityClick by remember { mutableStateOf(false) }
+    var currentToast by remember { mutableStateOf<Toast?>(null) }
+
     val creditProjects by produceState(initialValue = emptyList()) {
         value = withContext(Dispatchers.IO) {
             runCatching {
-                val jsonString = context.assets.open("thanks.json").bufferedReader().use { it.readText() }
+                val jsonString =
+                    context.assets.open("thanks.json").bufferedReader().use { it.readText() }
                 val jsonArray = JSONArray(jsonString)
                 List(jsonArray.length()) { i ->
                     val obj = jsonArray.getJSONObject(i)
@@ -202,69 +214,131 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(48.dp))
 
                 AnimatedVisibility(
                     visible = visible,
                     enter = if (isPreview) fadeIn(tween(0)) else fadeIn() + slideInVertically(
                         initialOffsetY = { 40 })
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        val drawable = remember(R.mipmap.ic_launcher) {
-                            context.packageManager.getDrawable(
-                                context.packageName,
-                                R.mipmap.ic_launcher,
-                                context.applicationInfo
-                            )
-                        }
-                        Surface(
-                            modifier = Modifier.size(110.dp),
-                            shape = RoundedCornerShape(28.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            shadowElevation = 12.dp
-                        ) {
-                            Image(
-                                painter = rememberAsyncImagePainter(model = drawable),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(48.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        if (event.type == PointerEventType.Press) {
+                                            val isAccessibility = event.changes.any {
+                                                it.type == PointerType.Unknown
+                                            }
+                                            if (isAccessibility) {
+                                                hasAccessibilityClick = true
+                                            }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                                            val currentTime = System.currentTimeMillis()
+                                            clickTimestamps.add(currentTime)
 
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                                            if (clickTimestamps.size > 5) {
+                                                clickTimestamps.removeAt(0)
+                                            }
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                                            if (clickTimestamps.size == 5) {
+                                                val totalTime = currentTime - clickTimestamps[0]
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                                                val showToast: (String) -> Unit = { message ->
+                                                    currentToast?.cancel()
+                                                    currentToast = Toast.makeText(context, message, Toast.LENGTH_SHORT)
+                                                    currentToast?.show()
+                                                }
+
+                                                when {
+                                                    hasAccessibilityClick -> {
+                                                        showToast("不许作弊！！")
+                                                    }
+
+                                                    totalTime < 200 -> {
+                                                        val lzhIndex = LocaleConfigs.list.indexOfFirst { it.tag == "lzh-CN" }
+                                                        if (lzhIndex != -1) {
+                                                            val app = context.applicationContext as com.wifi.toolbox.ToolboxApp
+                                                            app.settings.update { it.copy(language = lzhIndex) }
+                                                            val appLocale = LocaleConfigs.getLocaleListCompat(lzhIndex)
+                                                            AppCompatDelegate.setApplicationLocales(appLocale)
+                                                            showToast("操作成功")
+                                                        }
+                                                    }
+
+                                                    totalTime < 2000 -> {
+                                                        showToast("点这么慢没吃饭吗")
+                                                    }
+                                                }
+
+                                                clickTimestamps.clear()
+                                                hasAccessibilityClick = false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val drawable = remember(R.mipmap.ic_launcher) {
+                                context.packageManager.getDrawable(
+                                    context.packageName,
+                                    R.mipmap.ic_launcher,
+                                    context.applicationInfo
+                                )
+                            }
+                            Surface(
+                                modifier = Modifier.size(110.dp),
+                                shape = RoundedCornerShape(28.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shadowElevation = 12.dp
+                            ) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = drawable),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
                             Text(
-                                text = stringResource(
-                                    R.string.version_text,
-                                    BuildConfig.VERSION_NAME,
-                                    BuildConfig.VERSION_CODE
+                                text = stringResource(R.string.app_name),
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 1.sp
                                 ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onBackground
                             )
-                            if (BuildConfig.DEBUG) {
-                                TagItem(text = "DEBUG", type = TagType.Primary)
+
+                            Spacer(modifier = Modifier.height(2.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.version_text,
+                                        BuildConfig.VERSION_NAME,
+                                        BuildConfig.VERSION_CODE
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                )
+                                if (BuildConfig.DEBUG) {
+                                    TagItem(text = "DEBUG", type = TagType.Primary)
+                                }
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(40.dp))
                 }
-
-                Spacer(modifier = Modifier.height(40.dp))
 
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -281,13 +355,15 @@ fun AboutScreen(onMenuClick: () -> Unit) {
                                 slideInVertically(animationSpec = tween(800, 0)) { 100 }
                     ) {
                         SettingsGroup {
-                            ClickableInfoItem(stringResource(R.string.changelog),
+                            ClickableInfoItem(
+                                stringResource(R.string.changelog),
                                 stringResource(R.string.changelog_tip)
                             ) {
                                 showDialog = true
                             }
                             SettingsDivider()
-                            ClickableInfoItem(stringResource(R.string.score_code_location),
+                            ClickableInfoItem(
+                                stringResource(R.string.score_code_location),
                                 stringResource(R.string.score_code_location_tip)
                             ) {
                                 uriHandler.openUri("https://github.com/bszapp/android-wifi-pojie")
@@ -342,7 +418,9 @@ fun AboutScreen(onMenuClick: () -> Unit) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 confirmButton = {
-                    TextButton(onClick = { showDialog = false }) { Text(stringResource(R.string.btn_disappear)) }
+                    TextButton(onClick = {
+                        showDialog = false
+                    }) { Text(stringResource(R.string.btn_disappear)) }
                 },
                 title = { Text(stringResource(R.string.changelog), fontWeight = FontWeight.Bold) },
                 text = {

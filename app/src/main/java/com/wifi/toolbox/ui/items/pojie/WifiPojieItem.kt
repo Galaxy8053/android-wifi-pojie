@@ -217,8 +217,8 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                     )
                     Text(
                         text = avgMs?.let { ms ->
-                            "预计剩余 ${formatDuration(ms * (it.tryList.size - it.tryIndex))}"
-                        } ?: "计算剩余时间…",
+                            stringResource(R.string.remaining_time_format, formatDuration(ms * (it.tryList.size - it.tryIndex)))
+                        } ?: stringResource(R.string.calculating_time),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
                     )
@@ -238,18 +238,19 @@ fun calculateAverageSpeed(task: PojieRunInfo): Long? {
     return avgMs.toLong()
 }
 
+@Composable
 fun formatDuration(ms: Long): String {
     val totalMinutes = ms / 60000
-    if (totalMinutes < 1) return "<1m"
+    if (totalMinutes < 1) return stringResource(R.string.time_unit_less_than_minute)
 
     val days = totalMinutes / (24 * 60)
     val hours = (totalMinutes % (24 * 60)) / 60
     val minutes = totalMinutes % 60
 
     val result = mutableListOf<String>()
-    if (days > 0) result.add("${days}d")
-    if (hours > 0 || days > 0) result.add("${hours}h")
-    result.add("${minutes}m")
+    if (days > 0) result.add(stringResource(R.string.time_unit_day, days))
+    if (hours > 0 || days > 0) result.add(stringResource(R.string.time_unit_hour, hours))
+    result.add(stringResource(R.string.time_unit_minute, minutes))
 
     return result.joinToString(" ")
 }

@@ -77,14 +77,7 @@ class MainActivity : AppCompatActivity() {
         val app = applicationContext as ToolboxApp
         val langIndex = app.settings.global.language
 
-        val targetLocale: LocaleListCompat = when (langIndex) {
-            1 -> LocaleListCompat.forLanguageTags("zh-CN")
-            2 -> LocaleListCompat.forLanguageTags("zh-TW")
-            3 -> LocaleListCompat.forLanguageTags("lzh-CN")
-            4 -> LocaleListCompat.forLanguageTags("en")
-            5 -> LocaleListCompat.forLanguageTags("lzh-EN")
-            else -> LocaleListCompat.getEmptyLocaleList()
-        }
+        val targetLocale = LocaleConfigs.getLocaleListCompat(langIndex)
 
         if (AppCompatDelegate.getApplicationLocales() != targetLocale) {
             AppCompatDelegate.setApplicationLocales(targetLocale)

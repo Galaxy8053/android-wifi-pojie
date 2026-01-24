@@ -175,6 +175,7 @@ fun RunListView(
                     val realTimeInfo = scannedList.find { it.ssid == task.ssid }
                     WifiInfo(
                         ssid = task.ssid,
+                        bssid="",
                         level = realTimeInfo?.level ?: 0,
                         capabilities = realTimeInfo?.capabilities ?: ""
                     )
@@ -219,7 +220,33 @@ fun RunListView(
                         ContainedLoadingIndicator(Modifier.size(60.dp))
                     }
 
-                    1 -> { /* 空列表 UI */
+                    1 -> Column(Modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Rounded.Inbox,
+                                    null,
+                                    Modifier.size(96.dp),
+                                    tint = MaterialTheme.colorScheme.outlineVariant
+                                )
+                                Text("空列表", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+
+                        BannerTip(
+                            title = "没有找到想要的wifi？",
+                            text = "点击手动输入名称",
+                            trailingIcon = true,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                            onBannerClick = { showManualInput = true }
+                        )
                     }
 
                     2 -> Column(Modifier.fillMaxSize()) {

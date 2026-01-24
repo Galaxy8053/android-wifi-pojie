@@ -70,7 +70,8 @@
     <string name="run_output">运行输出</string>
     <string name="resources_nothing">¯\\_(ツ)_/¯\n暂无资源，点击 + 号添加</string>
     <string name="save_failed">保存失败</string>
-    <string name="no_choose_tip">--请选择--</string>
+    <string name="no_choose_tip">请选择</string>
+    <string name="no_choose_tip_list">--请选择--</string>
     <string name="item_free">空闲</string>
     <string name="command_logcat">[命令行] logcat</string>
     <string name="api_broadcastreceiver">[应用API] BroadcastReceiver</string>
@@ -325,5 +326,21 @@
     <string name="fail_time">(%1$d ms)</string>
     <string name="run_speed_minute">%1$d/m</string>
     <string name="manual_input">手动输入</string>
-
+    <string name="error_scan_fail">扫描失败</string>
+    <string name="error_wifi_not_enabled">wifi未开启</string>
+    <string name="error_location_not_enabled">定位服务未开启</string>
+    <string name="error_location_not_allowed">未获取定位权限</string>
+    <string name="error_unknown_with_message">未知错误(%1$s)</string>
+    <string name="error_scan_impl_empty">扫描实现为空，请先在设置中选择</string>
+    <string name="error_shizuku_no_permission">未获取到Shizuku权限</string>
+    <string name="error_missing_params">缺失参数</string>
+    <string name="error_enable_wifi_impl_empty">开关wifi实现为空</string>
+    <string name="error_manage_saved_wifi_impl_empty">管理已保存网络实现为空</string>
+    <string name="calculating_time">计算剩余时间…</string>
+    <string name="remaining_time_format">预计剩余 %1$s</string>
+    <string name="time_unit_day">%1$sd</string>
+    <string name="time_unit_hour">%1$sh</string>
+    <string name="time_unit_minute">%1$sm</string>
+    <string name="time_unit_less_than_minute">&lt;1m</string>
+    <string name="local_path">本地路径</string>
 </resources>

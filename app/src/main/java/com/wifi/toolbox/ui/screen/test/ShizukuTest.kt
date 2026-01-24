@@ -167,6 +167,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                                     logState.addLog(
                                         context.getString(R.string.scan_result_item, it.ssid, it.level, it.capabilities)
                                     )
+                                    logState.addLog(it.bssid)
                                 }
                                 logState.addLog(context.getString(R.string.command_end))
                             }

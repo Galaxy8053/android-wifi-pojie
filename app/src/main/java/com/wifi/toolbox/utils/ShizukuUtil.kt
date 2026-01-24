@@ -7,6 +7,7 @@ import android.content.AttributionSource
 import android.content.Context
 import android.media.AudioManager
 import android.net.wifi.WifiConfiguration
+import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -475,15 +476,17 @@ object ShizukuUtil {
 
         val scanResultClass = Class.forName("android.net.wifi.ScanResult")
         val ssidField = scanResultClass.getField("SSID")
+        val bssidField = scanResultClass.getField("BSSID")
         val levelField = scanResultClass.getField("level")
         val capabilitiesField = scanResultClass.getField("capabilities")
 
         scanResultsList.forEach { result ->
             val ssid = ssidField.get(result)?.toString() ?: ""
+            val bssid = bssidField.get(result)?.toString() ?: ""
             val level = levelField.get(result) as Int
             val capabilities = capabilitiesField.get(result)?.toString() ?: ""
 
-            results.add(WifiInfo(ssid, level, capabilities))
+            results.add(WifiInfo(ssid, level, bssid, capabilities))
         }
         results.sortByDescending { it.level }
         return results

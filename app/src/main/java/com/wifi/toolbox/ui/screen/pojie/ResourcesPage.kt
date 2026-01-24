@@ -28,7 +28,9 @@ fun ResourcesPage(
 ) {
     val context = LocalContext.current
     val state = ResourcesState.rememberState(onShowFabDialogChange)
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
