@@ -7,7 +7,6 @@ import android.content.AttributionSource
 import android.content.Context
 import android.media.AudioManager
 import android.net.wifi.WifiConfiguration
-import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder

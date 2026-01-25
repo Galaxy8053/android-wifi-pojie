@@ -21,6 +21,7 @@ import com.wifi.toolbox.utils.ShizukuUtil
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.utils.ShizukuUtil.REQUEST_PERMISSION_CODE
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import rikka.shizuku.*
@@ -205,13 +206,6 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                             logState,
                             context.getString(R.string.lock_screen_failed)
                         ) { ShizukuUtil.lookScreen(); logState.addLog(context.getString(R.string.request_sent)) }
-                    }
-                    ActionChip(stringResource(R.string.max_volume), Icons.AutoMirrored.Filled.VolumeUp) {
-                        shizukuAction(
-                            context,
-                            logState,
-                            context.getString(R.string.set_volume_failed)
-                        ) { ShizukuUtil.setMediaVolumeMax(); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                 }
 
