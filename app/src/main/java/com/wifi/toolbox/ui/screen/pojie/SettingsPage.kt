@@ -140,7 +140,7 @@ fun SettingsPage(
 
             item {
                 AnimatedVisibility(
-                    visible = pojieSettings.scanMode == 1,
+                    visible = pojieSettings.scanMode == 1 || pojieSettings.scanMode == 2,
                     enter = expandVertically(),
                     exit = shrinkVertically()
                 ) {

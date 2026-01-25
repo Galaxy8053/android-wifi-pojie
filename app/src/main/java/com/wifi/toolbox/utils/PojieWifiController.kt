@@ -242,24 +242,32 @@ fun rememberPojieWifiController(
                             errorMessage = context.getString(R.string.error_scan_impl_empty)
                         )
 
-                        1 -> ScanResult(
-                            ScanResult.CODE_SUCCESS,
-                            null,
-                            ShizukuUtil.getWifiScanResults().filter { it.ssid.isNotEmpty() }
-                                .distinctBy { it.ssid })
-
-                        2 -> ScanResult(
-                            ScanResult.CODE_SUCCESS,
-                            null,
-                            AidlServiceHelper.getWifiScanResults(app)
+                        1 -> {
+                            val saved = ShizukuUtil.getSavedWifiList()
+                            val results = ShizukuUtil.getWifiScanResults()
                                 .filter { it.ssid.isNotEmpty() }
-                                .distinctBy { it.ssid })
+                                .distinctBy { it.ssid }
+                                .map { it.copy(savedInfo = saved.find { s -> s.SSID == "\"${it.ssid}\"" || s.SSID == it.ssid }) }
+                            ScanResult(ScanResult.CODE_SUCCESS, null, results)
+                        }
 
-                        3 -> ScanResult(
-                            ScanResult.CODE_SUCCESS,
-                            null,
-                            ApiUtil.getScanResults(context).filter { it.ssid.isNotEmpty() }
-                                .distinctBy { it.ssid })
+                        2 -> {
+                            val saved = AidlServiceHelper.getSavedWifiList(app)
+                            val results = AidlServiceHelper.getWifiScanResults(app)
+                                .filter { it.ssid.isNotEmpty() }
+                                .distinctBy { it.ssid }
+                                .map { it.copy(savedInfo = saved.find { s -> s.SSID == "\"${it.ssid}\"" || s.SSID == it.ssid }) }
+                            ScanResult(ScanResult.CODE_SUCCESS, null, results)
+                        }
+
+                        3 -> {
+                            val saved = ApiUtil.getSavedWifiList(app)
+                            val results = ApiUtil.getScanResults(context)
+                                .filter { it.ssid.isNotEmpty() }
+                                .distinctBy { it.ssid }
+                                .map { it.copy(savedInfo = saved.find { s -> s.SSID == "\"${it.ssid}\"" || s.SSID == it.ssid }) }
+                            ScanResult(ScanResult.CODE_SUCCESS, null, results)
+                        }
 
                         else -> ScanResult(
                             code = StartScanResult.CODE_UNKNOWN,

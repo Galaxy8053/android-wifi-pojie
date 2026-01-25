@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.wifi.toolbox.ui.items.pojie
 
 import android.net.wifi.WifiManager
@@ -19,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
+import com.wifi.toolbox.ui.items.TagItem
+import com.wifi.toolbox.ui.items.TagType
 import com.wifi.toolbox.ui.items.WifiIcon
 
 @Composable
@@ -81,7 +85,20 @@ private fun WifiItemMainHeader(
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = wifi.ssid, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+            FlowRow {
+                Text(
+                    text = wifi.ssid,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+                if (WifiInfo.checkIsFreeOpenNetwork(wifi)) TagItem("开放式", TagType.Tertiary)
+                wifi.savedInfo?.let {
+                    if (it.preSharedKey.length >= 8) {
+                        TagItem("已保存(密码:${it.preSharedKey})")
+                    } else TagItem("已保存")
+                }
+            }
             Text(
                 text = if (wifi.level == 0) stringResource(R.string.unknown) else stringResource(
                     R.string.dbm_string,
@@ -208,7 +225,7 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
-                ){
+                ) {
                     Text(
                         text = it.textTip,
                         style = MaterialTheme.typography.bodySmall,
@@ -217,7 +234,10 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
                     )
                     Text(
                         text = avgMs?.let { ms ->
-                            stringResource(R.string.remaining_time_format, formatDuration(ms * (it.tryList.size - it.tryIndex)))
+                            stringResource(
+                                R.string.remaining_time_format,
+                                formatDuration(ms * (it.tryList.size - it.tryIndex))
+                            )
                         } ?: stringResource(R.string.calculating_time),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)

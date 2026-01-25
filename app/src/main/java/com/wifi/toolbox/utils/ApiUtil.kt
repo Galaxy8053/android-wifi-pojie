@@ -120,18 +120,22 @@ object ApiUtil {
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         return wifiManager.removeNetwork(netId)
     }
+
     fun enableLocation(context: Context, onEnabled: (() -> Unit)? = null): Boolean {
         val activity = context as? MainActivity ?: return false
         if (!isLocationEnabled(context)) {
             activity.pendingLocationCallback = onEnabled
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000).build()
-            val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest).setAlwaysShow(true)
+            val locationRequest =
+                LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000).build()
+            val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+                .setAlwaysShow(true)
             val client = LocationServices.getSettingsClient(activity)
 
             client.checkLocationSettings(builder.build()).addOnFailureListener { exception ->
                 if (exception is ResolvableApiException) {
                     try {
-                        val intentSenderRequest = IntentSenderRequest.Builder(exception.resolution.intentSender).build()
+                        val intentSenderRequest =
+                            IntentSenderRequest.Builder(exception.resolution.intentSender).build()
                         activity.locationLauncher.launch(intentSenderRequest)
                     } catch (_: Exception) {
                         val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
@@ -146,22 +150,16 @@ object ApiUtil {
 
 
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-    fun getSavedWifiList(context: Context): List<Pair<Int, String>> {
+    fun getSavedWifiList(context: Context): List<WifiConfiguration> {
         val wifiManager =
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val configs = wifiManager.configuredNetworks ?: return emptyList()
-
-        return configs.distinctBy { it.networkId }.mapNotNull { config ->
-            var ssid = config.SSID ?: return@mapNotNull null
-            if (ssid.startsWith("\"") && ssid.endsWith("\"") && ssid.length >= 2) {
-                ssid = ssid.substring(1, ssid.length - 1)
-            }
-            Pair(config.networkId, ssid)
-        }
+        return configs.distinctBy { it.networkId }
     }
 
     fun getNetIdBySsid(context: Context, ssid: String): Int {
-        return getSavedWifiList(context).find { it.second == ssid }?.first ?: -1
+        val savedNetworks: List<WifiConfiguration> = getSavedWifiList(context)
+        return savedNetworks.find { it.SSID.removeSurrounding("\"") == ssid }?.networkId ?: -1
     }
 
     fun startScan(context: Context): Boolean {
@@ -179,7 +177,7 @@ object ApiUtil {
                 com.wifi.toolbox.structs.WifiInfo(
                     ssid = it.SSID,
                     level = it.level,
-                    bssid="",
+                    bssid = "",
                     capabilities = it.capabilities
                 )
             }.sortedByDescending { it.level }

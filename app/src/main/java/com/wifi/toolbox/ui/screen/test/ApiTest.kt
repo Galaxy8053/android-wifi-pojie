@@ -254,10 +254,11 @@ private fun checkAndPerformAndGetWifiList(
             logState.addLog(context.getString(R.string.saved_wifi_list_head))
             result.forEach {
                 @Suppress("DEPRECATION") logState.addLog(
-                    String.format(
-                        context.getString(R.string.saved_wifi_item),
-                        it.first,
-                        it.second.removeSurrounding("\""),
+                    context.getString(
+                        R.string.saved_wifi_item_with_psk,
+                        it.networkId.toString(),
+                        it.SSID.removeSurrounding("\""),
+                        it.preSharedKey?.removeSurrounding("\"") ?: ""
                     )
                 )
             }

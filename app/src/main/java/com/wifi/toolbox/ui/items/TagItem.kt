@@ -15,8 +15,8 @@ enum class TagType { Primary, Secondary, Tertiary }
 @Composable
 fun TagItem(
     text: String,
-    modifier: Modifier = Modifier,
-    type: TagType = TagType.Secondary
+    type: TagType = TagType.Secondary,
+    modifier: Modifier = Modifier
 ) {
     val (containerColor, contentColor) = when (type) {
         TagType.Primary -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
