@@ -1,31 +1,56 @@
 package com.wifi.toolbox.ui.screen.test
 
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.InsertLink
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.Dns
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
-import com.wifi.toolbox.utils.ShizukuUtil
-import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.ui.items.ActionChip
+import com.wifi.toolbox.ui.items.SectionDivider
+import com.wifi.toolbox.ui.items.SectionTitle
 import com.wifi.toolbox.ui.screen.testAction
 import com.wifi.toolbox.utils.LogState
+import com.wifi.toolbox.utils.ShizukuUtil
 import com.wifi.toolbox.utils.ShizukuUtil.REQUEST_PERMISSION_CODE
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import rikka.shizuku.*
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 
 @Composable
 fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
@@ -154,9 +179,14 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                                 logState.addLog(context.getString(R.string.scan_result_head))
                                 result.forEach {
                                     logState.addLog(
-                                        context.getString(R.string.scan_result_item, it.ssid, it.level, it.capabilities)
+                                        context.getString(
+                                            R.string.scan_result_item,
+                                            it.ssid,
+                                            it.level,
+                                            it.bssid,
+                                            it.capabilities
+                                        )
                                     )
-                                    logState.addLog(it.bssid)
                                 }
                                 logState.addLog(context.getString(R.string.command_end))
                             }
@@ -199,7 +229,10 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
 
                 SectionDivider()
 
-                SectionTitle(title = stringResource(R.string.connect_wifi), icon = Icons.Default.InsertLink)
+                SectionTitle(
+                    title = stringResource(R.string.connect_wifi),
+                    icon = Icons.Default.InsertLink
+                )
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -232,9 +265,17 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                                 context, logState, context.getString(R.string.execute_shell_failed)
                             ) {
                                 val command = "cmd wifi connect-network $name wpa2 $password"
-                                logState.addLog(context.getString(R.string.run_command_string, command))
                                 logState.addLog(
-                                    context.getString(R.string.request_sent_with_response, ShizukuUtil.executeCommandSync(command))
+                                    context.getString(
+                                        R.string.run_command_string,
+                                        command
+                                    )
+                                )
+                                logState.addLog(
+                                    context.getString(
+                                        R.string.request_sent_with_response,
+                                        ShizukuUtil.executeCommandSync(command)
+                                    )
                                 )
                             }
                         },

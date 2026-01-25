@@ -146,7 +146,7 @@
     <string name="start_scan_success_later">表章已递，三秒后察其果</string>
     <string name="no_location_permission">缺定位之敕</string>
     <string name="scan_result_head">=== 巡视之果 ===</string>
-    <string name="scan_result_item">名: %-16s 气劲: %-8s 规约: %s</string>
+    <string name="scan_result_item">名: %-16s 气劲: %-8s bssid: %-24s 规约: %s</string>
     <string name="command_end">===============</string>
     <string name="scan_wifi_failed">谬矣：巡视无线未果</string>
     <string name="location_not_enabled">定位之术未启，请于整饬中开之</string>

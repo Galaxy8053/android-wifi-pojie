@@ -146,7 +146,7 @@
     <string name="start_scan_success_later">請求已發送，3秒後獲取結果</string>
     <string name="no_location_permission">缺少位置權限</string>
     <string name="scan_result_head">=== 掃描結果 ===</string>
-    <string name="scan_result_item">名稱: %-16s 訊號強度: %-8s 支援的協議: %s</string>
+    <string name="scan_result_item">名稱: %-16s 訊號強度: %-8s bssid: %-24s 支援的協議: %s</string>
     <string name="command_end">===============</string>
     <string name="scan_wifi_failed">E: 掃描 WiFi 失敗</string>
     <string name="location_not_enabled">系統定位服務未開啟，請在設定中打開</string>

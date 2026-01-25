@@ -142,7 +142,7 @@
     <string name="start_scan_success_later">Sent. Getting results in 3s…</string>
     <string name="no_location_permission">Missing location permission</string>
     <string name="scan_result_head">=== Scan Results ===</string>
-    <string name="scan_result_item">SSID: %-16s Level: %-8s Protocol: %s</string>
+    <string name="scan_result_item">SSID: %-16s Level: %-8s bssid: %-24s Protocol: %s</string>
     <string name="command_end">===============</string>
     <string name="scan_wifi_failed">E: WiFi scan failed</string>
     <string name="location_not_enabled">Location services are disabled</string>

@@ -148,7 +148,7 @@
     <string name="start_scan_success_later">请求已发送，3秒后获取结果</string>
     <string name="no_location_permission">缺少位置权限</string>
     <string name="scan_result_head">=== 扫描结果 ===</string>
-    <string name="scan_result_item">名称: %-16s 信号强度: %-8s 支持的协议: %s</string>
+    <string name="scan_result_item">名称: %-16s 信号强度: %-8s bssid: %-24s 支持的协议: %s</string>
     <string name="command_end">===============</string>
     <string name="scan_wifi_failed">E: 扫描wifi失败</string>
     <string name="location_not_enabled">系统定位服务未开启，请在设置中打开</string>
