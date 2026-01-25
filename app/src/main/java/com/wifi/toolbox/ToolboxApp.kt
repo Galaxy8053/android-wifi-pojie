@@ -1,19 +1,19 @@
 package com.wifi.toolbox
 
-import android.app.*
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
-import android.os.IBinder
-import android.os.RemoteException
-import android.util.Log
-import com.topjohnwu.superuser.ipc.RootService
-import com.wifi.toolbox.app.*
-import com.wifi.toolbox.services.AIDLService
+import android.app.Activity
+import android.app.Application
+import com.wifi.toolbox.app.AppAidl
+import com.wifi.toolbox.app.AppCrash
+import com.wifi.toolbox.app.AppPojieTask
+import com.wifi.toolbox.app.AppShizuku
+import com.wifi.toolbox.app.AppUI
 import com.wifi.toolbox.utils.ActivityStack
 import com.wifi.toolbox.utils.PojieHistoryManager
 import com.wifi.toolbox.utils.SettingsManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 class ToolboxApp : Application() {
 
@@ -22,7 +22,6 @@ class ToolboxApp : Application() {
             private set
     }
 
-    val TAG="ToolboxApp"
 
     data class AlertDialogData(val title: String, val text: String)
     data class SnackbarData(
@@ -37,6 +36,7 @@ class ToolboxApp : Application() {
     lateinit var shizuku: AppShizuku
     lateinit var ui: AppUI
     lateinit var pojieTask: AppPojieTask
+    lateinit var aidl: AppAidl
     lateinit var settings: SettingsManager
     lateinit var pojieHistory: PojieHistoryManager
 
@@ -54,28 +54,36 @@ class ToolboxApp : Application() {
         appCrash = AppCrash(this)
         shizuku = AppShizuku(appScope)
         ui = AppUI(appScope)
+        aidl = AppAidl(this)
         pojieTask = AppPojieTask(this)
         settings = SettingsManager(this)
         pojieHistory = PojieHistoryManager(this)
 
         appCrash.StartCatch()
         shizuku.init()
-
-
-        Log.d(TAG, "Application onCreate: Binding Root Service...")
-        val intent = Intent(this, AIDLService::class.java)
-        RootService.bind(intent, conn)
+        aidl.startAIDLServiceRoot()
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) = ActivityStack.register(activity)
             override fun onActivityPaused(activity: Activity) = ActivityStack.unregister()
-            override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
+            override fun onActivityCreated(
+                activity: Activity,
+                savedInstanceState: android.os.Bundle?
+            ) {
+            }
+
             override fun onActivityStarted(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
-            override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) {}
+            override fun onActivitySaveInstanceState(
+                activity: Activity,
+                outState: android.os.Bundle
+            ) {
+            }
+
             override fun onActivityDestroyed(activity: Activity) {}
         })
     }
+
 
     override fun onTerminate() {
         super.onTerminate()
@@ -83,26 +91,6 @@ class ToolboxApp : Application() {
         appScope.cancel()
     }
 
-
-    private var ipc: IToolboxService? = null
-
-    private val conn: ServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, service: IBinder) {
-            Log.d(TAG, "AIDL Service Connected (App Level)")
-            ipc = IToolboxService.Stub.asInterface(service)
-            try {
-                Log.d(TAG, "Executing: Press Power Key")
-                ipc?.pressPowerKey()
-            } catch (e: RemoteException) {
-                Log.e(TAG, "Remote call failed", e)
-            }
-        }
-
-        override fun onServiceDisconnected(name: ComponentName) {
-            Log.d(TAG, "AIDL Service Disconnected")
-            ipc = null
-        }
-    }
 
     fun alert(title: String, text: String) = ui.alert(title, text)
 }

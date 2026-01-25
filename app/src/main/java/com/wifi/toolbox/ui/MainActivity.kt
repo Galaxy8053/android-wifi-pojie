@@ -26,7 +26,8 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
+
+val LocalNavTarget = compositionLocalOf<MutableState<String?>> { error("No NavTarget provided") }
 
 class MainActivity : AppCompatActivity() {
     private var pendingNavigation = mutableStateOf<String?>(null)
@@ -137,7 +138,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         MiuixTheme(ThemeController(isDark = useDarkTheme)) {
-            CompositionLocalProvider(LocalEditorController provides editorController) {
+            CompositionLocalProvider(
+                LocalEditorController provides editorController,
+                LocalNavTarget provides pendingNavigation
+            ) {
                 AppTheme(
                     darkTheme = useDarkTheme,
                     dynamicColor = settings.dynamicColor,

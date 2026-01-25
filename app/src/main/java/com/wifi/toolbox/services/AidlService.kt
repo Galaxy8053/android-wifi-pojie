@@ -8,8 +8,8 @@ import com.topjohnwu.superuser.ipc.RootService
 import com.wifi.toolbox.IToolboxService
 import java.util.UUID
 
-class AIDLService : RootService() {
-    private val TAG = "AIDLService"
+class AidlService : RootService() {
+    private val TAG = "ToolboxApp-Root"
     private val uuid = UUID.randomUUID().toString()
 
     inner class ToolboxIPC : IToolboxService.Stub() {

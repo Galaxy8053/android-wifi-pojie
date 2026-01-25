@@ -18,9 +18,8 @@ import java.util.Scanner
 fun HyperOSBackground(modifier: Modifier = Modifier) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
     val context = LocalContext.current
-    val backgroundColor = MaterialTheme.colorScheme.background
 
-    val isDark = backgroundColor.run {
+    val isDark = MaterialTheme.colorScheme.background.run {
         val luminance = (red * 0.2126f + green * 0.7152f + blue * 0.0722f)
         luminance < 0.5f
     }
