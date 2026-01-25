@@ -43,7 +43,6 @@ core = { module = "com.github.topjohnwu.libsu:core", version.ref = "core" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 editor = { module = "io.github.rosemoe:editor" }
 editor-bom = { module = "io.github.rosemoe:editor-bom", version.ref = "editorBom" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

@@ -1,7 +1,15 @@
 package com.wifi.toolbox
 
 import android.app.*
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
+import android.os.RemoteException
+import android.util.Log
+import com.topjohnwu.superuser.ipc.RootService
 import com.wifi.toolbox.app.*
+import com.wifi.toolbox.services.AIDLService
 import com.wifi.toolbox.utils.ActivityStack
 import com.wifi.toolbox.utils.PojieHistoryManager
 import com.wifi.toolbox.utils.SettingsManager
@@ -13,6 +21,8 @@ class ToolboxApp : Application() {
         lateinit var instance: ToolboxApp
             private set
     }
+
+    val TAG="ToolboxApp"
 
     data class AlertDialogData(val title: String, val text: String)
     data class SnackbarData(
@@ -51,6 +61,11 @@ class ToolboxApp : Application() {
         appCrash.StartCatch()
         shizuku.init()
 
+
+        Log.d(TAG, "Application onCreate: Binding Root Service...")
+        val intent = Intent(this, AIDLService::class.java)
+        RootService.bind(intent, conn)
+
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) = ActivityStack.register(activity)
             override fun onActivityPaused(activity: Activity) = ActivityStack.unregister()
@@ -66,6 +81,27 @@ class ToolboxApp : Application() {
         super.onTerminate()
         shizuku.removeListener()
         appScope.cancel()
+    }
+
+
+    private var ipc: IToolboxService? = null
+
+    private val conn: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            Log.d(TAG, "AIDL Service Connected (App Level)")
+            ipc = IToolboxService.Stub.asInterface(service)
+            try {
+                Log.d(TAG, "Executing: Press Power Key")
+                ipc?.pressPowerKey()
+            } catch (e: RemoteException) {
+                Log.e(TAG, "Remote call failed", e)
+            }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.d(TAG, "AIDL Service Disconnected")
+            ipc = null
+        }
     }
 
     fun alert(title: String, text: String) = ui.alert(title, text)
