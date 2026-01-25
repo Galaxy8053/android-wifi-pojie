@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
@@ -245,7 +246,7 @@ fun SettingsScreen(
                         },
                         title = { Text("启用AIDL服务") },
                         summary = { Text("使用所有纯root功能必须开启此选项") },
-                        icon = { Icon(Icons.Default.FolderOpen, null) }
+                        icon = { Icon(painterResource(R.drawable.ic_root), null) }
                     )
 
                     PreferenceCategory(title = { Text(stringResource(R.string.language_settings)) })

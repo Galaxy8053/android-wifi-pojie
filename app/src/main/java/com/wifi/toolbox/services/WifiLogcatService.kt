@@ -1,9 +1,12 @@
 package com.wifi.toolbox.services
 
 import android.util.Log
+import android.content.Context
 import com.wifi.toolbox.R
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.PojieSettings
 import com.wifi.toolbox.structs.WifiLogData
+import com.wifi.toolbox.utils.AidlServiceHelper
 import com.wifi.toolbox.utils.CommandRunner
 import com.wifi.toolbox.utils.ShizukuUtil
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,7 +14,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import java.util.function.Consumer
 
 class WifiLogcatService(
-    private val context: android.content.Context, private val pojieSettings: PojieSettings
+    private val context: Context, private val pojieSettings: PojieSettings
 ) : AutoCloseable {
     var stopFunc: Runnable? = null
 
@@ -49,22 +52,28 @@ class WifiLogcatService(
         }
     }
 
-    fun executeCommand(
+    private fun executeCommand(
         command: String,
         onOutputReceived: Consumer<String>?,
         onCommandFinished: Consumer<CommandRunner.CommandResult>?
     ): Runnable {
+        val app = context.applicationContext as ToolboxApp
         return when (val method = pojieSettings.commandMethod) {
             0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
             1 -> ShizukuUtil.executeCommand(command, onOutputReceived, onCommandFinished)
+            2 -> AidlServiceHelper.executeCommand(app, command, onOutputReceived, onCommandFinished)
+            3 -> CommandRunner.executeCommand(command, true, onOutputReceived, onCommandFinished)
             else -> throw Exception(context.getString(R.string.tip_not_completed) + "(commandMethod=$method)")
         }
     }
 
     fun executeCommandSync(command: String): CommandRunner.CommandResult {
+        val app = context.applicationContext as ToolboxApp
         return when (val method = pojieSettings.commandMethod) {
             0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
             1 -> ShizukuUtil.executeCommandSync(command)
+            2 -> AidlServiceHelper.executeCommandSync(app, command)
+            3 -> CommandRunner.executeCommandSync(command, true)
             else -> throw Exception(context.getString(R.string.tip_not_completed) + "(commandMethod=$method)")
         }
     }

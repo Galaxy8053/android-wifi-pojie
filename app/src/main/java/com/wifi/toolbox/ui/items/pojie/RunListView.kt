@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -41,7 +40,8 @@ data class StartScanResult(
         const val CODE_LOCATION_NOT_ALLOWED = -4
         const val CODE_SEND_FAIL = -5
         const val CODE_NOT_SET = -6
-        const val CODE_UNKNOWN = -7
+        const val CODE_SERVICE_NOT_BOUND = -7
+        const val CODE_UNKNOWN = -8
     }
 }
 
@@ -316,7 +316,8 @@ fun RunListView(
                 StartScanResult.CODE_SCAN_FAIL -> Icons.Rounded.ErrorOutline
                 StartScanResult.CODE_LOCATION_NOT_ENABLED -> Icons.Rounded.LocationOff
                 StartScanResult.CODE_LOCATION_NOT_ALLOWED -> Icons.Rounded.WrongLocation
-                StartScanResult.CODE_NOT_SET -> painterResource(id = R.drawable.ic_settings_b_roll)
+                StartScanResult.CODE_NOT_SET, StartScanResult.CODE_SERVICE_NOT_BOUND ->
+                    painterResource(id = R.drawable.ic_settings_b_roll)
                 else -> Icons.Rounded.BugReport
             }
             ErrorTip(
@@ -328,7 +329,7 @@ fun RunListView(
                     StartScanResult.CODE_WIFI_NOT_ENABLED -> {
                         Button(onClick = { controller.enableWifi() }) {
                             Icon(
-                                Icons.Rounded.ToggleOn,
+                                Icons.Rounded.TouchApp,
                                 null,
                                 Modifier.size(ButtonDefaults.IconSize)
                             )
@@ -363,6 +364,18 @@ fun RunListView(
 
                     StartScanResult.CODE_NOT_SET -> {
                         Button(onClick = { controller.gotoSettings() }) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                null,
+                                Modifier.size(ButtonDefaults.IconSize)
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("去设置")
+                        }
+                    }
+
+                    StartScanResult.CODE_SERVICE_NOT_BOUND -> {
+                        Button(onClick = { controller.gotoAppSettings() }) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.ArrowForward,
                                 null,
@@ -451,6 +464,7 @@ fun ErrorTip(
                         tint = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
+
                 is Painter -> {
                     Icon(
                         painter = icon,

@@ -59,7 +59,7 @@ object PojieNotification {
      * @param context 上下文
      * @param contentText 要更新的内容
      */
-    fun update(context: Context, contentText: String) {
+    fun update(context: Context, contentText: String, subText: String) {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = buildForeground(context).let {
@@ -67,6 +67,7 @@ object PojieNotification {
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(context.getString(R.string.wifi_pojie_name))
                 .setContentText(contentText)
+                .setSubText(subText)
                 .setContentIntent(it.contentIntent)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_MIN)

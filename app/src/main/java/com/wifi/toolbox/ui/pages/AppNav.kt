@@ -21,7 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.MenuOpen
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -314,7 +313,7 @@ fun NavContent(
                 )
             ),
             NavGroup(
-                context.getString(R.string.toolbox), Icons.AutoMirrored.Rounded.MenuOpen,
+                context.getString(R.string.toolbox), Icons.Rounded.DesignServices,
                 listOf(
                     NavMenuItem(
                         context.getString(R.string.wifi_pojie_name),

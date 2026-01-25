@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.wifi.toolbox.R
+import com.wifi.toolbox.ToolboxApp
+import com.wifi.toolbox.utils.AidlServiceHelper
 import com.wifi.toolbox.utils.CommandRunner
 
 
@@ -46,12 +48,14 @@ data class ActionChipItem(val icon: ImageVector, val text: String, val command: 
 @Composable
 fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val app = LocalContext.current.applicationContext as ToolboxApp
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     var command by remember { mutableStateOf("") }
     val buttonLabels = arrayOf(
         stringResource(R.string.normal),
         stringResource(R.string.shizuku),
+        "AIDL",
         stringResource(R.string.root)
     )
 
@@ -199,7 +203,19 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                                     )
                                 }
 
-                                2 -> { // Root mode
+                                2 -> { // AIDL Service mode
+                                    logState.addLog(
+                                        "使用AIDL Service执行：$commandToExecute"
+                                    )
+                                    stopCommandRunnable = AidlServiceHelper.executeCommand(
+                                        app = app,
+                                        command = commandToExecute,
+                                        onOutputReceived = onOutput,
+                                        onCommandFinished = onFinish
+                                    )
+                                }
+
+                                3 -> { // Root mode
                                     logState.addLog(
                                         context.getString(
                                             R.string.run_command_string_root,

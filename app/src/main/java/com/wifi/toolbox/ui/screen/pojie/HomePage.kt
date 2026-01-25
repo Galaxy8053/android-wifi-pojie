@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.MenuOpen
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -74,7 +75,7 @@ fun HomePageContent(
     ) {
         FoldCard(
             title = stringResource(R.string.run_config),
-            icon = Icons.Rounded.DesignServices,
+            icon = Icons.AutoMirrored.Rounded.MenuOpen,
             expanded = expandedParamsCard,
             onExpandedChange = {
                 expandedParamsCard = it
@@ -161,6 +162,8 @@ fun HomePagePreview() {
         override fun enableWifi() {}
         override fun applyLocation() {}
         override fun gotoSettings() {}
+        override fun gotoAppSettings() {}
+
         override fun enableLocation() {}
         override fun disconnectWifi() {}
     }

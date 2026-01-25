@@ -56,6 +56,7 @@ fun PojieScreen(onMenuClick: () -> Unit) {
                 override fun enableLocation() {}
                 override fun disconnectWifi() {}
                 override fun gotoSettings() {}
+                override fun gotoAppSettings() {}
             }
         }
     }

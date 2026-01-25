@@ -133,7 +133,7 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
             val total = it.tryList.size
             val current = it.tryIndex
             val progress = if (total > 0) current.toFloat() / total else 0f
-            val avgMs = calculateAverageSpeed(it)
+            val avgMs = PojieRunInfo.calculateAverageSpeed(it)
             val speed = if (avgMs != null && avgMs > 0) 60000.0 / avgMs else null
 
 
@@ -226,16 +226,6 @@ private fun WifiItemRunningProgress(runningInfo: PojieRunInfo?, info: PojieRunIn
             }
         }
     }
-}
-
-fun calculateAverageSpeed(task: PojieRunInfo): Long? {
-    val costs = task.costList
-    if (costs.size < 5) return null
-
-    val avgMs = costs.average()
-    if (avgMs <= 0) return null
-
-    return avgMs.toLong()
 }
 
 @Composable

@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.wifi.toolbox.services
 
 import android.annotation.SuppressLint
@@ -12,17 +13,19 @@ import android.util.Log
 import com.topjohnwu.superuser.ipc.RootService
 import com.wifi.toolbox.IToolboxService
 import com.wifi.toolbox.IToolboxCallback
+import com.wifi.toolbox.utils.CommandRunner
 import com.wifi.toolbox.utils.ShizukuUtil.getWifiMethod
-import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 class AidlService : RootService() {
-    private val TAG = "ToolboxApp-Root"
-    private val uuid = UUID.randomUUID().toString()
+    private val TAG = "AidlService"
     private var expectedUid = -1
 
+    private val taskMap = ConcurrentHashMap<Int, Runnable>()
+    private val taskIdGenerator = AtomicInteger(1)
+
     inner class ToolboxIPC : IToolboxService.Stub() {
-        private val activeCommands = mutableMapOf<Int, java.util.concurrent.Future<*>>()
-        private val executor = java.util.concurrent.Executors.newCachedThreadPool()
 
         private fun checkCaller() {
             val callingUid = getCallingUid()
@@ -437,34 +440,31 @@ class AidlService : RootService() {
 
         override fun stopCommand(taskId: Int) {
             checkCaller()
-            activeCommands.remove(taskId)?.cancel(true)
+            taskMap.remove(taskId)?.run()
         }
 
-        override fun executeCommand(command: String, callback: IToolboxCallback) {
+        override fun executeCommand(command: String, callback: IToolboxCallback): Int {
             checkCaller()
-            val task = executor.submit {
-                val out = StringBuilder()
-                val result = com.topjohnwu.superuser.Shell.cmd(command)
-                    .to(object : java.util.AbstractList<String>() {
-                        override fun add(element: String): Boolean {
-                            callback.onOutput(element)
-                            out.append(element).append("\n")
-                            return true
-                        }
+            val taskId = taskIdGenerator.getAndIncrement()
 
-                        override val size: Int get() = 0
-                        override fun get(index: Int): String = ""
-                    }).exec()
-                callback.onFinished(out.toString(), result.code)
-            }
-            activeCommands[command.hashCode()] = task
+            val stopFunc = CommandRunner.executeCommand(
+                command, false,
+                onOutputReceived = {
+                    callback.onOutput(it)
+                }, onCommandFinished = {
+                    taskMap.remove(taskId)
+                    callback.onFinished(it.output, it.exitCode)
+                })
+
+            taskMap[taskId] = stopFunc
+            return taskId
         }
 
         private fun getWifiService(): Any = asInterface("android.net.wifi.IWifiManager", "wifi")
     }
 
     override fun onCreate() {
-        Log.d(TAG, "ToolboxIPC: onCreate, $uuid")
+        Log.d(TAG, "ToolboxIPC: onCreate")
     }
 
     override fun onRebind(intent: Intent) {

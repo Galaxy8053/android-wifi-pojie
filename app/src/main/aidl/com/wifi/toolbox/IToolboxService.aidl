@@ -14,7 +14,7 @@ interface IToolboxService {
     void disconnectWifi();
     boolean startWifiScan(boolean allowUseCommand);
     List<Bundle> getSavedWifiList();
-    void executeCommand(String command, IToolboxCallback callback);
+    int executeCommand(String command, IToolboxCallback callback);
     int getNetIdBySsid(String ssid);
     List<Bundle> getWifiScanResults();
     void stopCommand(int taskId);

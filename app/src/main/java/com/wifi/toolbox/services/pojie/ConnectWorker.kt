@@ -63,12 +63,13 @@ class ConnectWorker(
         when (connectMode) {
             0 -> throw Exception(service.getString(R.string.connect_mode_empty))
             1 -> ShizukuUtil.connectToWifi(task.ssid, task.password)
-            2 -> {
+            2 -> AidlServiceHelper.connectToWifi(app, task.ssid, task.password)
+            3 -> {
                 val netId = ApiUtil.connectToWifiApi28(service, task.ssid, task.password)
                 if (netId == -1) throw Exception(service.getString(R.string.connect_wifi_failed))
             }
 
-            3 -> { /* API 29 处理流程 */
+            4 -> { /* API 29 处理流程 */
             }
 
             else -> throw Exception(service.getString(R.string.tip_not_completed) + "(connectMode=$connectMode)")
@@ -76,7 +77,7 @@ class ConnectWorker(
 
         try {
             withTimeout(app.pojieConfig.maxTryTime.toLong()) {
-                if (connectMode == 3) {
+                if (connectMode == 4) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         suspendCancellableCoroutine { continuation ->
                             launch(Dispatchers.Main) {
@@ -147,11 +148,11 @@ class ConnectWorker(
         connectMode: Int
     ): Int {
         val isMatch =
-            connectMode == 3 || (data.ssid == task.ssid && data.eventStartTime >= startTime)
+            connectMode == 4 || (data.ssid == task.ssid && data.eventStartTime >= startTime)
         if (!isMatch) return -1
 
         return when (data.event) {
-            WifiLogData.EVENT_WIFI_CONNECTED -> if (connectMode != 3) SinglePojieTask.RESULT_SUCCESS else -1
+            WifiLogData.EVENT_WIFI_CONNECTED -> if (connectMode != 4) SinglePojieTask.RESULT_SUCCESS else -1
             WifiLogData.EVENT_CONNECT_FAILED -> {
                 if (readLogMode == 2 || System.currentTimeMillis() - data.eventStartTime > 2000) SinglePojieTask.RESULT_FAILED else -1
             }
@@ -206,7 +207,7 @@ class ConnectWorker(
     fun forgetNetwork(settings: PojieSettings, ssid: String): Boolean {
         val netId = when (settings.connectMode) {
             1 -> ShizukuUtil.getNetIdBySsid(ssid)
-            2 -> ApiUtil.getNetIdBySsid(service, ssid)
+            3 -> ApiUtil.getNetIdBySsid(service, ssid)
             else -> -1
         }
         if (netId == -1) return false
@@ -216,7 +217,7 @@ class ConnectWorker(
                 true
             }
 
-            2 -> ApiUtil.forgetNetwork(service, netId)
+            3 -> ApiUtil.forgetNetwork(service, netId)
             else -> false
         }
     }

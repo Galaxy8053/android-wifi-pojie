@@ -17,6 +17,7 @@ import com.wifi.toolbox.ui.items.pojie.ScreenState
 import com.wifi.toolbox.ui.items.pojie.StartScanResult
 import kotlinx.coroutines.*
 import  com.wifi.toolbox.R
+import com.wifi.toolbox.ui.LocalNavTarget
 
 interface PojieWifiController {
     val uiState: ScreenState
@@ -30,6 +31,7 @@ interface PojieWifiController {
     fun enableWifi()
     fun applyLocation()
     fun gotoSettings()
+    fun gotoAppSettings()
     fun enableLocation()
     fun disconnectWifi()
 }
@@ -47,6 +49,7 @@ fun rememberPojieWifiController(
     var refreshErrorKey by remember { mutableLongStateOf(0L) }
     val currentRunningTasks = app.runningPojieTasks
     val currentFinishedTasks = app.finishedPojieTasksTip
+    val navTarget = LocalNavTarget.current
 
     var onWifiEnabledAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
@@ -98,6 +101,24 @@ fun rememberPojieWifiController(
                     }
 
                     2 -> {
+                        try {
+                            if (AidlServiceHelper.startWifiScan(
+                                    app,
+                                    settings.allowScanUseCommand
+                                )
+                            ) StartScanResult(
+                                code = StartScanResult.CODE_SUCCESS
+                            )
+                            else StartScanResult(code = StartScanResult.CODE_SEND_FAIL)
+                        } catch (e: Exception) {
+                            StartScanResult(
+                                code = StartScanResult.CODE_SERVICE_NOT_BOUND,
+                                errorMessage = e.message
+                            )
+                        }
+                    }
+
+                    3 -> {
                         if (ApiUtil.hasLocationPermission(context)) {
                             if (ApiUtil.isLocationEnabled(context)) {
                                 if (ApiUtil.startScan(context)) StartScanResult(code = StartScanResult.CODE_SUCCESS)
@@ -112,7 +133,7 @@ fun rememberPojieWifiController(
                     )
                 }
             } catch (e: Exception) {
-                StartScanResult(StartScanResult.CODE_UNKNOWN, e.message)
+                StartScanResult(StartScanResult.CODE_SCAN_FAIL, e.message)
             }
         }
     }
@@ -171,6 +192,11 @@ fun rememberPojieWifiController(
                     StartScanResult.CODE_NOT_SET,
                 )
 
+                StartScanResult.CODE_SERVICE_NOT_BOUND -> uiState = ScreenState.Error(
+                    start.errorMessage ?: "",
+                    StartScanResult.CODE_SERVICE_NOT_BOUND,
+                )
+
                 else -> uiState = ScreenState.Error(
                     context.getString(
                         R.string.error_unknown_with_message,
@@ -225,6 +251,13 @@ fun rememberPojieWifiController(
                         2 -> ScanResult(
                             ScanResult.CODE_SUCCESS,
                             null,
+                            AidlServiceHelper.getWifiScanResults(app)
+                                .filter { it.ssid.isNotEmpty() }
+                                .distinctBy { it.ssid })
+
+                        3 -> ScanResult(
+                            ScanResult.CODE_SUCCESS,
+                            null,
                             ApiUtil.getScanResults(context).filter { it.ssid.isNotEmpty() }
                                 .distinctBy { it.ssid })
 
@@ -244,17 +277,28 @@ fun rememberPojieWifiController(
                     return
                 }
                 onWifiEnabledAction = { reload() }
-                when (settings.enableMode) {
-                    0 -> app.alert(
-                        context.getString(R.string.error_missing_params),
-                        context.getString(R.string.error_enable_wifi_impl_empty)
-                    )
+                try {
+                    when (settings.enableMode) {
+                        0 -> app.alert(
+                            context.getString(R.string.error_missing_params),
+                            context.getString(R.string.error_enable_wifi_impl_empty)
+                        )
 
-                    1 -> checkShizukuUI(app) { ShizukuUtil.setWifiEnabled(true) }
-                    2 -> ApiUtil.setWifiEnabled(context, true)
-                    else -> app.alert(
-                        context.getString(R.string.error_missing_params),
-                        context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
+                        1 -> checkShizukuUI(app) { ShizukuUtil.setWifiEnabled(true) }
+                        2 -> {
+                            AidlServiceHelper.setWifiEnabled(app, true)
+                        }
+
+                        3 -> ApiUtil.setWifiEnabled(context, true)
+                        else -> app.alert(
+                            context.getString(R.string.error_missing_params),
+                            context.getString(R.string.tip_not_completed) + "(enableMode=${settings.enableMode})"
+                        )
+                    }
+                } catch (e: Exception) {
+                    app.alert(
+                        "执行出错",
+                        e.message.toString()
                     )
                 }
             }
@@ -264,6 +308,9 @@ fun rememberPojieWifiController(
             }
 
             override fun gotoSettings() = onChangePage(3)
+            override fun gotoAppSettings() {
+                navTarget.value = "Settings"
+            }
 
             override fun enableLocation() {
                 if (ApiUtil.enableLocation(context) { reload() }) reload()
@@ -278,6 +325,11 @@ fun rememberPojieWifiController(
 
                     1 -> {
                         ShizukuUtil.disconnectWifi()
+                        trigger++
+                    }
+
+                    2 -> {
+                        AidlServiceHelper.disconnectWifi(app)
                         trigger++
                     }
 

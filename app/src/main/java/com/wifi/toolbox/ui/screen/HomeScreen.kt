@@ -22,17 +22,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Lan
-import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SignalCellularAlt
@@ -40,6 +39,7 @@ import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +47,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -54,9 +57,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.ui.LocalNavTarget
 import kotlinx.coroutines.Dispatchers
@@ -72,12 +78,14 @@ data class NetworkState(
     val isWifiConnected: Boolean = false
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onMenuClick: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as ToolboxApp
     val navTarget = LocalNavTarget.current
     val scrollState = rememberScrollState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     val isDark = MaterialTheme.colorScheme.background.run {
         val luminance = (red * 0.2126f + green * 0.7152f + blue * 0.0722f)
@@ -139,8 +147,30 @@ fun HomeScreen(onMenuClick: () -> Unit) {
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = { HomeTopBar(onMenuClick) }
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column(modifier = Modifier.padding(0.dp, 8.dp)) {
+                        Text(
+                            text = stringResource(R.string.home),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = null)
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -232,32 +262,6 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}
-
-@Composable
-fun HomeTopBar(onMenuClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 12.dp)
-            .statusBarsPadding(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Rounded.Menu, contentDescription = "Menu")
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-            Column {
-                Text(
-                    text = "工具箱",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }

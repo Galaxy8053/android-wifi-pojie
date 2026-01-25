@@ -1,10 +1,12 @@
 package com.wifi.toolbox.services.pojie
 
+import android.content.Context
 import androidx.compose.runtime.snapshotFlow
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.PojieService
 import com.wifi.toolbox.structs.*
+import com.wifi.toolbox.utils.AidlServiceHelper
 import com.wifi.toolbox.utils.PojieHistoryItem
 import com.wifi.toolbox.utils.ShizukuUtil
 import kotlinx.coroutines.*
@@ -41,8 +43,16 @@ class PojieTaskManager(
 
         safeScope.launch {
             while (isActive) {
-                if (settings.connectMode != 3) ShizukuUtil.executeCommandSync("am force-stop com.android.settings")
-                delay(100)
+                if (settings.connectMode != 4) {
+                    if (AidlServiceHelper.executeCommandSync(
+                            app,
+                            "am force-stop com.android.settings"
+                        ).exitCode != 0
+                    ) {
+                        ShizukuUtil.executeCommandSync("am force-stop com.android.settings")
+                    }
+                }
+                delay(250)
             }
         }
 
@@ -114,7 +124,11 @@ class PojieTaskManager(
         if (waitMs > 0) {
             val cooldownJob = scope.launch {
                 service.log(service.getString(R.string.cooldown_log, waitMs))
-                PojieNotification.update(service, service.getString(R.string.cooldown_status))
+                PojieNotification.update(
+                    context = service,
+                    contentText = service.getString(R.string.cooldown_status),
+                    subText = ""
+                )
                 delay(waitMs)
             }
             currentWorkerJob = cooldownJob
@@ -170,9 +184,20 @@ class PojieTaskManager(
                 currentPass
             ), true
         )
+
+        val totalRemainingTime = app.runningPojieTasks
+            .map {
+                it.let { info ->
+                    PojieRunInfo.calculateAverageSpeed(info)
+                        ?.times(info.tryList.size - info.tryIndex)
+                }
+            }
+            .let { list -> if (list.any { it == null }) null else list.filterNotNull().sum() }
+
         PojieNotification.update(
-            service,
-            service.getString(R.string.notif_attempting, task.ssid, currentPass)
+            context = service,
+            contentText = service.getString(R.string.notif_attempting, task.ssid, currentPass),
+            subText = formatDuration(app, totalRemainingTime)
         )
 
         val startTime = System.currentTimeMillis()
@@ -181,6 +206,7 @@ class PojieTaskManager(
                 worker.performTaskLogic(app, SinglePojieTask(task.ssid, currentPass), settings)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+                service.log("E: ${e.message}")
                 SinglePojieTask.RESULT_ERROR
             }
         }
@@ -200,6 +226,25 @@ class PojieTaskManager(
         handleAttemptResult(app, task, currentPass, taskResult, settings, duration)
         currentWorkingSsid = null
         currentWorkerJob = null
+    }
+
+    fun formatDuration(context: Context, ms: Long?): String {
+        if (ms == null) {
+            return context.getString(R.string.calculating_time)
+        }
+        val totalMinutes = ms / 60000
+        if (totalMinutes < 1) return context.getString(R.string.time_unit_less_than_minute)
+
+        val days = totalMinutes / (24 * 60)
+        val hours = (totalMinutes % (24 * 60)) / 60
+        val minutes = totalMinutes % 60
+
+        val result = mutableListOf<String>()
+        if (days > 0) result.add(context.getString(R.string.time_unit_day, days))
+        if (hours > 0 || days > 0) result.add(context.getString(R.string.time_unit_hour, hours))
+        result.add(context.getString(R.string.time_unit_minute, minutes))
+
+        return context.getString(R.string.remaining_time_format, result.joinToString(" "))
     }
 
     private fun handleAttemptResult(

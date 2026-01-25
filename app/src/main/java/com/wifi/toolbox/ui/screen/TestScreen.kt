@@ -23,7 +23,7 @@ fun TestScreen(onMenuClick: () -> Unit) {
     val tabs = listOf(
         stringResource(R.string.shizuku),
         "AIDL服务",
-        stringResource(R.string.system_api),
+        "应用API",
         stringResource(R.string.terminal_command)
     )
     val logState = rememberLogState()
