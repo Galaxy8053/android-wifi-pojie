@@ -460,11 +460,6 @@ fun HomeCardItem(
     }
 }
 
-/**
- * 核心功能：获取本机所有 IP
- * 逻辑源自用户提供的 NetworkInterface 遍历方法，
- * 移除了 Socket 扫描部分，只保留获取本机 IP 的逻辑。
- */
 fun getAllIpAddresses(): List<String> {
     val ipList = mutableListOf<String>()
     try {
@@ -485,7 +480,6 @@ fun getAllIpAddresses(): List<String> {
         e.printStackTrace()
         return listOf("获取失败: ${e.message}")
     }
-
     return ipList.sortedBy {
         when {
             it.startsWith("192") -> 0

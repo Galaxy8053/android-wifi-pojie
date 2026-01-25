@@ -32,7 +32,14 @@ class AppAidl(private val context: android.content.Context) {
 
     fun startAIDLServiceRoot() {
         Log.d(TAG, "启动AIDLService")
+        if (ipc != null) return
         val intent = Intent(context, AidlService::class.java)
+        intent.putExtra("caller_uid", android.os.Process.myUid())
         RootService.bind(intent, conn)
+    }
+
+    fun stopAIDLService() {
+        if (ipc == null) return
+        RootService.stop(Intent(context, AidlService::class.java))
     }
 }

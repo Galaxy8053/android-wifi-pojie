@@ -10,7 +10,7 @@
     <string name="score_code_location">开源地址</string>
     <string name="score_code_location_tip">在GitHub上查看项目源码</string>
     <string name="thanks_project">鸣谢项目</string>
-    <string name="thanks_project_tip">感谢为本项目提供灵感与技术支持的开源项目</string>
+    <string name="thanks_project_tip">感谢为本项目提供灵感与技术支持的其他项目</string>
     <string name="license">三方开源许可</string>
     <string name="license_tip">查看第三方库授权协议</string>
     <string name="copyright">© 2025-%1$s WiFi Toolbox - Apache 2.0</string>

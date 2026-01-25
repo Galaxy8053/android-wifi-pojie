@@ -1,7 +1,5 @@
 package com.wifi.toolbox.ui.screen
 
-import android.app.ActivityOptions
-import android.content.Intent
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -45,8 +43,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import com.topjohnwu.superuser.Shell
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
+import com.wifi.toolbox.utils.LocaleConfigs
 import me.zhanghai.compose.preference.ListPreference
 import me.zhanghai.compose.preference.ListPreferenceType
 import me.zhanghai.compose.preference.Preference
@@ -57,7 +57,8 @@ import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.ColorPicker
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.extra.SuperDialog
-import com.wifi.toolbox.utils.LocaleConfigs
+import java.io.File
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,7 +207,7 @@ fun SettingsScreen(
                         icon = { Icon(Icons.Filled.Brightness4, null) }
                     )
 
-                    PreferenceCategory(title = { Text(stringResource(R.string.use_hidden_api)) })
+                    PreferenceCategory(title = { Text("应用功能") })
 
                     ListPreference(
                         value = settings.hiddenApiBypass,
@@ -215,16 +216,7 @@ fun SettingsScreen(
                             app.ui.snackbar(
                                 context.getString(R.string.need_restart_app),
                                 context.getString(R.string.restart)
-                            ) {
-                                val restartIntent =
-                                    context.packageManager.getLaunchIntentForPackage(context.packageName)
-                                context.startActivity(
-                                    Intent.makeRestartActivityTask(restartIntent?.component)
-                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION) },
-                                    ActivityOptions.makeCustomAnimation(context, 0, 0).toBundle()
-                                )
-                                Runtime.getRuntime().exit(0)
-                            }
+                            ) { app.restart() }
                         },
                         values = hiddenApiBypassValues.indices.toList(),
                         valueToText = { AnnotatedString(hiddenApiBypassValues[it]) },
@@ -232,6 +224,28 @@ fun SettingsScreen(
                         summary = { Text(hiddenApiBypassValues[settings.hiddenApiBypass]) },
                         type = ListPreferenceType.DROPDOWN_MENU,
                         icon = { Icon(Icons.Filled.Api, null) }
+                    )
+
+                    SwitchPreference(
+                        value = settings.startAidlServiceOnBoot,
+                        onValueChange = { newValue ->
+                            if (!checkSuExists()) {
+                                app.alert("权限检查", "当前不是root环境，请先去管理器授权本应用")
+                                app.settings.update { it.copy(startAidlServiceOnBoot = false) }
+                            } else {
+                                app.settings.update { it.copy(startAidlServiceOnBoot = newValue) }
+                                if (Shell.isAppGrantedRoot() == true) {
+                                    if (newValue) app.aidl.startAIDLServiceRoot()
+                                    else app.aidl.stopAIDLService()
+                                } else app.ui.snackbar(
+                                    context.getString(R.string.need_restart_app),
+                                    context.getString(R.string.restart)
+                                ) { app.restart() }
+                            }
+                        },
+                        title = { Text("启用AIDL服务") },
+                        summary = { Text("使用所有纯root功能必须开启此选项") },
+                        icon = { Icon(Icons.Default.FolderOpen, null) }
                     )
 
                     PreferenceCategory(title = { Text(stringResource(R.string.language_settings)) })
@@ -249,7 +263,10 @@ fun SettingsScreen(
                         },
                         title = { Text(stringResource(R.string.language)) },
                         summary = {
-                            Text(LocaleConfigs.list.getOrNull(settings.language)?.displayName ?: languageValues[0])
+                            Text(
+                                LocaleConfigs.list.getOrNull(settings.language)?.displayName
+                                    ?: languageValues[0]
+                            )
                         },
                         type = ListPreferenceType.ALERT_DIALOG,
                         icon = { Icon(Icons.Default.Language, null) }
@@ -282,6 +299,21 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+fun checkSuExists(): Boolean {
+    val path = System.getenv("PATH")
+    if (path == null || path.isEmpty()) return false
+
+    val dirs: Array<String?> =
+        path.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    for (dir in dirs) {
+        val file = File(dir, "su")
+        if (file.exists()) {
+            return true
+        }
+    }
+    return false
 }
 
 fun Color.toHexString(): String = String.format("#%08X", this.toArgb())

@@ -74,8 +74,7 @@ fun HomePageContent(
     ) {
         FoldCard(
             title = stringResource(R.string.run_config),
-            icon = Icons.Rounded.BorderColor,
-            iconSize = 18.dp,
+            icon = Icons.Rounded.DesignServices,
             expanded = expandedParamsCard,
             onExpandedChange = {
                 expandedParamsCard = it

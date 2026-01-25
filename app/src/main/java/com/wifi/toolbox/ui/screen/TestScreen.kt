@@ -1,5 +1,6 @@
 package com.wifi.toolbox.ui.screen
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ui.items.*
 import com.wifi.toolbox.ui.screen.test.*
+import com.wifi.toolbox.utils.LogState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,6 +22,7 @@ fun TestScreen(onMenuClick: () -> Unit) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.shizuku),
+        "AIDL服务",
         stringResource(R.string.system_api),
         stringResource(R.string.terminal_command)
     )
@@ -75,8 +78,9 @@ fun TestScreen(onMenuClick: () -> Unit) {
 
                 when (selectedTabIndex) {
                     0 -> ShizukuTest(logState = logState, modifier = Modifier.fillMaxSize())
-                    1 -> ApiTest(logState = logState, modifier = Modifier.fillMaxSize())
-                    2 -> ShellTest(logState = logState, modifier = Modifier.fillMaxSize())
+                    1 -> AidlTest(logState = logState, modifier = Modifier.fillMaxSize())
+                    2 -> ApiTest(logState = logState, modifier = Modifier.fillMaxSize())
+                    3 -> ShellTest(logState = logState, modifier = Modifier.fillMaxSize())
                 }
             }
 
@@ -97,6 +101,20 @@ fun TestScreen(onMenuClick: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+inline fun testAction(
+    context: Context,
+    logState: LogState,
+    errorPrefix: String,
+    action: () -> Unit
+) {
+    try {
+        action()
+    } catch (e: Exception) {
+        logState.addLog(context.getString(R.string.error_string, errorPrefix))
+        logState.addLog(e.stackTraceToString())
     }
 }
 

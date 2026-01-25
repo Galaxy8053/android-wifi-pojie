@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
 import com.wifi.toolbox.utils.ShizukuUtil
 import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.ui.screen.testAction
 import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.utils.ShizukuUtil.REQUEST_PERMISSION_CODE
 import kotlinx.coroutines.Dispatchers
@@ -26,19 +27,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import rikka.shizuku.*
 
-inline fun shizukuAction(
-    context: Context,
-    logState: LogState,
-    errorPrefix: String,
-    action: () -> Unit
-) {
-    try {
-        action()
-    } catch (e: Exception) {
-        logState.addLog(context.getString(R.string.error_string, errorPrefix))
-        logState.addLog(e.stackTraceToString())
-    }
-}
 @Composable
 fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -141,14 +129,14 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ActionChip(stringResource(R.string.enable_wifi), Icons.Filled.Wifi) {
-                        shizukuAction(
+                        testAction(
                             context,
                             logState,
                             context.getString(R.string.enable_wifi_failed)
                         ) { ShizukuUtil.setWifiEnabled(true); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                     ActionChip(stringResource(R.string.disable_wifi), Icons.Filled.WifiOff) {
-                        shizukuAction(
+                        testAction(
                             context,
                             logState,
                             context.getString(R.string.disable_wifi_failed)
@@ -156,7 +144,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                     }
                     ActionChip(stringResource(R.string.scan_wifi), Icons.Filled.Radar) {
                         scope.launch {
-                            shizukuAction(
+                            testAction(
                                 context, logState, context.getString(R.string.scan_wifi_failed)
                             ) {
                                 if (ShizukuUtil.startWifiScan()) logState.addLog(context.getString(R.string.start_scan_success_later))
@@ -175,7 +163,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                         }
                     }
                     ActionChip(stringResource(R.string.get_saved_wifi), Icons.Outlined.Dns) {
-                        shizukuAction(
+                        testAction(
                             context, logState, context.getString(R.string.get_failed)
                         ) {
                             val result = ShizukuUtil.getSavedWifiList()
@@ -194,14 +182,14 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                         }
                     }
                     ActionChip(stringResource(R.string.disconnect_wifi), Icons.Filled.WifiOff) {
-                        shizukuAction(
+                        testAction(
                             context,
                             logState,
                             context.getString(R.string.disconnect_failed)
                         ) { ShizukuUtil.disconnectWifi(); logState.addLog(context.getString(R.string.request_sent)) }
                     }
                     ActionChip(stringResource(R.string.lock_screen), Icons.Filled.Lock) {
-                        shizukuAction(
+                        testAction(
                             context,
                             logState,
                             context.getString(R.string.lock_screen_failed)
@@ -240,7 +228,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            shizukuAction(
+                            testAction(
                                 context, logState, context.getString(R.string.execute_shell_failed)
                             ) {
                                 val command = "cmd wifi connect-network $name wpa2 $password"
@@ -256,7 +244,7 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                     ) { Text(stringResource(R.string.btn_cmd_connect)) }
                     Button(
                         onClick = {
-                            shizukuAction(
+                            testAction(
                                 context,
                                 logState,
                                 context.getString(R.string.connect_wifi_failed_general)

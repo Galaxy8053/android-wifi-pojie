@@ -8,6 +8,7 @@ data class GlobalSettings(
     val dynamicColorSeed: Int = defaultColorSeed.toArgb(),
     val darkTheme: Int = 0,
     val hiddenApiBypass: Int = 1,
+    val startAidlServiceOnBoot: Boolean = false,
     val language: Int = 0
 ) {
     companion object {
@@ -16,6 +17,7 @@ data class GlobalSettings(
         const val DYNAMIC_COLOR_SEED = "dynamic_color_seed"
         const val DARK_THEME = "dark_theme"
         const val HIDDEN_API_BYPASS = "hidden_api_bypass"
+        const val START_AIDL_SERVICE_ON_BOOT="start_aidl_service_on_boot"
         const val LANGUAGE = "language"
     }
 }

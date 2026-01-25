@@ -1,7 +1,9 @@
 package com.wifi.toolbox
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.app.Application
+import android.content.Intent
 import com.wifi.toolbox.app.AppAidl
 import com.wifi.toolbox.app.AppCrash
 import com.wifi.toolbox.app.AppPojieTask
@@ -61,7 +63,7 @@ class ToolboxApp : Application() {
 
         appCrash.StartCatch()
         shizuku.init()
-        aidl.startAIDLServiceRoot()
+        if (settings.global.startAidlServiceOnBoot) aidl.startAIDLServiceRoot()
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) = ActivityStack.register(activity)
@@ -89,6 +91,17 @@ class ToolboxApp : Application() {
         super.onTerminate()
         shizuku.removeListener()
         appScope.cancel()
+    }
+
+    fun restart() {
+        val restartIntent =
+            this.packageManager.getLaunchIntentForPackage(this.packageName)
+        this.startActivity(
+            Intent.makeRestartActivityTask(restartIntent?.component)
+                .apply { addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION) },
+            ActivityOptions.makeCustomAnimation(this, 0, 0).toBundle()
+        )
+        Runtime.getRuntime().exit(0)
     }
 
 
