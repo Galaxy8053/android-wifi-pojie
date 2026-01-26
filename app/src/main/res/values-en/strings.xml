@@ -265,8 +265,8 @@
     <string name="config_retry_none">No Retry</string>
     <string name="config_retry_infinite">Inf</string>
     <string name="config_failure_password">Wrong Pass</string>
-    <string name="config_failure_timeout">Timeout</string>
-    <string name="config_failure_handshake">Handshake Limit</string>
+    <string name="config_failure_timeout">HS Timeout</string>
+    <string name="config_failure_handshake">HS Limit</string>
     <string name="config_help_description">Help</string>
     <string name="ms_string">%1$d ms</string>
     <string name="tag_builtin">Built-in</string>

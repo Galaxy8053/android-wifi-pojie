@@ -57,6 +57,7 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 miuix = { module = "top.yukonga.miuix.kmp:miuix", version.ref = "miuix" }
+nio = { module = "com.github.topjohnwu.libsu:nio", version.ref = "core" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 preference = { module = "me.zhanghai.compose.preference:preference", version.ref = "preference" }
 androidx-compose-runtime-annotation = { group = "androidx.compose.runtime", name = "runtime-annotation", version.ref = "runtimeAnnotation" }

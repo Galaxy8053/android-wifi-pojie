@@ -32,16 +32,20 @@ android {
         versionName = "v3.0.0_Alpha-06"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val buildTime = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+        val buildNumber = getAndIncrementBuildNumber()
+        val gitId = getGitCommitId()
+
+        buildConfigField("String", "BUILD_DATE", "\"$buildTime\"")
+        buildConfigField("String", "BUILD_COUNT", "\"${buildNumber}\"")
+        buildConfigField("String", "GIT_ID", "\"$gitId\"")
     }
-    val buildTime = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
 
     buildTypes {
-        val buildNumber = getAndIncrementBuildNumber()
         release {
             isMinifyEnabled = true
             manifestPlaceholders["shizukuAuthority"] = "com.wifi.toolbox.shizuku"
-            buildConfigField("String", "BUILD_DATE", "\"$buildTime\"")
-            buildConfigField("String", "BUILD_COUNT", "\"${buildNumber}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -50,8 +54,6 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             manifestPlaceholders["shizukuAuthority"] = "com.wifi.toolbox.debug.shizuku"
-            buildConfigField("String", "BUILD_DATE", "\"$buildTime\"")
-            buildConfigField("String", "BUILD_COUNT", "\"${buildNumber}\"")
         }
 
         buildFeatures {
@@ -127,7 +129,7 @@ dependencies {
     implementation(libs.core)
     implementation(libs.service)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation("com.github.topjohnwu.libsu:nio:6.0.0")
+    implementation(libs.nio)
 }
 
 fun getAndIncrementBuildNumber(): Int {
@@ -145,4 +147,15 @@ fun getAndIncrementBuildNumber(): Int {
     buildPropsFile.outputStream().use { props.store(it, null) }
 
     return nextNumber
+}
+
+fun getGitCommitId(): String {
+    return try {
+        val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD").start()
+        val text = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        text.ifEmpty { "unknown" }
+    } catch (_: Exception) {
+        "unknown"
+    }
 }

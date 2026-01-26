@@ -11,12 +11,20 @@ import com.wifi.toolbox.BuildConfig
 
 @Composable
 fun DebugWatermark() {
+    val isDebug = BuildConfig.DEBUG
+    val isAlpha = BuildConfig.VERSION_NAME.contains("alpha", ignoreCase = true)
+
+    if (!isDebug && !isAlpha) return
+
+    val bgColor = if (isDebug) "#77FF0000".toColorInt() else "#774477FF".toColorInt()
+    val label = if (isDebug) "DEBUG" else "ALPHA"
+
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.save()
             canvas.nativeCanvas.translate(drawContext.size.width, 0f)
             canvas.nativeCanvas.rotate(45f)
-            val paint = android.graphics.Paint().apply { color = "#77FF0000".toColorInt() }
+            val paint = android.graphics.Paint().apply { color = bgColor }
             canvas.nativeCanvas.drawRect(-200f, 90f, 200f, 170f, paint)
             val textPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.WHITE
@@ -24,11 +32,11 @@ fun DebugWatermark() {
                 textAlign = android.graphics.Paint.Align.CENTER
                 isFakeBoldText = true
             }
-            canvas.nativeCanvas.drawText("DEBUG", 0f, 130f, textPaint)
+            canvas.nativeCanvas.drawText(label, 0f, 130f, textPaint)
             textPaint.textSize = 24f
             textPaint.isFakeBoldText = false
             canvas.nativeCanvas.drawText(
-                "${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})_${BuildConfig.BUILD_COUNT}",
+                "${BuildConfig.VERSION_NAME}_${BuildConfig.GIT_ID}",
                 0f,
                 160f,
                 textPaint
