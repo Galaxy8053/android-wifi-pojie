@@ -210,7 +210,7 @@ class PojieTaskManager(
                 worker.performTaskLogic(app, SinglePojieTask(task.ssid, currentPass), settings)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                service.log("E: ${e.message}")
+                service.log(service.getString(R.string.error_string, e.message ?: ""))
                 SinglePojieTask.RESULT_ERROR
             }
         }

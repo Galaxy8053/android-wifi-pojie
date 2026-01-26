@@ -13,9 +13,9 @@ object LocaleConfigs {
         LocaleItem("", "跟随系统"),
         LocaleItem("zh-CN", "中文（简体）"),
         LocaleItem("zh-TW", "中文（繁體）"),
-        LocaleItem("lzh-CN", "文言（華夏）", false),
+        LocaleItem("lzh", "文言（華夏）", false),
         LocaleItem("en", "English"),
-        LocaleItem("lzh-EN", "Chinglish", false)
+        LocaleItem("en-CN", "Chinglish", false)
     )
 
     fun getLocaleListCompat(index: Int): LocaleListCompat {

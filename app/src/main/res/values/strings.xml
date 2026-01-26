@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">wifi工具箱</string>
     <string name="failure_flag_help_text">用于程序判断单次尝试失败：\n• 密码错误：标准的连接失败，最稳定但速度最慢\n• 握手超时：通过监听握手事件的开始时间判失败，速度较快\n• 握手超次（推荐）：通过logcat捕获系统服务的握手详细日志，超过指定次数判失败，速度最快且较上一个更稳定</string>
-    <string name="error_algin_help_text">在单次尝试超过最大尝试时间时重试\n此情况多因为连接wifi请求没有发送成功或者信号过差\n• 重试次数：单个密码最多再尝试几次\n• 等待时间翻倍基数：在尝试失败后会延迟一段时间再尝试（防止请求过于频繁被路由器忽略），以该时间为基数翻倍，每失败一次翻一倍</string>
-    <string name="default_script_content">// ==ToolboxScript==\n// @id {ID}\n// @name 脚本名称\n// @description 脚本描述内容\n// @author 作者\n// @version 1.0.0\n// ==/ToolboxScript==\n\nconsole.log(\"先加一个密码…\") //输出使用console.log\ntask.addItem(\"12345678\") //添加使用task.addItem\nconsole.log(\"等一秒…\")\nawait wait(1000); //代码默认嵌套在async function内，可以使用await\nconsole.log(\"再来一个！\");\ntask.addItem(\"88888888\")\n\ntry {\n\tconsole.log(\"请求网络试试…\");\n\tconst response = await fetch(\'https://uapis.cn/api/v1/network/myip\'); //可以使用WebView自带的工具，但是有cors限制\n\tconst data = await response.json();\n\tconsole.log(\"本机IP: \" + data.ip);\n\tconsole.log(\"归属地: \" + data.region);\n} catch (err) {\n\tconsole.log(\"请求失败: \" + err.message);\n}\nconsole.log(\"完成\");</string>
+    <string name="error_algin_help_text">在单次尝试超过最大尝试时间时重试\n此情况多因为连接wifi请求没有发送成功或者信号过差\n• 重试次数：单个密码最多再尝试几次\n• 冷却时间翻倍基数：在尝试失败后会延迟一段时间再尝试（防止请求过于频繁被路由器忽略），以该时间为基数翻倍，每失败一次翻一倍</string>
+    <string name="default_script_content" translatable="false">// ==ToolboxScript==\n// @id {ID}\n// @name 脚本名称\n// @description 脚本描述内容\n// @author 作者\n// @version 1.0.0\n// ==/ToolboxScript==\n\nconsole.log(\"先加一个密码…\") //输出使用console.log\ntask.addItem(\"12345678\") //添加使用task.addItem\nconsole.log(\"等一秒…\")\nawait wait(1000); //代码默认嵌套在async function内，可以使用await\nconsole.log(\"再来一个！\");\ntask.addItem(\"88888888\")\n\ntry {\n\tconsole.log(\"请求网络试试…\");\n\tconst response = await fetch(\'https://uapis.cn/api/v1/network/myip\'); //可以使用WebView自带的工具，但是有cors限制\n\tconst data = await response.json();\n\tconsole.log(\"本机IP: \" + data.ip);\n\tconsole.log(\"归属地: \" + data.region);\n} catch (err) {\n\tconsole.log(\"请求失败: \" + err.message);\n}\nconsole.log(\"完成\");</string>
     <string name="changelog_md_not_found">此版本未包含CHANGELOG.md</string>
     <string name="version_text">%1$s (%2$d)</string>
     <string name="changelog">更新日志</string>
@@ -13,7 +13,7 @@
     <string name="thanks_project_tip">感谢为本项目提供灵感与技术支持的其他项目</string>
     <string name="license">三方开源许可</string>
     <string name="license_tip">查看第三方库授权协议</string>
-    <string name="copyright">© 2025-%1$s WiFi Toolbox - Apache 2.0</string>
+    <string name="copyright" translatable="false">© 2025-%1$s WiFi Toolbox - Apache 2.0</string>
     <string name="btn_disappear">知道了</string>
     <string name="btn_close">关闭</string>
     <string name="thank_project_dialog_tip">专业名词解释</string>
@@ -46,9 +46,9 @@
     <string name="developer">开发者</string>
     <string name="contributor">贡献者</string>
     <string name="save">保存</string>
-    <string name="code_editor">Code Editor</string>
+    <string name="code_editor">文本编辑器</string>
     <string name="resource">资源</string>
-    <string name="hitsory">历史</string>
+    <string name="history">历史</string>
     <string name="run">运行</string>
     <string name="settings">设置</string>
     <string name="help">帮助</string>
@@ -78,8 +78,6 @@
     <string name="shizuku_iwifimanager">[Shizuku] IWifiManager</string>
     <string name="api_wifimanager">[应用API] WifiManager</string>
     <string name="api_connect_device">[应用API] 连接到设备</string>
-    <string name="command_not_completed">❌命令行</string>
-    <string name="root_su_file_not_completed">❌[root] su -c</string>
     <string name="shizuku_newprocess">[Shizuku] newProcess</string>
     <string name="run_method">运行方式</string>
     <string name="run_method_settings_tip">实现方法越往前越推荐，“请选择”为必选项，“空闲”为可选项。如果不能使用请尝试更换不同的组合</string>
@@ -110,10 +108,8 @@
     <string name="btn_confirm">确认</string>
     <string name="color_seed">颜色种子</string>
     <string name="dark_theme">深色主题</string>
-    <string name="use_hidden_api">隐藏API调用</string>
     <string name="need_restart_app">重启应用生效</string>
     <string name="restart">重启</string>
-    <string name="hidden_api_method">实现方式</string>
     <string name="debug">调试</string>
     <string name="show_file_in_system">在文件管理器中显示目录</string>
     <string name="show_file_in_system_tip">允许外部管理器访问App私有目录</string>
@@ -155,7 +151,6 @@
     <string name="wifi_not_enabled">Wi-Fi未开启，请打开Wi-Fi</string>
     <string name="please_grant_loaction_permission">请先允许定位权限</string>
     <string name="saved_wifi_list_head">=== 已保存的wifi列表 ===</string>
-    <string name="saved_wifi_item">ID: %-4s 名称: %-16s</string>
     <string name="get_failed">E: 获取失败</string>
     <string name="check_id">查看当前身份</string>
     <string name="fix_hidden_api">修复Shizuku隐藏API调用</string>/
@@ -195,15 +190,12 @@
     <string name="disconnect_failed">断开失败</string>
     <string name="lock_screen">锁屏</string>
     <string name="lock_screen_failed">锁屏失败</string>
-    <string name="max_volume">调整音量最大</string>
-    <string name="set_volume_failed">调整音量失败</string>
     <string name="execute_shell_failed">执行Shell命令失败</string>
     <string name="connect_wifi_failed_general">连接wifi失败</string>
     <string name="request_sent_with_response">请求已发送（响应：%1$s）</string>
     <string name="btn_cmd_connect">命令行（cmd wifi connect-network）</string>
     <string name="btn_hidden_api_connect">系统隐藏API（IWifiManager）</string>
     <string name="saved_wifi_item_with_psk">ID: %1$-4s 名称: %2$-16s 密码: %3$s</string>
-    <string name="system_api">系统API</string>
     <string name="terminal_command">终端命令</string>
     <string name="resource_details">资源详情</string>
     <string name="label_name">名称</string>
@@ -272,7 +264,6 @@
     <string name="config_max_handshake_count">最大握手次数</string>
     <string name="config_error_retry">异常重试</string>
     <string name="config_retry_count">重试次数</string>
-    <string name="config_doubling_base">冷却时间翻倍基数</string>
     <string name="config_retry_none">不重试</string>
     <string name="config_retry_infinite">无限</string>
     <string name="config_failure_password">密码错误</string>
@@ -295,7 +286,6 @@
     <string name="status_running">运行中</string>
     <string name="progress_format">%1$d / %2$d (%3$.1f%%)</string>
     <string name="progress_unknown">-/-</string>
-    <string name="percentage_unknown">-%</string>
     <string name="tooltip_more_actions">更多操作</string>
     <string name="acc_close_menu">关闭菜单</string>
     <string name="log_auto_scroll">自动滚动</string>
@@ -326,16 +316,11 @@
     <string name="fail_time">(%1$d ms)</string>
     <string name="run_speed_minute">%1$d/m</string>
     <string name="manual_input">手动输入</string>
-    <string name="error_scan_fail">扫描失败</string>
     <string name="error_wifi_not_enabled">wifi未开启</string>
     <string name="error_location_not_enabled">定位服务未开启</string>
     <string name="error_location_not_allowed">未获取定位权限</string>
-    <string name="error_unknown_with_message">未知错误(%1$s)</string>
     <string name="error_scan_impl_empty">扫描实现为空，请先在设置中选择</string>
     <string name="error_shizuku_no_permission">未获取到Shizuku权限</string>
-    <string name="error_missing_params">缺失参数</string>
-    <string name="error_enable_wifi_impl_empty">开关wifi实现为空</string>
-    <string name="error_manage_saved_wifi_impl_empty">管理已保存网络实现为空</string>
     <string name="calculating_time">计算剩余时间…</string>
     <string name="remaining_time_format">预计剩余 %1$s</string>
     <string name="time_unit_day">%1$sd</string>
@@ -343,4 +328,60 @@
     <string name="time_unit_minute">%1$sm</string>
     <string name="time_unit_less_than_minute">&lt;1m</string>
     <string name="local_path">本地路径</string>
+    <string name="error_api29_empty_pass">api29模式不支持空密码连接</string>
+    <string name="error_saved_pass_failed">使用已保存密码尝试连接失败</string>
+    <string name="command_method_empty">命令行实现方式为空，请先去设置中选择</string>
+    <string name="config_doubling_base">冷却时间翻倍基数</string>
+    <string name="none">-</string>
+    <string name="empty_list">空列表</string>
+    <string name="go_to_settings">去设置</string>
+    <string name="tag_open_network">开放式</string>
+    <string name="tag_saved">已保存</string>
+    <string name="tag_has_history">有历史</string>
+    <string name="aidl_iwifimanager">[AidlService] IWifiManager</string>
+    <string name="aidl_runtime_exec">[AidlService] Runtime.exec</string>
+    <string name="root_su_c">[root] su -c</string>
+    <string name="log_service_status">服务状态：%1$s</string>
+    <string name="log_service_uid">服务UID：%1$s</string>
+    <string name="log_get_uid_failed">获取UID失败: %1$s</string>
+    <string name="set_max_volume">调整到最大音量</string>
+    <string name="set_volume_failed">设置音量失败</string>
+    <string name="log_exit_code">退出代码: %1$s</string>
+    <string name="log_connect_sent_with_id">连接请求已发送，分配ID: %1$s</string>
+    <string name="run_command_string_aidl">使用AIDL Service执行：%1$s</string>
+    <string name="toast_no_cheating">不许作弊！！</string>
+    <string name="toast_operation_success">操作成功</string>
+    <string name="toast_too_slow">点这么慢没吃饭吗</string>
+    <string name="not_connected">未连接</string>
+    <string name="wifi_connected_generic">WiFi 已连接</string>
+    <string name="wifi_connected_to">已连接到</string>
+    <string name="mobile_data">移动数据网络</string>
+    <string name="quick_actions">快捷操作</string>
+    <string name="network_status">网络状态</string>
+    <string name="no_active_ip">无活跃 IP 地址</string>
+    <string name="aidl_service_title">AIDL 服务</string>
+    <string name="aidl_service_running_tip">后台服务正在运行中</string>
+    <string name="nav_pojie">密码字典破解</string>
+    <string name="nav_manager">wifi管理器</string>
+    <string name="nav_test">实验室</string>
+    <string name="nav_settings">设置</string>
+    <string name="found_saved_password">发现已保存密码</string>
+    <string name="found_saved_password_tip">系统已存在该 WiFi 的配置信息，是否直接尝试连接？</string>
+    <string name="re_run">重新运行</string>
+    <string name="direct_try">直接尝试</string>
+    <string name="app_functions">应用功能</string>
+    <string name="hidden_api_call">隐藏API调用</string>
+    <string name="enable_aidl_service">启用AIDL服务</string>
+    <string name="enable_aidl_service_tip">使用所有纯root功能必须开启此选项</string>
+    <string name="root_permission_check">权限检查</string>
+    <string name="no_root_environment_tip">当前不是root环境，请先去管理器授权本应用</string>
+    <string name="tab_aidl_service">AIDL服务</string>
+    <string name="tab_app_api">应用API</string>
+    <string name="crash_title">崩溃啦</string>
+    <string name="crash_text">刚才发生了不可逆的错误，应用已自动重启\n%1$s\n你可以将此截图发给开发者，以及描述刚才做了什么（但能不能修复就是另一回事了）</string>
+    <string name="error_aidl_not_bound">AIDL服务未绑定，请在应用设置启用服务</string>
+    <string name="error_id_exists">ID“%1$s”已经存在</string>
+    <string name="unsupported_file_format">不支持的文件格式</string>
+    <string name="import_failed">导入失败</string>
+    <string name="parse_failed">解析失败</string>
 </resources>

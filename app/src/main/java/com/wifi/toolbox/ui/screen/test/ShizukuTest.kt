@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.InsertLink
 import androidx.compose.material.icons.filled.Key
@@ -226,6 +227,13 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                             context.getString(R.string.lock_screen_failed)
                         ) { ShizukuUtil.lookScreen(); logState.addLog(context.getString(R.string.request_sent)) }
                     }
+                    ActionChip(stringResource(R.string.set_max_volume), Icons.AutoMirrored.Filled.VolumeUp) {
+                        testAction(
+                            context,
+                            logState,
+                            context.getString(R.string.set_volume_failed)
+                        ) { ShizukuUtil.setMediaVolumeMax(); logState.addLog(context.getString(R.string.request_sent)) }
+                    }
                 }
 
                 SectionDivider()
@@ -297,7 +305,6 @@ fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(end = 8.dp)
                     ) { Text(stringResource(R.string.btn_hidden_api_connect)) }
                 }
             }

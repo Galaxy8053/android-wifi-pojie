@@ -33,12 +33,12 @@ fun AidlTest(logState: LogState, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
 
     fun checkStatus() {
-        logState.addLog("服务状态：${app.aidl.ipc != null}")
+        logState.addLog(context.getString(R.string.log_service_status, (app.aidl.ipc != null).toString()))
         app.aidl.ipc?.let {
             try {
-                logState.addLog("服务UID：${it.uid}")
+                logState.addLog(context.getString(R.string.log_service_uid, it.uid.toString()))
             } catch (e: Exception) {
-                logState.addLog("获取UID失败: ${e.message}")
+                logState.addLog(context.getString(R.string.log_get_uid_failed, e.message ?: ""))
             }
         }
     }
@@ -130,8 +130,8 @@ fun AidlTest(logState: LogState, modifier: Modifier = Modifier) {
                                     context.getString(
                                         R.string.saved_wifi_item_with_psk,
                                         it.networkId.toString(),
-                                        it.SSID.removeSurrounding("\""),
-                                        it.preSharedKey?.removeSurrounding("\"") ?: ""
+                                        it.SSID.trim('"'),
+                                        it.preSharedKey.trim('"')
                                     )
                                 )
                             }
@@ -158,8 +158,8 @@ fun AidlTest(logState: LogState, modifier: Modifier = Modifier) {
                             logState.addLog(context.getString(R.string.request_sent))
                         }
                     }
-                    ActionChip("最大音量", Icons.AutoMirrored.Filled.VolumeUp) {
-                        testAction(context, logState, "设置音量失败") {
+                    ActionChip(stringResource(R.string.set_max_volume), Icons.AutoMirrored.Filled.VolumeUp) {
+                        testAction(context, logState, context.getString(R.string.set_volume_failed)) {
                             app.aidl.ipc?.setMediaVolumeMax()
                             logState.addLog(context.getString(R.string.request_sent))
                         }
@@ -213,12 +213,14 @@ fun AidlTest(logState: LogState, modifier: Modifier = Modifier) {
                                     }
 
                                     override fun onFinished(all: String, code: Int) {
-                                        logState.addLog("Exit code: $code")
+                                        logState.addLog(context.getString(R.string.log_exit_code, code.toString()))
                                     }
-                                })
+                                 })
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 8.dp)
                     ) { Text(stringResource(R.string.btn_cmd_connect)) }
                     Button(
                         onClick = {
@@ -228,12 +230,11 @@ fun AidlTest(logState: LogState, modifier: Modifier = Modifier) {
                                 context.getString(R.string.connect_wifi_failed_general)
                             ) {
                                 val netId = app.aidl.ipc?.connectToWifi(name, password) ?: -1
-                                logState.addLog("连接请求已发送，分配ID: $netId")
+                                logState.addLog(context.getString(R.string.log_connect_sent_with_id, netId.toString()))
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp)
                     ) { Text(stringResource(R.string.btn_hidden_api_connect)) }
                 }
             }

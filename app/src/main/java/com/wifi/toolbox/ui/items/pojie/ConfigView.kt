@@ -67,7 +67,7 @@ fun ConfigView(
     ) {
         Text(stringResource(R.string.config_max_try_time))
         Text(
-            text = "${config.maxTryTime} ms",
+            text = stringResource(R.string.ms_string, config.maxTryTime),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
@@ -288,7 +288,7 @@ fun ConfigView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("冷却时间翻倍基数")
+                Text(stringResource(R.string.config_doubling_base))
                 Text(
                     text = stringResource(R.string.ms_string, config.doublingBase),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

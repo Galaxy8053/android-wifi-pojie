@@ -55,13 +55,13 @@ class ToolboxApp : Application() {
 
         appCrash = AppCrash(this)
         shizuku = AppShizuku(appScope)
-        ui = AppUI(appScope)
+        ui = AppUI(this, appScope)
         aidl = AppAidl(this)
         pojieTask = AppPojieTask(this)
         settings = SettingsManager(this)
         pojieHistory = PojieHistoryManager(this)
 
-        appCrash.StartCatch()
+        appCrash.startCatch()
         shizuku.init()
         if (settings.global.startAidlServiceOnBoot) aidl.startAIDLServiceRoot()
 

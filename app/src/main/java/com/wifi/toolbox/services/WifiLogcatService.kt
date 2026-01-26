@@ -59,7 +59,7 @@ class WifiLogcatService(
     ): Runnable {
         val app = context.applicationContext as ToolboxApp
         return when (val method = pojieSettings.commandMethod) {
-            0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
+            0 -> throw Exception(context.getString(R.string.command_method_empty))
             1 -> ShizukuUtil.executeCommand(command, onOutputReceived, onCommandFinished)
             2 -> AidlServiceHelper.executeCommand(app, command, onOutputReceived, onCommandFinished)
             3 -> CommandRunner.executeCommand(command, true, onOutputReceived, onCommandFinished)
@@ -70,7 +70,7 @@ class WifiLogcatService(
     fun executeCommandSync(command: String): CommandRunner.CommandResult {
         val app = context.applicationContext as ToolboxApp
         return when (val method = pojieSettings.commandMethod) {
-            0 -> throw Exception("命令行实现方式为空，请先去设置中选择")
+            0 -> throw Exception(context.getString(R.string.command_method_empty))
             1 -> ShizukuUtil.executeCommandSync(command)
             2 -> AidlServiceHelper.executeCommandSync(app, command)
             3 -> CommandRunner.executeCommandSync(command, true)

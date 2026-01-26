@@ -24,7 +24,6 @@ import com.wifi.toolbox.ui.items.pojie.ScreenState
 import com.wifi.toolbox.utils.*
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import com.wifi.toolbox.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,7 +110,7 @@ fun PojieScreenContent(
                 }
             },
             object : NavPage {
-                override val name = context.getString(R.string.hitsory)
+                override val name = context.getString(R.string.history)
                 override val selectedIcon = Icons.Filled.History
                 override val unselectedIcon = Icons.Outlined.History
                 override val content = @Composable { HistoryPage() }
@@ -201,7 +200,7 @@ fun PojieScreenContent(
             onDirectTry = {
                 showSavedConfirmDialog = false
                 pendingWifi.savedInfo?.let { saved ->
-                    val psk = saved.preSharedKey ?: ""
+                    val psk = saved.preSharedKey.trim('"')
                     if (psk.length >= 8) {
                         app?.pojieTask?.start(
                             PojieRunInfo(
@@ -271,11 +270,11 @@ fun SavedWifiConfirmDialog(
                 tint = MaterialTheme.colorScheme.primary
             )
         },
-        title = { Text("发现已保存密码") },
+        title = { Text(stringResource(R.string.found_saved_password)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "系统已存在该 WiFi 的配置信息，是否直接尝试连接？",
+                    text = stringResource(R.string.found_saved_password_tip),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Surface(
@@ -288,9 +287,9 @@ fun SavedWifiConfirmDialog(
                             .padding(12.dp)
                             .fillMaxWidth()
                     ) {
-                        Text("SSID: ${wifiInfo.ssid}", style = MaterialTheme.typography.labelLarge)
-                        if (saved.preSharedKey.length >= 8) Text(
-                            "密码: ${saved.preSharedKey}",
+                        Text(stringResource(R.string.ssid_string, wifiInfo.ssid), style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            stringResource(R.string.password_string, saved.preSharedKey.trim('"')),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -307,13 +306,13 @@ fun SavedWifiConfirmDialog(
                         brush = SolidColor(MaterialTheme.colorScheme.error)
                     )
                 ) {
-                    Text("重新运行")
+                    Text(stringResource(R.string.re_run))
                 }
                 Button(
                     onClick = onDirectTry,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("直接尝试")
+                    Text(stringResource(R.string.direct_try))
                 }
             }
         }

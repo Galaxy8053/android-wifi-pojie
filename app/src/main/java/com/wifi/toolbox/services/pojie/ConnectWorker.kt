@@ -16,6 +16,7 @@ import kotlin.coroutines.resumeWithException
 /**
  * 负责管理单次连接并获取结果
  */
+@Suppress("DEPRECATION")
 class ConnectWorker(
     private val service: PojieService
 ) {
@@ -66,13 +67,14 @@ class ConnectWorker(
                 1 -> ShizukuUtil.getSavedWifiList()
                 2 -> AidlServiceHelper.getSavedWifiList(app)
                 3 -> ApiUtil.getSavedWifiList(app)
+                4 -> throw Exception(service.getString(R.string.error_api29_empty_pass))
                 else -> emptyList()
             }
             savedList.find {
                 it.SSID == "\"${task.ssid}\"" || it.SSID == task.ssid
             }?.networkId ?: throw Exception()
         } catch (_: Exception) {
-            throw Exception("使用空密码尝试连接失败")
+            throw Exception(service.getString(R.string.error_saved_pass_failed))
         } else -1
 
 
@@ -97,9 +99,7 @@ class ConnectWorker(
                 }
             }
 
-            4 -> if (task.password.isEmpty()) throw Exception("api29模式不支持空密码连接")
-
-            else -> throw Exception(service.getString(R.string.tip_not_completed) + "(connectMode=$connectMode)")
+            else -> if (connectMode != 4) throw Exception(service.getString(R.string.tip_not_completed) + "(connectMode=$connectMode)")
         }
 
         try {

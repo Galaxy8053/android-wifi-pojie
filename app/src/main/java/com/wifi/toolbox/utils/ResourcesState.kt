@@ -107,7 +107,7 @@ class ResourcesState(
                                 version = null
                             )
                         }
-                        else -> throw Exception("不支持的文件格式")
+                        else -> throw Exception(context.getString(R.string.unsupported_file_format))
                     }
 
                     PojieStore.testExists(context, newRes, null)
@@ -116,7 +116,9 @@ class ResourcesState(
                     refreshKey++
                     withContext(Dispatchers.Main) { onShowFabDialogChange(false) }
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main) { app.alert("导入失败", e.message.toString()) }
+                    withContext(Dispatchers.Main) {
+                        app.alert(context.getString(R.string.import_failed), e.message.toString())
+                    }
                 }
             }
         }
@@ -143,7 +145,7 @@ class ResourcesState(
                     refreshKey++
                 }
             } catch (e: Exception) {
-                app.alert("解析失败", e.message.toString())
+                app.alert(context.getString(R.string.parse_failed), e.message.toString())
             }
         }
     }

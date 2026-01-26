@@ -53,7 +53,7 @@ fun CodeEditor(
                 IconButton(onClick = {
                     vm.handleBackPress {
                         keyboardController?.hide()
-                        vm.editorInstance?.clearFocus() // 修复键盘关不掉的问题
+                        vm.editorInstance?.clearFocus()
                     }
                 }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
@@ -63,7 +63,6 @@ fun CodeEditor(
                 TextButton(onClick = {
                     val text = vm.editorInstance?.text.toString()
                     onSave(text) {
-                        // 可以在这里处理保存成功逻辑
                     }
                 }) { Text(stringResource(R.string.save)) }
             }

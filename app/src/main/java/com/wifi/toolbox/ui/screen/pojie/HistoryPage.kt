@@ -60,12 +60,11 @@ fun HistoryPage() {
             title = { Text(stringResource(R.string.confirm_delete)) },
             text = { Text(stringResource(R.string.confirm_delete_tip, item.ssid)) },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         app.pojieHistory.deleteHistory(item.ssid)
                         pendingDeleteItem = null
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text(stringResource(R.string.delete))
                 }

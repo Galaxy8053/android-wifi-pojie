@@ -150,7 +150,7 @@ fun ResourceDetailContent(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = resource.name ?: "-",
+                        text = resource.name ?: stringResource(R.string.none),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f, false)
                     )
@@ -254,6 +254,6 @@ fun DetailItem(label: String, value: String?) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
-        Text(text = value ?: "-", style = MaterialTheme.typography.bodyLarge)
+        Text(text = value ?: stringResource(R.string.none), style = MaterialTheme.typography.bodyLarge)
     }
 }

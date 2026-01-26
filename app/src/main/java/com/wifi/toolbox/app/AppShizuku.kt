@@ -61,7 +61,6 @@ class AppShizuku(private val scope: CoroutineScope) {
             try {
                 val ok = msgFlow.first()
                 if (ok) {
-                    android.util.Log.d("AppShizuku","同意")
                     call()
                 }
             } catch (_: Throwable) {

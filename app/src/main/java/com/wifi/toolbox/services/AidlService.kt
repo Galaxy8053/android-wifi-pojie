@@ -238,17 +238,9 @@ class AidlService : RootService() {
             checkCaller()
             return getSavedWifiList_().map { config ->
                 Bundle().apply {
-                    val ssid = config.SSID
-                    val psk = try {
-                        val field = config.javaClass.getField("preSharedKey")
-                        field.get(config) as? String
-                    } catch (_: Exception) {
-                        null
-                    }
-
-                    putString("ssid", ssid?.removeSurrounding("\""))
-                    putInt("netId", config.networkId)
-                    putString("password", psk?.removeSurrounding("\""))
+                    putString("SSID", config.SSID)
+                    putInt("networkId", config.networkId)
+                    putString("preSharedKey", config.preSharedKey)
                 }
             }
         }

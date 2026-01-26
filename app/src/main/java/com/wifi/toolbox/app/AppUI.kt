@@ -1,5 +1,7 @@
 package com.wifi.toolbox.app
 
+import android.content.Context
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp.AlertDialogData
 import com.wifi.toolbox.ToolboxApp.SnackbarData
 import kotlinx.coroutines.CoroutineScope
@@ -7,7 +9,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
-class AppUI(private val scope: CoroutineScope) {
+class AppUI(private val context: Context,
+            private val scope: CoroutineScope) {
 
     private val _alertFlow = MutableSharedFlow<AlertDialogData?>(replay = 1)
     val alertFlow = _alertFlow.asSharedFlow()
@@ -45,7 +48,7 @@ class AppUI(private val scope: CoroutineScope) {
      * @param call 点击回调
      * @return none
      */
-    fun snackbar(m: String, l: String? = "知道了", call: (() -> Unit)? = null) {
+    fun snackbar(m: String, l: String? = context.getString(R.string.btn_disappear), call: (() -> Unit)? = null) {
         scope.launch {
             _snackFlow.emit(SnackbarData(m, l, call))
         }

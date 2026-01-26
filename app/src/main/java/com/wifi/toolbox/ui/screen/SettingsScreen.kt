@@ -208,7 +208,7 @@ fun SettingsScreen(
                         icon = { Icon(Icons.Filled.Brightness4, null) }
                     )
 
-                    PreferenceCategory(title = { Text("应用功能") })
+                    PreferenceCategory(title = { Text(stringResource(R.string.app_functions)) })
 
                     ListPreference(
                         value = settings.hiddenApiBypass,
@@ -221,7 +221,7 @@ fun SettingsScreen(
                         },
                         values = hiddenApiBypassValues.indices.toList(),
                         valueToText = { AnnotatedString(hiddenApiBypassValues[it]) },
-                        title = { Text("隐藏API调用") },
+                        title = { Text(stringResource(R.string.hidden_api_call)) },
                         summary = { Text(hiddenApiBypassValues[settings.hiddenApiBypass]) },
                         type = ListPreferenceType.DROPDOWN_MENU,
                         icon = { Icon(Icons.Filled.Api, null) }
@@ -231,7 +231,7 @@ fun SettingsScreen(
                         value = settings.startAidlServiceOnBoot,
                         onValueChange = { newValue ->
                             if (!checkSuExists()) {
-                                app.alert("权限检查", "当前不是root环境，请先去管理器授权本应用")
+                                app.alert(context.getString(R.string.root_permission_check), context.getString(R.string.no_root_environment_tip))
                                 app.settings.update { it.copy(startAidlServiceOnBoot = false) }
                             } else {
                                 app.settings.update { it.copy(startAidlServiceOnBoot = newValue) }
@@ -244,8 +244,8 @@ fun SettingsScreen(
                                 ) { app.restart() }
                             }
                         },
-                        title = { Text("启用AIDL服务") },
-                        summary = { Text("使用所有纯root功能必须开启此选项") },
+                        title = { Text(stringResource(R.string.enable_aidl_service)) },
+                        summary = { Text(stringResource(R.string.enable_aidl_service_tip)) },
                         icon = { Icon(painterResource(R.drawable.ic_root), null) }
                     )
 

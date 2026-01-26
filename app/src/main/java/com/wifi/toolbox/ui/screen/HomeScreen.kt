@@ -75,7 +75,7 @@ import java.net.NetworkInterface
 import java.util.Collections
 
 data class NetworkState(
-    val wifiSsid: String = "未连接",
+    val wifiSsid: String,
     val ipList: List<IpInfo> = emptyList(),
     val isWifiConnected: Boolean = false
 )
@@ -94,7 +94,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
         luminance < 0.5f
     }
 
-    val networkState by produceState(initialValue = NetworkState()) {
+    val networkState by produceState(initialValue = NetworkState(stringResource(R.string.not_connected))) {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         suspend fun update() {
@@ -104,7 +104,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                 val activeNetwork = cm.activeNetwork
                 val caps = cm.getNetworkCapabilities(activeNetwork)
 
-                var ssid = "未连接"
+                var ssid = context.getString(R.string.not_connected)
                 var isWifi = false
 
                 if (caps != null) {
@@ -112,11 +112,14 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                         isWifi = true
                         val info = wifiManager.connectionInfo
                         val rawSsid = info.ssid
-                        ssid = if (rawSsid == "<unknown ssid>") "WiFi 已连接" else "已连接到 ${
-                            rawSsid.trim('"')
-                        }"
+                        ssid =
+                            if (rawSsid == "<unknown ssid>") context.getString(R.string.wifi_connected_generic) else "${
+                                context.getString(R.string.wifi_connected_to)
+                            } ${
+                                rawSsid.trim('"')
+                            }"
                     } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-                        ssid = "移动数据网络"
+                        ssid = context.getString(R.string.mobile_data)
                     }
                 }
                 NetworkState(ssid, getAllIpAddresses(), isWifi)
@@ -205,7 +208,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                 }
 
                 Text(
-                    text = "快捷操作",
+                    text = stringResource(R.string.quick_actions),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
@@ -216,7 +219,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         HomeCardItem(
                             modifier = Modifier.weight(1f),
-                            title = "密码字典破解",
+                            title = stringResource(R.string.nav_pojie),
                             icon = Icons.Rounded.VpnKey,
                             baseColor = Color(0xFFFFD8E4),
                             darkColor = Color(0xFF5E2A38),
@@ -226,7 +229,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                         )
                         HomeCardItem(
                             modifier = Modifier.weight(1f),
-                            title = "wifi管理器",
+                            title = stringResource(R.string.nav_manager),
                             icon = Icons.Rounded.Dns,
                             baseColor = Color(0xFFFDE495),
                             darkColor = Color(0xFF4A3E15),
@@ -239,7 +242,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         HomeCardItem(
                             modifier = Modifier.weight(1f),
-                            title = "实验室",
+                            title = stringResource(R.string.nav_test),
                             icon = Icons.Rounded.Science,
                             baseColor = Color(0xFFF2D9FA),
                             darkColor = Color(0xFF3E1C4A),
@@ -253,7 +256,7 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         HomeCardItem(
                             modifier = Modifier.weight(1f),
-                            title = "设置",
+                            title = stringResource(R.string.nav_settings),
                             icon = Icons.Rounded.Settings,
                             baseColor = Color(0xFFFFE0C8),
                             darkColor = Color(0xFF4A2C20),
@@ -296,7 +299,7 @@ fun InfoCard(state: NetworkState, isDark: Boolean) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "网络状态",
+                    text = stringResource(R.string.network_status),
                     style = MaterialTheme.typography.labelLarge,
                     color = iconTint,
                     fontWeight = FontWeight.Bold
@@ -319,7 +322,7 @@ fun InfoCard(state: NetworkState, isDark: Boolean) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (state.ipList.isEmpty()) {
                     Text(
-                        "无活跃 IP 地址",
+                        stringResource(R.string.no_active_ip),
                         style = MaterialTheme.typography.bodyMedium,
                         color = subTextColor
                     )
@@ -353,6 +356,8 @@ fun InfoCard(state: NetworkState, isDark: Boolean) {
             }
         }
     }
+
+
 }
 
 @Composable
@@ -360,6 +365,7 @@ fun AidlStatusCard(isDark: Boolean) {
     val bgColor = if (isDark) Color(0xFF004D40).copy(alpha = 0.3f) else Color(0xFFE0F2F1)
     val titleColor = if (isDark) Color(0xFF80CBC4) else Color(0xFF00695C)
     val iconColor = if (isDark) Color(0xFF4DB6AC) else Color(0xFF00897B)
+
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -375,13 +381,13 @@ fun AidlStatusCard(isDark: Boolean) {
         ) {
             Column {
                 Text(
-                    text = "AIDL 服务",
+                    text = stringResource(R.string.aidl_service_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = titleColor
                 )
                 Text(
-                    text = "后台服务正在运行中",
+                    text = stringResource(R.string.aidl_service_running_tip),
                     style = MaterialTheme.typography.bodySmall,
                     color = titleColor.copy(alpha = 0.8f)
                 )
@@ -394,6 +400,8 @@ fun AidlStatusCard(isDark: Boolean) {
             )
         }
     }
+
+
 }
 
 @Composable
@@ -409,6 +417,7 @@ fun HomeCardItem(
     onClick: () -> Unit
 ) {
     val finalBgColor = if (isDark) darkColor.copy(alpha = 0.4f) else baseColor
+
 
     Surface(
         onClick = onClick,
@@ -469,6 +478,8 @@ fun HomeCardItem(
             }
         }
     }
+
+
 }
 
 data class IpInfo(
@@ -482,6 +493,7 @@ fun getAllIpAddresses(): List<IpInfo> {
         val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
         for (intf in interfaces) {
             if (!intf.isUp) continue
+
 
             val addrs = Collections.list(intf.inetAddresses)
             for (addr in addrs) {
@@ -505,6 +517,7 @@ fun getAllIpAddresses(): List<IpInfo> {
             else -> 5
         }
     }
+
 }
 
 fun copyToClipboard(context: Context, text: String) {

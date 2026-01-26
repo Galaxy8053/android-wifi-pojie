@@ -1,6 +1,7 @@
 package com.wifi.toolbox.utils
 
 import android.content.Context
+import com.wifi.toolbox.R
 import com.wifi.toolbox.structs.PojieResource
 import org.json.JSONObject
 import java.io.File
@@ -102,7 +103,7 @@ object PojieStore {
         val assetExists = context.assets.list(DIR_NAME)?.any { it.startsWith("${res.id}.") } == true
 
         if (fileExists || assetExists) {
-            throw Exception("ID“${res.id}”已经存在")
+            throw Exception(context.getString(R.string.error_id_exists, res.id))
         }
     }
 

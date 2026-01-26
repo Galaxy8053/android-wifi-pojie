@@ -19,7 +19,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
-import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.ui.items.TagItem
 import com.wifi.toolbox.ui.items.TagType
@@ -92,9 +91,9 @@ private fun WifiItemMainHeader(
                     maxLines = 1,
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
-                if (WifiInfo.checkIsFreeOpenNetwork(wifi)) TagItem("开放式", TagType.Tertiary)
-                wifi.savedInfo?.let { TagItem("已保存") }
-                wifi.pojieHistoryItem?.let { TagItem("有历史", TagType.Primary) }
+                if (WifiInfo.checkIsFreeOpenNetwork(wifi)) TagItem(stringResource(R.string.tag_open_network), TagType.Tertiary)
+                wifi.savedInfo?.let { TagItem(stringResource(R.string.tag_saved)) }
+                wifi.pojieHistoryItem?.let { TagItem(stringResource(R.string.tag_has_history), TagType.Primary) }
             }
             Text(
                 text = if (wifi.level == 0) stringResource(R.string.unknown) else stringResource(

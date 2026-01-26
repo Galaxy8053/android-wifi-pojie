@@ -9,11 +9,12 @@ import com.wifi.toolbox.structs.WifiInfo
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
+import com.wifi.toolbox.R
 
 object AidlServiceHelper {
     fun getWifiScanResults(app: ToolboxApp): List<WifiInfo> {
         val result =
-            app.aidl.ipc?.wifiScanResults ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            app.aidl.ipc?.wifiScanResults ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
 
         val results = mutableListOf<WifiInfo>()
         result.forEach {
@@ -30,12 +31,12 @@ object AidlServiceHelper {
 
     fun getSavedWifiList(app: ToolboxApp): List<WifiConfiguration> {
         val result =
-            app.aidl.ipc?.savedWifiList ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            app.aidl.ipc?.savedWifiList ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
         return result.map {
             WifiConfiguration().apply {
-                networkId = it.getInt("netId")
-                SSID = it.getString("ssid")
-                preSharedKey = it.getString("password") ?: ""
+                networkId = it.getInt("networkId")
+                SSID = it.getString("SSID")
+                preSharedKey = it.getString("preSharedKey")
             }
         }
     }
@@ -97,36 +98,36 @@ object AidlServiceHelper {
 
     fun connectToWifi(app: ToolboxApp, ssid: String, password: String): Int {
         return app.aidl.ipc?.connectToWifi(ssid, password)
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 
     fun startWifiScan(app: ToolboxApp, allowUseCommand: Boolean = false): Boolean {
         return app.aidl.ipc?.startWifiScan(allowUseCommand)
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 
     fun setWifiEnabled(app: ToolboxApp, enabled: Boolean) {
         app.aidl.ipc?.setWifiEnabled(enabled)
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 
     fun disconnectWifi(app: ToolboxApp) {
         app.aidl.ipc?.disconnectWifi()
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 
     fun enableNetwork(app: ToolboxApp, netId: Int) {
         app.aidl.ipc?.enableNetwork(netId)
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 
     fun getNetIdBySsid(app: ToolboxApp, ssid: String): Int {
         return app.aidl.ipc?.getNetIdBySsid(ssid)
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 
     fun forgetNetwork(app: ToolboxApp, netId: Int) {
         app.aidl.ipc?.forgetNetwork(netId)
-            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+            ?: throw Exception(app.getString(R.string.error_aidl_not_bound))
     }
 }

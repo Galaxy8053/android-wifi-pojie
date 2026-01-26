@@ -38,27 +38,27 @@ fun SettingsPage(
     val connectValues = listOf(
         stringResource(R.string.no_choose_tip_list),
         stringResource(R.string.shizuku_iwifimanager),
-        "[AidlService] IWifiManager",
+        stringResource(R.string.aidl_iwifimanager),
         stringResource(R.string.api_wifimanager),
         stringResource(R.string.api_connect_device),
     )
     val scanValues = listOf(
         stringResource(R.string.item_free),
         stringResource(R.string.shizuku_iwifimanager),
-        "[AidlService] IWifiManager",
+        stringResource(R.string.aidl_iwifimanager),
         stringResource(R.string.api_wifimanager),
     )
     val turnOnValues = listOf(
         stringResource(R.string.item_free),
         stringResource(R.string.shizuku_iwifimanager),
-        "[AidlService] IWifiManager",
+        stringResource(R.string.aidl_iwifimanager),
         stringResource(R.string.api_wifimanager),
     )
     val commandMethodValues = listOf(
         stringResource(R.string.no_choose_tip_list),
         stringResource(R.string.shizuku_newprocess),
-        "[AidlService] Runtime.exec",
-        "[root] su -c"
+        stringResource(R.string.aidl_runtime_exec),
+        stringResource(R.string.root_su_c)
     )
 
     ProvidePreferenceLocals {

@@ -26,6 +26,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import com.wifi.toolbox.R
 
 val LocalNavTarget = compositionLocalOf<MutableState<String?>> { error("No NavTarget provided") }
 
@@ -57,14 +58,14 @@ class MainActivity : AppCompatActivity() {
     private fun handleCrashRecovery(intent: Intent?) {
         val isRecovery = intent?.getBooleanExtra("CRASH_RECOVERY", false) ?: false
         if (isRecovery) {
-            val msg = intent.getStringExtra("ERROR_MESSAGE") ?: "未知错误"
+            val msg = intent.getStringExtra("ERROR_MESSAGE") ?: getString(R.string.unknown)
             val stack = intent.getStringExtra("ERROR_STACK") ?: ""
 
             val app = application as ToolboxApp
 
             app.alert(
-                title = "崩溃啦",
-                text = "刚才发生了不可逆的错误，应用已自动重启\n$msg\n你可以将此截图发给开发者，以及描述刚才做了什么（但能不能修复就是另一回事了）"
+                title = getString(R.string.crash_title),
+                text = getString(R.string.crash_text, msg)
             )
 
             if (BuildConfig.DEBUG) {

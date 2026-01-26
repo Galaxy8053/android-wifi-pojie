@@ -14,7 +14,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -254,22 +253,24 @@ fun AboutScreen(onMenuClick: () -> Unit) {
 
                                                 when {
                                                     hasAccessibilityClick -> {
-                                                        showToast("不许作弊！！")
+                                                        showToast(context.getString(R.string.toast_no_cheating))
                                                     }
 
                                                     totalTime < 200 -> {
-                                                        val lzhIndex = LocaleConfigs.list.indexOfFirst { it.tag == "lzh-CN" }
-                                                        if (lzhIndex != -1) {
+                                                        val tags = arrayOf("lzh", "en-CN")
+                                                        val randomTag = tags.random()
+                                                        val targetIndex = LocaleConfigs.list.indexOfFirst { it.tag == randomTag }
+                                                        if (targetIndex != -1) {
                                                             val app = context.applicationContext as com.wifi.toolbox.ToolboxApp
-                                                            app.settings.update { it.copy(language = lzhIndex) }
-                                                            val appLocale = LocaleConfigs.getLocaleListCompat(lzhIndex)
+                                                            app.settings.update { it.copy(language = targetIndex) }
+                                                            val appLocale = LocaleConfigs.getLocaleListCompat(targetIndex)
                                                             AppCompatDelegate.setApplicationLocales(appLocale)
-                                                            showToast("操作成功")
+                                                            showToast(context.getString(R.string.toast_operation_success))
                                                         }
                                                     }
 
                                                     totalTime < 2000 -> {
-                                                        showToast("点这么慢没吃饭吗")
+                                                        showToast(context.getString(R.string.toast_too_slow))
                                                     }
                                                 }
 

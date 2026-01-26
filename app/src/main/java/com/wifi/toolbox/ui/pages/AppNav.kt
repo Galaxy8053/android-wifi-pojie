@@ -166,7 +166,7 @@ fun AppNav(pendingNavigation: MutableState<String?>) {
                 composable("Settings") { SettingsScreen { scope.launch { drawerState.open() } } }
                 composable("Pojie") { PojieScreen { scope.launch { drawerState.open() } } }
                 composable("Viewer") { ManageScreen { scope.launch { drawerState.open() } } }
-                composable("Test") { TestScreen { scope.launch { drawerState.open() } } }
+                composable("Test") { TestScreen(onMenuClick = { scope.launch { drawerState.open() } }) }
                 composable("About") { AboutScreen { scope.launch { drawerState.open() } } }
             }
         }

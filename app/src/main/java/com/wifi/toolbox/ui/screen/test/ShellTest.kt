@@ -17,42 +17,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.ui.items.ActionChip
-import com.wifi.toolbox.utils.LogState
 import com.wifi.toolbox.ui.items.SectionDivider
 import com.wifi.toolbox.ui.items.SectionTitle
-import com.wifi.toolbox.utils.ShizukuUtil
 import androidx.compose.ui.res.colorResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.Timelapse
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
-import com.wifi.toolbox.utils.AidlServiceHelper
-import com.wifi.toolbox.utils.CommandRunner
-
-
-data class ActionChipItem(val icon: ImageVector, val text: String, val command: String)
 
 @Composable
-fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
+fun ShellTest(viewModel: TestViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val app = LocalContext.current.applicationContext as ToolboxApp
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val app = context.applicationContext as ToolboxApp
 
-    var command by rememberSaveable {  mutableStateOf("") }
     val buttonLabels = arrayOf(
         stringResource(R.string.normal),
         stringResource(R.string.shizuku),
@@ -61,41 +46,13 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
     )
 
     val actionChips = listOf(
-        ActionChipItem(
-            Icons.Filled.Search,
-            stringResource(R.string.check_id),
-            "id"
-        ),
-        ActionChipItem(
-            Icons.Filled.Build,
-            stringResource(R.string.fix_hidden_api),
-            "settings put global hidden_api_policy 1"
-        ),
-        ActionChipItem(
-            Icons.Filled.Link,
-            stringResource(R.string.connect_wifi),
-            "cmd wifi connect-network 名称 wpa2 密码"
-        ),
-        ActionChipItem(
-            Icons.Filled.Radar,
-            stringResource(R.string.scan_wifi),
-            "sh -c \"cmd wifi start-scan && echo 3秒后获取结果 && sleep 3 && cmd wifi list-scan-results\""
-        ),
-        ActionChipItem(
-            Icons.Filled.Timelapse,
-            stringResource(R.string.wait_10s),
-            $$"sh -c \"for i in $(seq 1 10); do echo $i; sleep 1; done\""
-        ),
-        ActionChipItem(
-            Icons.AutoMirrored.Filled.ManageSearch,
-            stringResource(R.string.wifi_logcat),
-            "sh -c \"logcat -c && logcat -s \\\"WifiService:D\\\" \\\"wpa_supplicant:D\\\" \\\"DhcpClient:D\\\"\""
-        )
+        ActionChipItem(Icons.Filled.Search, stringResource(R.string.check_id), "id"),
+        ActionChipItem(Icons.Filled.Build, stringResource(R.string.fix_hidden_api), "settings put global hidden_api_policy 1"),
+        ActionChipItem(Icons.Filled.Link, stringResource(R.string.connect_wifi), "cmd wifi connect-network 名称 wpa2 密码"),
+        ActionChipItem(Icons.Filled.Radar, stringResource(R.string.scan_wifi), "sh -c \"cmd wifi start-scan && echo 3秒后获取结果 && sleep 3 && cmd wifi list-scan-results\""),
+        ActionChipItem(Icons.Filled.Timelapse, stringResource(R.string.wait_10s), "sh -c \"for i in $(seq 1 10); do echo \$i; sleep 1; done\""),
+        ActionChipItem(Icons.AutoMirrored.Filled.ManageSearch, stringResource(R.string.wifi_logcat), "sh -c \"logcat -c && logcat -s \\\"WifiService:D\\\" \\\"wpa_supplicant:D\\\" \\\"DhcpClient:D\\\"\"")
     )
-
-    var isCommandRunning by remember { mutableStateOf(false) }
-    var stopCommandRunnable by remember { mutableStateOf<Runnable?>(null) }
-
 
     LazyColumn {
         item {
@@ -109,8 +66,8 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                     icon = Icons.Default.Code
                 )
                 OutlinedTextField(
-                    value = command,
-                    onValueChange = { command = it },
+                    value = viewModel.shellCommand,
+                    onValueChange = { viewModel.shellCommand = it },
                     label = { Text(stringResource(R.string.command)) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -125,9 +82,7 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                         ActionChip(
                             text = item.text,
                             icon = item.icon,
-                            onClick = {
-                                command = item.command
-                            }
+                            onClick = { viewModel.shellCommand = item.command }
                         )
                     }
                 }
@@ -140,17 +95,11 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
                 )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    buttonLabels.forEachIndexed { index,
-                                                  label ->
+                    buttonLabels.forEachIndexed { index, label ->
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = buttonLabels.size
-                            ),
-                            onClick = {
-                                selectedTabIndex = index
-                            },
-                            selected = selectedTabIndex == index
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = buttonLabels.size),
+                            onClick = { viewModel.shellMethodIndex = index },
+                            selected = viewModel.shellMethodIndex == index
                         ) {
                             Text(label)
                         }
@@ -159,100 +108,43 @@ fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
-                        if (!isCommandRunning) {
-                            isCommandRunning = true
-                            val commandToExecute = command
-                            val onOutput: (String) -> Unit = { output -> logState.addLog(output) }
-                            val onFinish: (CommandRunner.CommandResult) -> Unit = { result ->
-                                logState.addLog(
-                                    context.getString(
-                                        R.string.run_completed_tip,
-                                        result.exitCode
-                                    )
-                                )
-                                isCommandRunning = false
-                                stopCommandRunnable = null
-                            }
-
-                            when (selectedTabIndex) {
-                                0 -> { // Normal mode
-                                    logState.addLog(
-                                        context.getString(
-                                            R.string.run_command_string,
-                                            commandToExecute
-                                        )
-                                    )
-                                    stopCommandRunnable = CommandRunner.executeCommand(
-                                        command = commandToExecute,
-                                        isRoot = false,
-                                        onOutputReceived = onOutput,
-                                        onCommandFinished = onFinish
-                                    )
-                                }
-
-                                1 -> { // Shizuku mode
-                                    logState.addLog(
-                                        context.getString(
-                                            R.string.run_command_string_shizuku,
-                                            commandToExecute
-                                        )
-                                    )
-                                    stopCommandRunnable = ShizukuUtil.executeCommand(
-                                        command = commandToExecute,
-                                        onOutputReceived = onOutput,
-                                        onCommandFinished = onFinish
-                                    )
-                                }
-
-                                2 -> { // AIDL Service mode
-                                    logState.addLog(
-                                        "使用AIDL Service执行：$commandToExecute"
-                                    )
-                                    stopCommandRunnable = AidlServiceHelper.executeCommand(
-                                        app = app,
-                                        command = commandToExecute,
-                                        onOutputReceived = onOutput,
-                                        onCommandFinished = onFinish
-                                    )
-                                }
-
-                                3 -> { // Root mode
-                                    logState.addLog(
-                                        context.getString(
-                                            R.string.run_command_string_root,
-                                            commandToExecute
-                                        )
-                                    )
-                                    stopCommandRunnable = CommandRunner.executeCommand(
-                                        command = commandToExecute,
-                                        isRoot = true,
-                                        onOutputReceived = onOutput,
-                                        onCommandFinished = onFinish
-                                    )
-                                }
-                            }
+                        if (viewModel.isCommandRunning) {
+                            viewModel.logState.addLog(context.getString(R.string.run_pause_tip))
                         } else {
-                            logState.addLog(context.getString(R.string.run_pause_tip))
-                            stopCommandRunnable?.run()
-                            isCommandRunning = false
-                            stopCommandRunnable = null
+                            val logPrefix = when (viewModel.shellMethodIndex) {
+                                0 -> context.getString(R.string.run_command_string, viewModel.shellCommand)
+                                1 -> context.getString(R.string.run_command_string_shizuku, viewModel.shellCommand)
+                                2 -> context.getString(R.string.run_command_string_aidl, viewModel.shellCommand)
+                                3 -> context.getString(R.string.run_command_string_root, viewModel.shellCommand)
+                                else -> ""
+                            }
+                            viewModel.logState.addLog(logPrefix)
+                        }
+                        viewModel.runShellCommand(app) { exitCode ->
+                            context.getString(R.string.run_completed_tip, exitCode)
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(0.dp, 4.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isCommandRunning) colorResource(android.R.color.holo_red_light)
+                        containerColor = if (viewModel.isCommandRunning) colorResource(android.R.color.holo_red_light)
                         else MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text(
-                        text = if (isCommandRunning) stringResource(R.string.stop_run)
+                        text = if (viewModel.isCommandRunning) stringResource(R.string.stop_run)
                         else stringResource(R.string.start_run),
-                        color = if (isCommandRunning) Color.White else MaterialTheme.colorScheme.onPrimary
+                        color = if (viewModel.isCommandRunning) Color.White else MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
         }
     }
 }
+
+data class ActionChipItem(
+    val icon: ImageVector,
+    val text: String,
+    val command: String
+)

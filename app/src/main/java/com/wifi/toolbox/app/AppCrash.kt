@@ -11,7 +11,7 @@ class AppCrash(private val context: Context) {
      * @param none
      * @return none
      */
-    fun StartCatch() {
+    fun startCatch() {
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
             val msg = throwable.localizedMessage ?: "未知错误"
             val stack = throwable.stackTraceToString()

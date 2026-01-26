@@ -1,6 +1,5 @@
 package com.wifi.toolbox.ui.items.pojie
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -173,8 +172,7 @@ fun RunListView(
         })
     }
 
-    val s = controller.uiState
-    when (s) {
+    when (val s = controller.uiState) {
         is ScreenState.Success -> {
             val res = remember(controller.trigger) { controller.fetchResults() }
             val scannedList = res.wifiList ?: emptyList()
@@ -184,11 +182,15 @@ fun RunListView(
 
                 val partRunning = runningTasks.map { task ->
                     val realTimeInfo = scannedList.find { it.ssid == task.ssid }
+                    val matchedHistory = historyList.find { it.ssid == task.ssid }
+
                     WifiInfo(
                         ssid = task.ssid,
                         bssid = "",
                         level = realTimeInfo?.level ?: 0,
-                        capabilities = realTimeInfo?.capabilities ?: ""
+                        capabilities = realTimeInfo?.capabilities ?: "",
+                        pojieHistoryItem = matchedHistory,
+                        savedInfo = realTimeInfo?.savedInfo
                     )
                 }
 
@@ -250,13 +252,13 @@ fun RunListView(
                                     Modifier.size(96.dp),
                                     tint = MaterialTheme.colorScheme.outlineVariant
                                 )
-                                Text("空列表", style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(R.string.empty_list), style = MaterialTheme.typography.bodyLarge)
                             }
                         }
 
                         BannerTip(
-                            title = "没有找到想要的wifi？",
-                            text = "点击手动输入名称",
+                            title = stringResource(R.string.manual_input_tip_title),
+                            text = stringResource(R.string.manual_input_tip_content),
                             trailingIcon = true,
                             modifier = Modifier
                                 .padding(8.dp)
@@ -390,7 +392,7 @@ fun RunListView(
                                 Modifier.size(ButtonDefaults.IconSize)
                             )
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("去设置")
+                            Text(stringResource(R.string.go_to_settings))
                         }
                     }
 
@@ -402,7 +404,7 @@ fun RunListView(
                                 Modifier.size(ButtonDefaults.IconSize)
                             )
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("去设置")
+                            Text(stringResource(R.string.go_to_settings))
                         }
                     }
 
