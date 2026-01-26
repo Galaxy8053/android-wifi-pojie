@@ -6,10 +6,11 @@ import android.net.wifi.WifiConfiguration
 
 data class WifiInfo(
     val ssid: String,
-    val level: Int,
-    val bssid: String,
-    val capabilities: String,
-    val savedInfo: WifiConfiguration? = null
+    val level: Int = 0,
+    val bssid: String = "",
+    val capabilities: String = "",
+    val savedInfo: WifiConfiguration? = null,
+    val pojieHistoryItem: PojieHistoryItem? = null
 ) {
     companion object {
         fun parseCapabilities(input: WifiInfo): List<List<String>> {

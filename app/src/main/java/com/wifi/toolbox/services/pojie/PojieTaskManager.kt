@@ -7,7 +7,6 @@ import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.services.PojieService
 import com.wifi.toolbox.structs.*
 import com.wifi.toolbox.utils.AidlServiceHelper
-import com.wifi.toolbox.utils.PojieHistoryItem
 import com.wifi.toolbox.utils.ShizukuUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
@@ -25,6 +24,7 @@ class PojieTaskManager(
 
     private var mainLoopJob: Job? = null
     private var currentWorkerJob: Job? = null
+    private var settingsMonitorJob: Job? = null
 
     @Volatile
     private var currentWorkingSsid: String? = null
@@ -33,6 +33,7 @@ class PojieTaskManager(
     fun isWorking(): Boolean = mainLoopJob != null && mainLoopJob!!.isActive
 
     fun cancelCurrentJob() {
+        settingsMonitorJob?.cancel()
         currentWorkerJob?.cancel()
         mainLoopJob?.cancel()
     }
@@ -41,18 +42,21 @@ class PojieTaskManager(
         val app = service.applicationContext as ToolboxApp
         val safeScope = scope + SupervisorJob()
 
-        safeScope.launch {
-            while (isActive) {
-                if (settings.connectMode != 4) {
-                    if (AidlServiceHelper.executeCommandSync(
-                            app,
-                            "am force-stop com.android.settings"
-                        ).exitCode != 0
-                    ) {
-                        ShizukuUtil.executeCommandSync("am force-stop com.android.settings")
+        settingsMonitorJob = safeScope.launch {
+            try {
+                while (isActive) {
+                    if (settings.connectMode != 4) {
+                        if (AidlServiceHelper.executeCommandSync(
+                                app,
+                                "am force-stop com.android.settings"
+                            ).exitCode != 0
+                        ) {
+                            ShizukuUtil.executeCommandSync("am force-stop com.android.settings")
+                        }
                     }
+                    delay(250)
                 }
-                delay(250)
+            } finally {
             }
         }
 
@@ -296,13 +300,11 @@ class PojieTaskManager(
             }
         }
 
-        scope.launch(Dispatchers.IO) { updateHistory(app, task.ssid) }
         worker.cleanConnection(settings)
 
         if (result == SinglePojieTask.RESULT_CANCEL) return
 
         when (result) {
-            //连接成功：记录历史并停止任务
             SinglePojieTask.RESULT_SUCCESS -> {
                 service.log("${service.getString(R.string.result_success)}: (${task.ssid}, $pass)")
                 app.pojieHistory.addOrUpdateHistory(
@@ -317,7 +319,6 @@ class PojieTaskManager(
                 app.pojieTask.stop(task.ssid)
             }
 
-            //达到失败标志：记录用时、准备下一个
             SinglePojieTask.RESULT_FAILED -> {
                 processTaskCompletion(app, task.ssid)
                 app.pojieTask.edit(task.ssid) {
@@ -332,7 +333,6 @@ class PojieTaskManager(
                 }
             }
 
-            //超时、路由器拒绝接入：重试、记录时间
             SinglePojieTask.RESULT_TIMEOUT, SinglePojieTask.RESULT_ERROR_TRANSIENT -> {
                 app.pojieTask.edit(task.ssid) {
                     val newList = it.costList.toMutableList()
@@ -354,17 +354,18 @@ class PojieTaskManager(
 
             else -> app.pojieTask.stop(task.ssid)
         }
+
+        scope.launch(Dispatchers.IO) { updateHistory(app, task.ssid) }
     }
 
     private fun processTaskCompletion(app: ToolboxApp, ssid: String) {
         val task = getTask(app, ssid) ?: return
         val nextIndex = task.tryIndex + 1
+        app.pojieTask.edit(ssid) { it.copy(tryIndex = nextIndex) }
         if (nextIndex >= task.tryList.size) {
             app.finishedPojieTasksTip[ssid] =
                 service.getString(R.string.tip_all_failed, task.tryList.size)
             app.pojieTask.stop(ssid)
-        } else {
-            app.pojieTask.edit(ssid) { it.copy(tryIndex = nextIndex) }
         }
     }
 

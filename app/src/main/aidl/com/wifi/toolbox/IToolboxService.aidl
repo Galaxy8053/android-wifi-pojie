@@ -11,6 +11,7 @@ interface IToolboxService {
     void forgetNetwork(int netId);
     void setMediaVolumeMax();
     int connectToWifi(String ssid, String password);
+    void enableNetwork(int netId);
     void disconnectWifi();
     boolean startWifiScan(boolean allowUseCommand);
     List<Bundle> getSavedWifiList();

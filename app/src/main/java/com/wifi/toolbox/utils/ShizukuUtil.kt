@@ -369,13 +369,20 @@ object ShizukuUtil {
 
         if (netId == -1) throw RuntimeException("添加网络失败")
 
+        enableNetwork(netId)
+        return netId
+    }
+
+    fun enableNetwork(netId: Int) {
+        val wifiManagerBinder = SystemServiceHelper.getSystemService(Context.WIFI_SERVICE)
+        val wifiService = asInterface("android.net.wifi.IWifiManager", wifiManagerBinder)
+
         val enableMethod = getWifiMethod(wifiService, "enableNetwork")
         when (enableMethod.parameterTypes.size) {
             3 -> enableMethod.invoke(wifiService, netId, true, PACKAGE_NAME)
             2 -> enableMethod.invoke(wifiService, netId, true)
         }
 
-        return netId
     }
 
     /**

@@ -60,17 +60,44 @@ class ConnectWorker(
         val startTime = System.currentTimeMillis()
         val connectMode = settings.connectMode
 
+
+        val targetNetId = try {
+            val savedList = when (connectMode) {
+                1 -> ShizukuUtil.getSavedWifiList()
+                2 -> AidlServiceHelper.getSavedWifiList(app)
+                3 -> ApiUtil.getSavedWifiList(app)
+                else -> emptyList()
+            }
+            savedList.find {
+                it.SSID == "\"${task.ssid}\"" || it.SSID == task.ssid
+            }?.networkId ?: throw Exception()
+        } catch (_: Exception) {
+            throw Exception("使用空密码尝试连接失败")
+        }
+
+
         when (connectMode) {
             0 -> throw Exception(service.getString(R.string.connect_mode_empty))
-            1 -> ShizukuUtil.connectToWifi(task.ssid, task.password)
-            2 -> AidlServiceHelper.connectToWifi(app, task.ssid, task.password)
-            3 -> {
-                val netId = ApiUtil.connectToWifiApi28(service, task.ssid, task.password)
-                if (netId == -1) throw Exception(service.getString(R.string.connect_wifi_failed))
+            1 -> {
+                if (task.password.isEmpty()) ShizukuUtil.enableNetwork(targetNetId)
+                else ShizukuUtil.connectToWifi(task.ssid, task.password)
             }
 
-            4 -> { /* API 29 处理流程 */
+            2 -> {
+                if (task.password.isEmpty()) AidlServiceHelper.enableNetwork(app, targetNetId)
+                else AidlServiceHelper.connectToWifi(app, task.ssid, task.password)
             }
+
+            3 -> {
+                if (task.password.isEmpty()) {
+                    ApiUtil.enableNetwork(app, targetNetId)
+                } else {
+                    val netId = ApiUtil.connectToWifiApi28(service, task.ssid, task.password)
+                    if (netId == -1) throw Exception(service.getString(R.string.connect_wifi_failed))
+                }
+            }
+
+            4 -> if (task.password.isEmpty()) throw Exception("api29模式不支持空密码连接")
 
             else -> throw Exception(service.getString(R.string.tip_not_completed) + "(connectMode=$connectMode)")
         }

@@ -2,6 +2,7 @@ package com.wifi.toolbox.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ManageSearch
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -88,8 +89,9 @@ fun PojieScreenContent(
     var showResourceSheet by rememberSaveable { mutableStateOf(false) }
 
     var showResourcesFabDialog by rememberSaveable { mutableStateOf(false) }
-
     var showHistoryConfirmDialog by rememberSaveable { mutableStateOf(false) }
+    var showSavedConfirmDialog by rememberSaveable { mutableStateOf(false) }
+    var pendingWifiInfo by remember { mutableStateOf<WifiInfo?>(null) }
 
     val historyItem =
         remember(currentTargetSsid, app?.pojieHistory?.historyFlow?.collectAsState()?.value) {
@@ -123,18 +125,21 @@ fun PojieScreenContent(
                         runListView = {
                             RunListView(
                                 controller = pojieWifiController,
-                                onStartClick = { ssid ->
-                                    currentTargetSsid = ssid
-                                    // 如果历史记录中有这个 SSID 且还没跑完
-                                    val hasHistory =
-                                        app?.pojieHistory?.historyFlow?.value?.any { it.ssid == ssid } == true
-                                    if (hasHistory) {
-                                        showHistoryConfirmDialog = true
-                                    } else {
-                                        showResourceSheet = true
+                                onStartClick = { wifiInfo ->
+                                    currentTargetSsid = wifiInfo.ssid
+                                    pendingWifiInfo = wifiInfo
+                                    val history = wifiInfo.pojieHistoryItem
+                                    val hasSaved = wifiInfo.savedInfo != null
+                                    val hasUnfinishedHistory =
+                                        history != null && history.progress < history.passwords.size
+
+                                    when {
+                                        hasSaved -> showSavedConfirmDialog = true
+                                        hasUnfinishedHistory -> showHistoryConfirmDialog = true
+                                        else -> showResourceSheet = true
                                     }
                                 },
-                                onStopClick = { ssid -> app?.pojieTask?.stop(ssid) }
+                                onStopClick = { app?.pojieTask?.stop(it) }
                             )
                         }
                     )
@@ -188,6 +193,44 @@ fun PojieScreenContent(
         )
     }
 
+    val pendingWifi = pendingWifiInfo
+    if (showSavedConfirmDialog && pendingWifi != null) {
+        SavedWifiConfirmDialog(
+            wifiInfo = pendingWifi,
+            onDismiss = { showSavedConfirmDialog = false },
+            onDirectTry = {
+                showSavedConfirmDialog = false
+                pendingWifi.savedInfo?.let { saved ->
+                    val psk = saved.preSharedKey ?: ""
+                    if (psk.length >= 8) {
+                        app?.pojieTask?.start(
+                            PojieRunInfo(
+                                ssid = currentTargetSsid,
+                                tryList = listOf(psk),
+                                lastTryTime = System.currentTimeMillis()
+                            )
+                        )
+                    } else app?.pojieTask?.start(
+                        PojieRunInfo(
+                            ssid = currentTargetSsid,
+                            tryList = listOf(""),
+                            lastTryTime = System.currentTimeMillis()
+                        )
+                    )
+                }
+            },
+            onReRun = {
+                showSavedConfirmDialog = false
+                val history = pendingWifi.pojieHistoryItem
+                if (history != null && history.progress < history.passwords.size) {
+                    showHistoryConfirmDialog = true
+                } else {
+                    showResourceSheet = true
+                }
+            }
+        )
+    }
+
     if (showHistoryConfirmDialog && historyItem != null) {
         HistoryRecoveryDialog(
             item = historyItem,
@@ -209,6 +252,72 @@ fun PojieScreenContent(
             }
         )
     }
+}
+
+@Composable
+fun SavedWifiConfirmDialog(
+    wifiInfo: WifiInfo,
+    onDismiss: () -> Unit,
+    onDirectTry: () -> Unit,
+    onReRun: () -> Unit
+) {
+    val saved = wifiInfo.savedInfo ?: return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.AutoMirrored.Outlined.ManageSearch,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = { Text("发现已保存密码") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "系统已存在该 WiFi 的配置信息，是否直接尝试连接？",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Surface(
+                    modifier = Modifier.padding(top = 16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Text("SSID: ${wifiInfo.ssid}", style = MaterialTheme.typography.labelLarge)
+                        if (saved.preSharedKey.length >= 8) Text(
+                            "密码: ${saved.preSharedKey}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onReRun,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                        brush = SolidColor(MaterialTheme.colorScheme.error)
+                    )
+                ) {
+                    Text("重新运行")
+                }
+                Button(
+                    onClick = onDirectTry,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("直接尝试")
+                }
+            }
+        }
+    )
 }
 
 @Composable

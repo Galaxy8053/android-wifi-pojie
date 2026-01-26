@@ -221,7 +221,7 @@ fun SettingsScreen(
                         },
                         values = hiddenApiBypassValues.indices.toList(),
                         valueToText = { AnnotatedString(hiddenApiBypassValues[it]) },
-                        title = { Text(stringResource(R.string.hidden_api_method)) },
+                        title = { Text("隐藏API调用") },
                         summary = { Text(hiddenApiBypassValues[settings.hiddenApiBypass]) },
                         type = ListPreferenceType.DROPDOWN_MENU,
                         icon = { Icon(Icons.Filled.Api, null) }

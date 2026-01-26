@@ -84,6 +84,7 @@ ${getString(R.string.pojie_service_description)}
 
     fun stop() {
         log(getString(R.string.run_finished))
+        taskDispatcher.cancelCurrentJob()
         connectionWorker.closeServices()
         stopSelf()
     }

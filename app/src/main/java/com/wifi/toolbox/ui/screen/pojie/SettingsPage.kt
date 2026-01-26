@@ -41,26 +41,23 @@ fun SettingsPage(
         "[AidlService] IWifiManager",
         stringResource(R.string.api_wifimanager),
         stringResource(R.string.api_connect_device),
-        stringResource(R.string.command_not_completed)
     )
     val scanValues = listOf(
         stringResource(R.string.item_free),
         stringResource(R.string.shizuku_iwifimanager),
         "[AidlService] IWifiManager",
         stringResource(R.string.api_wifimanager),
-        stringResource(R.string.command_not_completed)
     )
     val turnOnValues = listOf(
         stringResource(R.string.item_free),
         stringResource(R.string.shizuku_iwifimanager),
         "[AidlService] IWifiManager",
         stringResource(R.string.api_wifimanager),
-        stringResource(R.string.command_not_completed)
     )
     val commandMethodValues = listOf(
         stringResource(R.string.no_choose_tip_list),
         stringResource(R.string.shizuku_newprocess),
-        "[AidlService] Runtime.exec()",
+        "[AidlService] Runtime.exec",
         "[root] su -c"
     )
 

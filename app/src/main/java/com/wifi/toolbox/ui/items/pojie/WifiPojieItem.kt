@@ -31,7 +31,7 @@ fun WifiPojieItem(
     wifi: WifiInfo,
     runningInfo: PojieRunInfo?,
     finishedInfo: String?,
-    onStartClick: ((String) -> Unit) = {},
+    onStartClick: ((WifiInfo) -> Unit) = {},
     onStopClick: ((String) -> Unit) = {},
 ) {
     val stableInfo = remember { mutableStateOf<PojieRunInfo?>(null) }
@@ -80,7 +80,7 @@ private fun WifiItemMainHeader(
     finishedInfo: String?,
     stableFinishedInfo: String?,
     runningInfo: PojieRunInfo?,
-    onStartClick: (String) -> Unit,
+    onStartClick: (WifiInfo) -> Unit,
     onStopClick: (String) -> Unit
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -93,11 +93,8 @@ private fun WifiItemMainHeader(
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
                 if (WifiInfo.checkIsFreeOpenNetwork(wifi)) TagItem("开放式", TagType.Tertiary)
-                wifi.savedInfo?.let {
-                    if (it.preSharedKey.length >= 8) {
-                        TagItem("已保存(密码:${it.preSharedKey})")
-                    } else TagItem("已保存")
-                }
+                wifi.savedInfo?.let { TagItem("已保存") }
+                wifi.pojieHistoryItem?.let { TagItem("有历史", TagType.Primary) }
             }
             Text(
                 text = if (wifi.level == 0) stringResource(R.string.unknown) else stringResource(
@@ -120,7 +117,7 @@ private fun WifiItemMainHeader(
         }
         val isRunning = runningInfo != null
         Button(
-            onClick = { if (isRunning) onStopClick(wifi.ssid) else onStartClick(wifi.ssid) },
+            onClick = { if (isRunning) onStopClick(wifi.ssid) else onStartClick(wifi) },
             colors = ButtonDefaults.buttonColors(containerColor = if (isRunning) Color(0xFFFF4444) else MaterialTheme.colorScheme.primary),
             contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
         ) {

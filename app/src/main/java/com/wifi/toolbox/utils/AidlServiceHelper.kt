@@ -114,4 +114,9 @@ object AidlServiceHelper {
         app.aidl.ipc?.disconnectWifi()
             ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
     }
+
+    fun enableNetwork(app: ToolboxApp, netId: Int) {
+        app.aidl.ipc?.enableNetwork(netId)
+            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+    }
 }

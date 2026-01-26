@@ -115,6 +115,12 @@ object ApiUtil {
         } else -1
     }
 
+    fun enableNetwork(context: Context, netId: Int) {
+        val wifiManager =
+            context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        wifiManager.enableNetwork(netId, true)
+    }
+
     fun forgetNetwork(context: Context, netId: Int): Boolean {
         val wifiManager =
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager

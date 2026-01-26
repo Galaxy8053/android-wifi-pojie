@@ -143,6 +143,19 @@ class AidlService : RootService() {
             return netId
         }
 
+        override fun enableNetwork(netId: Int) {
+            checkCaller()
+            val wifiService = getWifiService()
+            val enableMethod = getWifiMethod(wifiService, "enableNetwork")
+            if (enableMethod.parameterTypes.size == 3) enableMethod.invoke(
+                wifiService,
+                netId,
+                true,
+                PACKAGE_NAME
+            )
+            else enableMethod.invoke(wifiService, netId, true)
+        }
+
         override fun disconnectWifi() {
             checkCaller()
             val wifiService = getWifiService()

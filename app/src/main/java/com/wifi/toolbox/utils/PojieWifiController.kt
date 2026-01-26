@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.wifi.toolbox.utils
 
 import android.app.Activity
@@ -6,18 +8,32 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
-import com.wifi.toolbox.structs.*
-import com.wifi.toolbox.ui.items.*
+import com.wifi.toolbox.structs.PojieHistoryItem
+import com.wifi.toolbox.structs.PojieRunInfo
+import com.wifi.toolbox.structs.PojieSettings
+import com.wifi.toolbox.ui.LocalNavTarget
+import com.wifi.toolbox.ui.items.checkShizukuUI
 import com.wifi.toolbox.ui.items.pojie.ScanResult
 import com.wifi.toolbox.ui.items.pojie.ScreenState
 import com.wifi.toolbox.ui.items.pojie.StartScanResult
-import kotlinx.coroutines.*
-import  com.wifi.toolbox.R
-import com.wifi.toolbox.ui.LocalNavTarget
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 interface PojieWifiController {
     val uiState: ScreenState
@@ -50,6 +66,9 @@ fun rememberPojieWifiController(
     val currentRunningTasks = app.runningPojieTasks
     val currentFinishedTasks = app.finishedPojieTasksTip
     val navTarget = LocalNavTarget.current
+    val historyList by app.pojieHistory.historyFlow.collectAsState(initial = emptyList())
+    var cachedSavedNetworks by remember { mutableStateOf<List<android.net.wifi.WifiConfiguration>>(emptyList()) }
+    var cachedHistory by remember { mutableStateOf<List<PojieHistoryItem>>(emptyList()) }
 
     var onWifiEnabledAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
@@ -144,6 +163,18 @@ fun rememberPojieWifiController(
             val start = scanInternal()
             when (start.code) {
                 StartScanResult.CODE_SUCCESS, StartScanResult.CODE_SEND_FAIL -> {
+                    cachedHistory = historyList
+                    cachedSavedNetworks = try {
+                        when (settings.scanMode) {
+                            1 -> ShizukuUtil.getSavedWifiList()
+                            2 -> AidlServiceHelper.getSavedWifiList(app)
+                            3 -> if (ApiUtil.hasLocationPermission(context)) ApiUtil.getSavedWifiList(app) else emptyList()
+                            else -> emptyList()
+                        }
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+
                     val sendSucceed = start.code == StartScanResult.CODE_SUCCESS
                     uiState = ScreenState.Success(sendSucceed)
                     if (sendSucceed) {
@@ -243,29 +274,41 @@ fun rememberPojieWifiController(
                         )
 
                         1 -> {
-                            val saved = ShizukuUtil.getSavedWifiList()
                             val results = ShizukuUtil.getWifiScanResults()
                                 .filter { it.ssid.isNotEmpty() }
                                 .distinctBy { it.ssid }
-                                .map { it.copy(savedInfo = saved.find { s -> s.SSID == "\"${it.ssid}\"" || s.SSID == it.ssid }) }
+                                .map { info ->
+                                    info.copy(
+                                        savedInfo = cachedSavedNetworks.find { s -> s.SSID == "\"${info.ssid}\"" || s.SSID == info.ssid },
+                                        pojieHistoryItem = cachedHistory.find { h -> h.ssid == info.ssid }
+                                    )
+                                }
                             ScanResult(ScanResult.CODE_SUCCESS, null, results)
                         }
 
                         2 -> {
-                            val saved = AidlServiceHelper.getSavedWifiList(app)
                             val results = AidlServiceHelper.getWifiScanResults(app)
                                 .filter { it.ssid.isNotEmpty() }
                                 .distinctBy { it.ssid }
-                                .map { it.copy(savedInfo = saved.find { s -> s.SSID == "\"${it.ssid}\"" || s.SSID == it.ssid }) }
+                                .map { info ->
+                                    info.copy(
+                                        savedInfo = cachedSavedNetworks.find { s -> s.SSID == "\"${info.ssid}\"" || s.SSID == info.ssid },
+                                        pojieHistoryItem = cachedHistory.find { h -> h.ssid == info.ssid }
+                                    )
+                                }
                             ScanResult(ScanResult.CODE_SUCCESS, null, results)
                         }
 
                         3 -> {
-                            val saved = ApiUtil.getSavedWifiList(app)
                             val results = ApiUtil.getScanResults(context)
                                 .filter { it.ssid.isNotEmpty() }
                                 .distinctBy { it.ssid }
-                                .map { it.copy(savedInfo = saved.find { s -> s.SSID == "\"${it.ssid}\"" || s.SSID == it.ssid }) }
+                                .map { info ->
+                                    info.copy(
+                                        savedInfo = cachedSavedNetworks.find { s -> s.SSID == "\"${info.ssid}\"" || s.SSID == info.ssid },
+                                        pojieHistoryItem = cachedHistory.find { h -> h.ssid == info.ssid }
+                                    )
+                                }
                             ScanResult(ScanResult.CODE_SUCCESS, null, results)
                         }
 

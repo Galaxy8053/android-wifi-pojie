@@ -1,5 +1,6 @@
 package com.wifi.toolbox.ui.items.pojie
 
+import android.annotation.SuppressLint
 import android.os.Parcelable
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -13,6 +14,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
@@ -23,10 +26,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
+import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.structs.WifiInfo
 import com.wifi.toolbox.ui.items.BannerTip
+import com.wifi.toolbox.utils.AidlServiceHelper
 import com.wifi.toolbox.utils.ApiUtil
 import com.wifi.toolbox.utils.PojieWifiController
+import com.wifi.toolbox.utils.ShizukuUtil
+import com.wifi.toolbox.utils.rememberPojieSettings
 import kotlinx.parcelize.Parcelize
 
 data class StartScanResult(
@@ -91,7 +98,7 @@ sealed class ScreenState : Parcelable {
 @Composable
 fun RunListView(
     controller: PojieWifiController,
-    onStartClick: (String) -> Unit = {},
+    onStartClick: (WifiInfo) -> Unit = {},
     onStopClick: (String) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -100,6 +107,11 @@ fun RunListView(
 
     var showManualInput by remember { mutableStateOf(false) }
     var manualSsid by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val app = context.applicationContext as ToolboxApp
+    val historyList by app.pojieHistory.historyFlow.collectAsState(initial = emptyList())
+    var pojieSettings by rememberPojieSettings(context)
 
     LaunchedEffect(Unit) {
         if (controller.uiState is ScreenState.Idle) controller.reload()
@@ -318,6 +330,7 @@ fun RunListView(
                 StartScanResult.CODE_LOCATION_NOT_ALLOWED -> Icons.Rounded.WrongLocation
                 StartScanResult.CODE_NOT_SET, StartScanResult.CODE_SERVICE_NOT_BOUND ->
                     painterResource(id = R.drawable.ic_settings_b_roll)
+
                 else -> Icons.Rounded.BugReport
             }
             ErrorTip(
@@ -418,11 +431,37 @@ fun RunListView(
             },
             confirmButton = {
                 Button(
-                    enabled = manualSsid.isNotBlank(), onClick = {
-                        onStartClick(manualSsid)
+                    enabled = manualSsid.isNotBlank(),
+                    onClick = {
+                        val currentSsid = manualSsid
+                        val savedList = try {
+                            when (pojieSettings.scanMode) {
+                                1 -> ShizukuUtil.getSavedWifiList()
+                                2 -> AidlServiceHelper.getSavedWifiList(app)
+                                3 -> if (ApiUtil.hasLocationPermission(context)) ApiUtil.getSavedWifiList(app) else emptyList()
+                                else -> emptyList()
+                            }
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+
+                        val matchedSaved = savedList.find { it.SSID == "\"$currentSsid\"" || it.SSID == currentSsid }
+
+                        val matchedHistory = historyList.find { it.ssid == currentSsid }
+
+                        val finalWifiInfo = WifiInfo(
+                            ssid = currentSsid,
+                            savedInfo = matchedSaved,
+                            pojieHistoryItem = matchedHistory
+                        )
+
+                        onStartClick(finalWifiInfo)
                         manualSsid = ""
                         showManualInput = false
-                    }) { Text(stringResource(R.string.btn_ok)) }
+                    }
+                ) {
+                    Text(stringResource(R.string.btn_ok))
+                }
             },
             dismissButton = {
                 TextButton(onClick = {

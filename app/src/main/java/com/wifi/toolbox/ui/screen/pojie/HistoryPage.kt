@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -20,12 +19,12 @@ import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.ui.items.TagItem
 import com.wifi.toolbox.ui.items.TagType
-import com.wifi.toolbox.utils.PojieHistoryItem
+import com.wifi.toolbox.structs.PojieHistoryItem
 
 @Composable
 fun HistoryPage() {
-    val context = LocalContext.current.applicationContext as ToolboxApp
-    val historyList by context.pojieHistory.historyFlow.collectAsState()
+    val app = LocalContext.current.applicationContext as ToolboxApp
+    val historyList by app.pojieHistory.historyFlow.collectAsState()
 
     val sortedList = remember(historyList) {
         historyList.sortedWith(
@@ -45,7 +44,7 @@ fun HistoryPage() {
         }
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            itemsIndexed(sortedList) { index, item ->
+            itemsIndexed(sortedList) { _, item ->
                 HistoryItem(
                     item = item,
                     modifier = Modifier.clickable {},
@@ -63,7 +62,7 @@ fun HistoryPage() {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        context.pojieHistory.deleteHistory(item.ssid)
+                        app.pojieHistory.deleteHistory(item.ssid)
                         pendingDeleteItem = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)

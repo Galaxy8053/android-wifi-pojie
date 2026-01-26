@@ -2,19 +2,11 @@ package com.wifi.toolbox.utils
 
 import android.content.Context
 import androidx.room.*
+import com.wifi.toolbox.structs.PojieHistoryItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-
-data class PojieHistoryItem(
-
-    val ssid: String,
-    val passwords: List<String>,
-    val progress: Int,
-    val password: String? = null,
-    val lasttime: Long = 0L
-)
 
 @Entity(tableName = "history_metadata")
 data class HistoryEntity(
@@ -125,12 +117,6 @@ class PojieHistoryManager(context: Context) {
         scope.launch {
             val itemWithTime = item.copy(lasttime = System.currentTimeMillis())
             dao.fullUpsert(itemWithTime)
-        }
-    }
-
-    fun updateProgressOnly(ssid: String, progress: Int) {
-        scope.launch {
-            dao.updateProgress(ssid, progress, System.currentTimeMillis())
         }
     }
 
