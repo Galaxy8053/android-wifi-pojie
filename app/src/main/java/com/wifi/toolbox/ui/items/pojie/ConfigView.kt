@@ -288,7 +288,7 @@ fun ConfigView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.config_doubling_base))
+                Text("冷却时间翻倍基数")
                 Text(
                     text = stringResource(R.string.ms_string, config.doublingBase),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,8 +56,8 @@ import rikka.shizuku.ShizukuProvider
 @Composable
 fun ShizukuTest(logState: LogState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var name by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {

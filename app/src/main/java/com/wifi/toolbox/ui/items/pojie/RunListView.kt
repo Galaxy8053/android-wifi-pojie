@@ -52,11 +52,12 @@ data class StartScanResult(
     }
 }
 
+@Parcelize
 data class ScanResult(
     val code: Int = CODE_UNKNOWN,
     val errorMessage: String? = null,
     var wifiList: List<WifiInfo>? = null
-) {
+) : Parcelable {
     companion object {
         const val CODE_SUCCESS = 0
         const val CODE_UNKNOWN = -1
@@ -201,26 +202,32 @@ fun RunListView(
             else if (!controller.isScanning && fullList.isEmpty()) 1
             else 2
 
-            val isWifiConnected = ApiUtil.isWifiConnected(LocalContext.current)
+            val isWifiConnected = remember(controller.trigger) {
+                ApiUtil.isWifiConnected(context)
+            }
 
-            val displayList = remember(fullList, controller.isScanning, controller.uiState) {
-                val list = mutableListOf<PojieListItem>()
-
+            LaunchedEffect(isWifiConnected) {
                 if (isWifiConnected) {
-                    list.add(PojieListItem.WifiConnectedBanner)
+                    listState.animateScrollToItem(0)
                 }
+            }
 
-                val uiState = controller.uiState
-                if (uiState is ScreenState.Success && !uiState.sendSucceed) {
-                    list.add(PojieListItem.SendFailedBanner)
+            val displayList = remember(fullList, isWifiConnected, controller.isScanning, s) {
+                mutableListOf<PojieListItem>().apply {
+                    if (isWifiConnected) {
+                        add(PojieListItem.WifiConnectedBanner)
+                    }
+
+                    if (!s.sendSucceed) {
+                        add(PojieListItem.SendFailedBanner)
+                    }
+
+                    addAll(fullList.map { PojieListItem.WifiItem(it) })
+
+                    if (!controller.isScanning || fullList.isNotEmpty()) {
+                        add(PojieListItem.ManualInputBanner)
+                    }
                 }
-
-                list.addAll(fullList.map { PojieListItem.WifiItem(it) })
-
-                if (!controller.isScanning || !res.wifiList.isNullOrEmpty()) {
-                    list.add(PojieListItem.ManualInputBanner)
-                }
-                list
             }
 
             AnimatedContent(state, label = "ListContent") { targetState ->
@@ -438,14 +445,18 @@ fun RunListView(
                             when (pojieSettings.scanMode) {
                                 1 -> ShizukuUtil.getSavedWifiList()
                                 2 -> AidlServiceHelper.getSavedWifiList(app)
-                                3 -> if (ApiUtil.hasLocationPermission(context)) ApiUtil.getSavedWifiList(app) else emptyList()
+                                3 -> if (ApiUtil.hasLocationPermission(context)) ApiUtil.getSavedWifiList(
+                                    app
+                                ) else emptyList()
+
                                 else -> emptyList()
                             }
                         } catch (_: Exception) {
                             emptyList()
                         }
 
-                        val matchedSaved = savedList.find { it.SSID == "\"$currentSsid\"" || it.SSID == currentSsid }
+                        val matchedSaved =
+                            savedList.find { it.SSID == "\"$currentSsid\"" || it.SSID == currentSsid }
 
                         val matchedHistory = historyList.find { it.ssid == currentSsid }
 

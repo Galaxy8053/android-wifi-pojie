@@ -10,6 +10,7 @@ import android.net.*
 import android.net.wifi.*
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.result.IntentSenderRequest
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
@@ -183,7 +184,7 @@ object ApiUtil {
                 com.wifi.toolbox.structs.WifiInfo(
                     ssid = it.SSID,
                     level = it.level,
-                    bssid = "",
+                    bssid = it.BSSID,
                     capabilities = it.capabilities
                 )
             }.sortedByDescending { it.level }
@@ -205,12 +206,11 @@ object ApiUtil {
 
     fun isWifiConnected(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val activeNetwork = cm.activeNetwork
-        val capabilities = cm.getNetworkCapabilities(activeNetwork)
-
-        return capabilities != null &&
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) &&
-                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        val activeNetwork = cm.activeNetwork ?: return false
+        val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
+        val result = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        Log.d("ApiUtil", "wifi已连接：$result")
+        return result
     }
 
     fun requestLocationPermission(activity: Activity, onGranted: (() -> Unit)? = null): Boolean {

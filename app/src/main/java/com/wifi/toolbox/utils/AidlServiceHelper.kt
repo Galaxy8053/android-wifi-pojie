@@ -119,4 +119,14 @@ object AidlServiceHelper {
         app.aidl.ipc?.enableNetwork(netId)
             ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
     }
+
+    fun getNetIdBySsid(app: ToolboxApp, ssid: String): Int {
+        return app.aidl.ipc?.getNetIdBySsid(ssid)
+            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+    }
+
+    fun forgetNetwork(app: ToolboxApp, netId: Int) {
+        app.aidl.ipc?.forgetNetwork(netId)
+            ?: throw Exception("AIDL服务未绑定，请在应用设置启用服务")
+    }
 }

@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import com.wifi.toolbox.R
 import com.wifi.toolbox.ToolboxApp
 import com.wifi.toolbox.ui.LocalNavTarget
+import com.wifi.toolbox.ui.items.TagItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,7 +76,7 @@ import java.util.Collections
 
 data class NetworkState(
     val wifiSsid: String = "未连接",
-    val ipList: List<String> = emptyList(),
+    val ipList: List<IpInfo> = emptyList(),
     val isWifiConnected: Boolean = false
 )
 
@@ -110,7 +112,9 @@ fun HomeScreen(onMenuClick: () -> Unit) {
                         isWifi = true
                         val info = wifiManager.connectionInfo
                         val rawSsid = info.ssid
-                        ssid = if (rawSsid == "<unknown ssid>") "WiFi 已连接" else rawSsid.trim('"')
+                        ssid = if (rawSsid == "<unknown ssid>") "WiFi 已连接" else "已连接到 ${
+                            rawSsid.trim('"')
+                        }"
                     } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
                         ssid = "移动数据网络"
                     }
@@ -268,15 +272,13 @@ fun HomeScreen(onMenuClick: () -> Unit) {
 
 @Composable
 fun InfoCard(state: NetworkState, isDark: Boolean) {
-    val containerColor = if (isDark) {
-        Color(0xFF284893).copy(alpha = 0.15f)
-    } else {
-        Color(0xFFE3EAFC)
-    }
+    val containerColor = MaterialTheme.colorScheme.surfaceContainer
 
     val textColor = if (isDark) Color(0xFFE3EAFC) else Color(0xFF1A1A1A)
     val subTextColor = if (isDark) Color(0xFFAAAAAA) else Color(0xFF555555)
     val iconTint = if (isDark) Color(0xFF6495ED) else Color(0xFF284893)
+
+    val context = LocalContext.current
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -311,10 +313,7 @@ fun InfoCard(state: NetworkState, isDark: Boolean) {
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(
-                color = if (isDark) Color.White.copy(alpha = 0.1f) else Color(0xFFCBD5E1),
-                thickness = 1.dp
-            )
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -326,7 +325,14 @@ fun InfoCard(state: NetworkState, isDark: Boolean) {
                     )
                 } else {
                     state.ipList.forEach { ip ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .clickable {
+                                    copyToClipboard(context, ip.address)
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
                                 Icons.Rounded.Lan,
                                 contentDescription = null,
@@ -335,11 +341,12 @@ fun InfoCard(state: NetworkState, isDark: Boolean) {
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = ip,
+                                text = ip.address,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = subTextColor,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             )
+                            TagItem(ip.from)
                         }
                     }
                 }
@@ -464,8 +471,13 @@ fun HomeCardItem(
     }
 }
 
-fun getAllIpAddresses(): List<String> {
-    val ipList = mutableListOf<String>()
+data class IpInfo(
+    val address: String,
+    val from: String
+)
+
+fun getAllIpAddresses(): List<IpInfo> {
+    val ipList = mutableListOf<IpInfo>()
     try {
         val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
         for (intf in interfaces) {
@@ -476,21 +488,28 @@ fun getAllIpAddresses(): List<String> {
                 val hostAddr = addr.hostAddress ?: continue
 
                 if (addr is Inet4Address) {
-                    ipList.add("$hostAddr (${intf.displayName ?: intf.name})")
+                    ipList.add(IpInfo(hostAddr, intf.displayName ?: intf.name))
                 }
             }
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        return listOf("获取失败: ${e.message}")
+        return emptyList()
     }
     return ipList.sortedBy {
         when {
-            it.startsWith("192") -> 0
-            it.startsWith("10.") -> 1
-            it.startsWith("172") -> 2
-            it.startsWith("127") -> 9
+            it.address.startsWith("192") -> 0
+            it.address.startsWith("10.") -> 1
+            it.address.startsWith("172") -> 2
+            it.address.startsWith("127") -> 9
             else -> 5
         }
     }
+}
+
+fun copyToClipboard(context: Context, text: String) {
+    val clipboard =
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    val clip = android.content.ClipData.newPlainText("", text)
+    clipboard.setPrimaryClip(clip)
 }

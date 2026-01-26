@@ -34,6 +34,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.Timelapse
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -49,9 +50,9 @@ data class ActionChipItem(val icon: ImageVector, val text: String, val command: 
 fun ShellTest(logState: LogState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val app = LocalContext.current.applicationContext as ToolboxApp
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    var command by remember { mutableStateOf("") }
+    var command by rememberSaveable {  mutableStateOf("") }
     val buttonLabels = arrayOf(
         stringResource(R.string.normal),
         stringResource(R.string.shizuku),

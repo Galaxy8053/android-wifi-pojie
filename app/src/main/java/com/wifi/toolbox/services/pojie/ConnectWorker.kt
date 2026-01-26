@@ -61,7 +61,7 @@ class ConnectWorker(
         val connectMode = settings.connectMode
 
 
-        val targetNetId = try {
+        val targetNetId = if (task.password.isEmpty()) try {
             val savedList = when (connectMode) {
                 1 -> ShizukuUtil.getSavedWifiList()
                 2 -> AidlServiceHelper.getSavedWifiList(app)
@@ -73,7 +73,7 @@ class ConnectWorker(
             }?.networkId ?: throw Exception()
         } catch (_: Exception) {
             throw Exception("使用空密码尝试连接失败")
-        }
+        } else -1
 
 
         when (connectMode) {
@@ -232,8 +232,10 @@ class ConnectWorker(
     }
 
     fun forgetNetwork(settings: PojieSettings, ssid: String): Boolean {
+        val app = service.applicationContext as ToolboxApp
         val netId = when (settings.connectMode) {
             1 -> ShizukuUtil.getNetIdBySsid(ssid)
+            2 -> AidlServiceHelper.getNetIdBySsid(app, ssid)
             3 -> ApiUtil.getNetIdBySsid(service, ssid)
             else -> -1
         }
@@ -241,6 +243,11 @@ class ConnectWorker(
         return when (settings.connectMode) {
             1 -> {
                 ShizukuUtil.forgetNetwork(netId)
+                true
+            }
+
+            2 -> {
+                AidlServiceHelper.forgetNetwork(app, netId)
                 true
             }
 

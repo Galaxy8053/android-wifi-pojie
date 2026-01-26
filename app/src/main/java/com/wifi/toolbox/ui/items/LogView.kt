@@ -81,7 +81,7 @@ fun LogView(
                     ),
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(8.dp)
+                        .padding(8.dp,8.dp,64.dp,8.dp)
                 )
             }
         }

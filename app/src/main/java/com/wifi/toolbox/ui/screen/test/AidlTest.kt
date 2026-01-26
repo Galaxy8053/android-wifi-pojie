@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,8 +28,8 @@ import kotlinx.coroutines.launch
 fun AidlTest(logState: LogState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val app = LocalContext.current.applicationContext as ToolboxApp
-    var name by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     fun checkStatus() {

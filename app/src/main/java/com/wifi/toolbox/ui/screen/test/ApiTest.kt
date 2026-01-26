@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -26,8 +27,8 @@ import kotlinx.coroutines.*
 
 @Composable
 fun ApiTest(logState: LogState, modifier: Modifier = Modifier) {
-    var name by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
 
     val scope = rememberCoroutineScope()
@@ -197,6 +198,7 @@ private suspend fun performWifiScan(context: Context, logState: LogState) {
                     context.getString(R.string.scan_result_item),
                     it.ssid,
                     it.level,
+                    it.bssid,
                     it.capabilities
                 )
             )

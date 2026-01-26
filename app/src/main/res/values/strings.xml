@@ -272,7 +272,7 @@
     <string name="config_max_handshake_count">最大握手次数</string>
     <string name="config_error_retry">异常重试</string>
     <string name="config_retry_count">重试次数</string>
-    <string name="config_doubling_base">等待时间翻倍基数</string>
+    <string name="config_doubling_base">冷却时间翻倍基数</string>
     <string name="config_retry_none">不重试</string>
     <string name="config_retry_infinite">无限</string>
     <string name="config_failure_password">密码错误</string>

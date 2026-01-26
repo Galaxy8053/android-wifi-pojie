@@ -3,7 +3,10 @@
 package com.wifi.toolbox.structs
 
 import android.net.wifi.WifiConfiguration
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class WifiInfo(
     val ssid: String,
     val level: Int = 0,
@@ -11,8 +14,7 @@ data class WifiInfo(
     val capabilities: String = "",
     val savedInfo: WifiConfiguration? = null,
     val pojieHistoryItem: PojieHistoryItem? = null
-) {
-    companion object {
+) : Parcelable {    companion object {
         fun parseCapabilities(input: WifiInfo): List<List<String>> {
             val regex = Regex("\\[(.*?)\\]")
             return regex.findAll(input.capabilities).map { match ->
