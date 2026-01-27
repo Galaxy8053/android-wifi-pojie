@@ -22,10 +22,11 @@
 
 v3.x版本，使用kotlin重构项目，包名改为com.wifi.toolbox
 
-目前只能用Shizuku或者普通模式运行，不支持纯root模式，部分功能尚未完善，有功能改进建议或者新功能建议欢迎来这里提议：[意见征集](https://github.com/bszapp/android-wifi-pojie/discussions/18)
+部分功能尚未完善，有功能改进建议或者新功能建议欢迎来这里提议：[意见征集](https://github.com/bszapp/android-wifi-pojie/discussions/18)
 
+纯root使用说明：在工作模式设置页将所有功能选中“命令行”以及“aidl”模式，然后在设置中勾选“启用aidl服务”并重启应用
 
-旧版本（支持纯root模式运行、历史记录等额外功能、界面更完善，不再维护）：[前往v2仓库](https://github.com/bszapp/android-wifi-pojie/tree/v1.x-v2.x)
+旧版本（b站封号时的最后一个版本，使用mdc设计）不再维护：[前往v2仓库](https://github.com/bszapp/android-wifi-pojie/tree/v1.x-v2.x)
 
 ## 功能介绍
 
