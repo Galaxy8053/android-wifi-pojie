@@ -18,6 +18,7 @@ fun DebugWatermark() {
 
     val bgColor = if (isDebug) "#77FF0000".toColorInt() else "#774477FF".toColorInt()
     val label = if (isDebug) "DEBUG" else "ALPHA"
+    val context = "${BuildConfig.VERSION_NAME}_${BuildConfig.GIT_ID}"
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawIntoCanvas { canvas ->
@@ -36,7 +37,7 @@ fun DebugWatermark() {
             textPaint.textSize = 24f
             textPaint.isFakeBoldText = false
             canvas.nativeCanvas.drawText(
-                "${BuildConfig.VERSION_NAME}_${BuildConfig.GIT_ID}",
+                context,
                 0f,
                 160f,
                 textPaint

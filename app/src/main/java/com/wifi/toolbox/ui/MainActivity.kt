@@ -164,9 +164,7 @@ class MainActivity : AppCompatActivity() {
                                 .padding(bottom = 16.dp)
                         )
 
-                        if (BuildConfig.DEBUG) {
-                            DebugWatermark()
-                        }
+                        DebugWatermark()
                     }
                 }
             }
