@@ -100,3 +100,5 @@ console.log("完成");
 
 #### 程序原理
 ![run_lc.svg](run_lc.svg)
+
+[![Star History](https://api.star-history.com/svg?repos=bszapp/android-wifi-pojie&type=Date)](https://star-history.com/#bszapp/android-wifi-pojie&Date)
