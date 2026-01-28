@@ -82,7 +82,7 @@ task.addItem("12345678") //添加使用task.addItem
 console.log("等一秒…")
 await wait(1000); //代码默认嵌套在async function内，可以使用await
 console.log("再来一个！");
-task.addItem("88888888")
+task.addItem(task.ssid + "888") //使用task.ssid获取要运行的wifi的名称
 
 try {
 	console.log("请求网络试试…");
