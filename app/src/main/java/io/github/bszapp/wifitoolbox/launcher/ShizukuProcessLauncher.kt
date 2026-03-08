@@ -12,10 +12,12 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuRemoteProcess
 import java.lang.reflect.Method
+import kotlin.coroutines.resume
 
 internal class ShizukuProcessLauncher(private val context: Context) : AutoCloseable {
 
@@ -26,12 +28,46 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
             throw Exception("未获得 Shizuku 授权")
     }
 
+    suspend fun ensurePermission() {
+        if (!Shizuku.pingBinder())
+            throw Exception("Shizuku 未运行，请先启动 Shizuku")
+
+        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) return
+
+        // 检查是否已被永久拒绝（需要去设置页手动开启）
+        if (Shizuku.shouldShowRequestPermissionRationale())
+            throw Exception("Shizuku 授权已被永久拒绝，请在 Shizuku 应用内手动授权")
+
+        // 请求权限，挂起等待结果
+        val granted = suspendCancellableCoroutine { cont ->
+            val requestCode = 1001
+
+            val listener = object : Shizuku.OnRequestPermissionResultListener {
+                override fun onRequestPermissionResult(reqCode: Int, grantResult: Int) {
+                    if (reqCode == requestCode) {
+                        Shizuku.removeRequestPermissionResultListener(this)
+                        cont.resume(grantResult == PackageManager.PERMISSION_GRANTED)
+                    }
+                }
+            }
+            Shizuku.addRequestPermissionResultListener(listener)
+            cont.invokeOnCancellation {
+                Shizuku.removeRequestPermissionResultListener(listener)
+            }
+
+            Shizuku.requestPermission(requestCode)
+        }
+
+        if (!granted)
+            throw Exception("Shizuku 授权已被拒绝")
+    }
+
     // SHIZUKU
     private var directArgs: Shizuku.UserServiceArgs? = null
     private var directConnection: ServiceConnection? = null
 
     suspend fun getDirectServiceBinder(): IBinder {
-        checkPermission()
+        ensurePermission()
 
         val args = Shizuku.UserServiceArgs(
             ComponentName(context, MainService::class.java)
@@ -91,8 +127,10 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
         }
     }
 
-    suspend fun getTerminalServiceBinder(className: String): IBinder =
-        terminalProcessLoader.get().serviceBinder(ComponentName(context, className))
+    suspend fun getTerminalServiceBinder(className: String): IBinder {
+        ensurePermission()
+        return terminalProcessLoader.get().serviceBinder(ComponentName(context, className))
+    }
 
     // 关闭服务
     override fun close() = runBlocking {

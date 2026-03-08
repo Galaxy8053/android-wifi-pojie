@@ -11,6 +11,7 @@ activityCompose = "1.12.4"
 kotlin = "2.3.10"
 composeBom = "2026.02.01"
 appcompat = "1.7.1"
+lifecycleViewmodelCompose = "2.10.0"
 material = "1.13.0"
 materialKolor = "4.1.1"
 runtime = "1.10.4"
@@ -18,8 +19,11 @@ material3 = "1.4.0"
 
 [libraries]
 androidappprocess = { module = "io.github.iamr0s:AndroidAppProcess", version.ref = "androidappprocess" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose-v287 = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 api = { module = "dev.rikka.shizuku:api", version.ref = "api" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

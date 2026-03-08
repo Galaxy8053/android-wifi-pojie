@@ -10,14 +10,11 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.lifecycleScope
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.PaletteStyle
 import io.github.bszapp.wifitoolbox.contract.ToolboxControllerProvider
 import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
 import io.github.bszapp.wifitoolbox.uidefault.DefaultUI
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 
 class MainActivity : ComponentActivity() {
 
@@ -27,33 +24,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        controller.state
-            .onEach { state ->
-                setContent {
-                    val context = LocalContext.current
-                    val isDark = isSystemInDarkTheme()
-                    val seedColor = remember {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                            dynamicLightColorScheme(context).primary
-                        else Color(0xFF6750A4)
-                    }
+        setContent {
+            val context = LocalContext.current
+            val isDark  = isSystemInDarkTheme()
+            val seedColor = remember {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                    dynamicLightColorScheme(context).primary
+                else Color(0xFF6750A4)
+            }
+            val state by controller.state.collectAsState()
 
-                    DynamicMaterialTheme(
-                        seedColor = seedColor,
-                        isDark = isDark,
-                        style = PaletteStyle.TonalSpot,
-                        animate = true
-                    ) {
-                        when (state.status) {
-                            ToolboxStatus.RUNNING -> DefaultUI()
-                            else -> AuthUI(
-                                state = state,
-                                onLaunch = { controller.launch(it) }
-                            )
-                        }
-                    }
+            DynamicMaterialTheme(
+                seedColor = seedColor,
+                isDark    = isDark,
+                style     = PaletteStyle.TonalSpot,
+                animate   = true
+            ) {
+                if (state.status == ToolboxStatus.RUNNING) {
+                    DefaultUI()
+                } else {
+                    AuthScreen()   // ViewModel 在这里自动创建
                 }
             }
-            .launchIn(lifecycleScope)
+        }
     }
 }
