@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox.uidefault
+package io.github.bszapp.wifitoolbox.uidefault.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -26,7 +26,7 @@ fun HomeScreen() {
             LargeTopAppBar(
                 title = {
                     Text(
-                        text = "Wi-Fi Toolbox",
+                        text = "主页",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.SemiBold,

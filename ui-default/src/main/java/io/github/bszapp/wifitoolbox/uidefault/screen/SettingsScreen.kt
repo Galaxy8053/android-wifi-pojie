@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox.uidefault
+package io.github.bszapp.wifitoolbox.uidefault.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,12 +20,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
-    val uid   by viewModel.uid.collectAsStateWithLifecycle()
-    val mode  by viewModel.mode.collectAsStateWithLifecycle()
+    val uid by viewModel.startup.uid.collectAsStateWithLifecycle()
+    val mode by viewModel.startup.mode.collectAsStateWithLifecycle()
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
@@ -71,13 +72,13 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
                     )
                     InfoRow(
                         label = "服务UID",
-                        value = uid.toString().ifBlank { "—" },
+                        value = uid.toString(),
                         icon = Icons.Outlined.Fingerprint
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     InfoRow(
-                        label = "运行模式",
-                        value = mode.toString().ifBlank { "—" },
+                        label = "启动方式",
+                        value = mode.toString(),
                         icon = Icons.Outlined.Tune
                     )
                 }
@@ -100,7 +101,7 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
                         fontWeight = FontWeight.SemiBold,
                     )
                     Button(
-                        onClick = { viewModel.stop() },
+                        onClick = { viewModel.startup.stop() },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(

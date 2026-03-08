@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
@@ -17,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.bszapp.wifitoolbox.uidefault.screen.HomeScreen
+import io.github.bszapp.wifitoolbox.uidefault.screen.SettingsScreen
 
 private enum class NavTab(
     val label: String,
@@ -57,11 +60,11 @@ fun DefaultUI(viewModel: DefaultViewModel = viewModel()) {
                 }
             }
         },
-    ) { _ ->
+    ) { innerPadding ->
         AnimatedContent(
             targetState = currentTab,
             transitionSpec = { fadeIn() togetherWith fadeOut() },
-            modifier = Modifier,
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
             label = "tab_transition",
         ) { tab ->
             when (tab) {
