@@ -40,8 +40,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":defaultUI"))
-    implementation(project(":core"))
+    implementation(project(":ui-default"))
+    implementation(project(":contract"))
     implementation(project(":services:mainservice"))
 
     implementation(libs.androidx.core.ktx)
