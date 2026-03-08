@@ -4,15 +4,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.twotone.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.contract.LaunchMode
-import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
+import io.github.bszapp.wifitoolbox.contract.ToolboxStatus.*
 
 
 @Composable
@@ -20,102 +24,211 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
     val allModes = listOf(LaunchMode.SHIZUKU, LaunchMode.SHIZUKU_TERMINAL, LaunchMode.ROOT)
 
-    val displayList = if (state.status == ToolboxStatus.IDLE) allModes
-    else allModes.filter { it == state.selectedMode }
+    val displayList = when (state.status) {
+        IDLE -> allModes
+        LAUNCHING, ERROR -> allModes.filter { it == state.selectedMode }
+        else -> emptyList()
+    }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
-    ) {
-        item(key = "status_header") {
-            val statusText = when (state.status) {
-                ToolboxStatus.IDLE -> "工作模式"
-                ToolboxStatus.LAUNCHING -> "启动中"
-                ToolboxStatus.RUNNING -> "完成"
-                ToolboxStatus.ERROR -> "启动失败"
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+        ) {
+            item {
+                Spacer(Modifier.padding(vertical = 8.dp))
             }
 
-            Text(
-                text = statusText,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-                fontWeight = FontWeight.SemiBold
-            )
+            // 上方状态显示
+            item {
+                when (state.status) {
+                    IDLE -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Construction,
+                                contentDescription = "Done",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "工作模式",
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "本应用需要adb/root权限运行，请从下方选择一个授权模式",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
 
-            if (state.status == ToolboxStatus.ERROR) {
-                Text(
-                    text = "${state.errorMessage}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-        }
+                    LAUNCHING -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.AccessTime,
+                                contentDescription = "Done",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "载入中",
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "正在启动服务，请等待数秒……",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
 
-        items(displayList, key = { it.name }) { mode ->
-            Card(
-                onClick = { viewModel.launch(mode) },
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateItem()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = when (mode) {
-                            LaunchMode.SHIZUKU -> "通过 Shizuku 启动"
-                            LaunchMode.SHIZUKU_TERMINAL -> "通过 Shizuku Terminal 启动"
-                            LaunchMode.ROOT -> "通过 Root 启动"
-                        },
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    RUNNING -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.CheckCircle,
+                                contentDescription = "Done",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 8.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "完成",
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    ERROR -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.ErrorOutline,
+                                contentDescription = "Error",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp),
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "启动失败",
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = state.errorMessage.toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
-        }
 
-        if (state.status == ToolboxStatus.LAUNCHING) {
-            item(key = "cancel_action") {
-                Button(
-                    onClick = { viewModel.cancel() },
+            // 工作模式选项
+            items(displayList, key = { it.name }) { mode ->
+                Card(
+                    onClick = { if (state.status == IDLE) viewModel.launch(mode) },
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    contentPadding = PaddingValues(vertical = 16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp)
+                        .padding(vertical = 4.dp)
                         .animateItem()
                 ) {
-                    Text(
-                        "取消",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = when (mode) {
+                                LaunchMode.SHIZUKU -> Icons.TwoTone.Bolt
+                                LaunchMode.SHIZUKU_TERMINAL -> Icons.TwoTone.Terminal
+                                LaunchMode.ROOT -> Icons.TwoTone.Shield
+                            },
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = when (mode) {
+                                    LaunchMode.SHIZUKU -> "Shizuku"
+                                    LaunchMode.SHIZUKU_TERMINAL -> "Shizuku Terminal"
+                                    LaunchMode.ROOT -> "Root"
+                                },
+                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            Text(
+                                text = when (mode) {
+                                    LaunchMode.SHIZUKU -> "需要额外安装并启动Shizuku，有无root均支持，启动速度最快"
+                                    LaunchMode.SHIZUKU_TERMINAL -> "如果上一种方式无法启动，可尝试此方法，启动速度较慢"
+                                    LaunchMode.ROOT -> "适合已root的设备，不需要额外安装应用"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (state.status == IDLE) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
-        }
 
-        if (state.status == ToolboxStatus.ERROR) {
-            item(key = "error_actions") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .animateItem(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+            // 启动中操作
+            if (state.status == LAUNCHING) {
+                item {
                     Button(
                         onClick = { viewModel.cancel() },
                         shape = RoundedCornerShape(16.dp),
@@ -124,28 +237,65 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         ),
                         contentPadding = PaddingValues(vertical = 16.dp),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .animateItem()
                     ) {
                         Text(
-                            "上一步",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Button(
-                        onClick = { state.selectedMode?.let { viewModel.launch(it) } },
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(vertical = 16.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            "重试",
+                            "取消",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
             }
+
+            // 启动失败操作
+            if (state.status == ERROR) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .animateItem(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.cancel() },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                "上一步",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Button(
+                            onClick = { state.selectedMode?.let { viewModel.launch(it) } },
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                "重试",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                Spacer(Modifier.padding(vertical = 8.dp))
+            }
         }
     }
+
 }

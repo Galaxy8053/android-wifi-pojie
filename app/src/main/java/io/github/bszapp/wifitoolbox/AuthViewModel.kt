@@ -15,10 +15,6 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     val state: StateFlow<ToolboxState> = controller.state
 
-    fun launch(mode: LaunchMode) {
-        if (this.state.value.status == ToolboxStatus.IDLE) {
-            controller.launch(mode)
-        }
-    }
+    fun launch(mode: LaunchMode) = controller.launch(mode)
     fun cancel() = controller.cancel()
 }

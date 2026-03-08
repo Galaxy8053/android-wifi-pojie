@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.*
@@ -23,10 +24,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
 
         setContent {
             val context = LocalContext.current
-            val isDark  = isSystemInDarkTheme()
+            val isDark = isSystemInDarkTheme()
             val seedColor = remember {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     dynamicLightColorScheme(context).primary
@@ -36,14 +40,16 @@ class MainActivity : ComponentActivity() {
 
             DynamicMaterialTheme(
                 seedColor = seedColor,
-                isDark    = isDark,
-                style     = PaletteStyle.TonalSpot,
-                animate   = true
+                isDark = isDark,
+                style = PaletteStyle.TonalSpot,
+                animate = true
             ) {
-                if (state.status == ToolboxStatus.RUNNING) {
-                    DefaultUI()
-                } else {
-                    AuthScreen()   // ViewModel 在这里自动创建
+                AnimatedContent(targetState = state.status == ToolboxStatus.RUNNING) { isRunning ->
+                    if (isRunning) {
+                        DefaultUI()
+                    } else {
+                        AuthScreen()
+                    }
                 }
             }
         }
