@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                     dynamicLightColorScheme(context).primary
                 else Color(0xFF6750A4)
             }
-            val state by controller.state.collectAsState()
+            val state by controller.startup.state.collectAsState()
 
             DynamicMaterialTheme(
                 seedColor = seedColor,

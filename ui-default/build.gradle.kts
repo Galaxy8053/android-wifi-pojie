@@ -36,6 +36,8 @@ android {
 dependencies {
     implementation(project(":contract"))
 
+    implementation(platform(libs.androidx.compose.bom))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -43,6 +45,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.material.kolor)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

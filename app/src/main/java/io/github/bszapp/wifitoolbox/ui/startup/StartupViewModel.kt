@@ -12,8 +12,8 @@ class StartupViewModel(app: Application) : AndroidViewModel(app) {
 
     private val controller: IAppController = AppControllerProvider.get()
 
-    val state: StateFlow<StartupState> = controller.state
+    val state: StateFlow<StartupState> = controller.startup.state
 
-    fun launch(mode: StartupMode) = controller.launch(mode)
-    fun cancel() = controller.cancel()
+    fun launch(mode: StartupMode) = controller.startup.launch(mode)
+    fun cancel() = controller.startup.cancel()
 }

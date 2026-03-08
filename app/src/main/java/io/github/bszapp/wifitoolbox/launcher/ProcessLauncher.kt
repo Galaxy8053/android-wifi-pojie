@@ -42,20 +42,20 @@ class ProcessLauncher(private val context: Context) {
 
             runCatching {
                 val (launcher, binder) = when (mode) {
-                    StartupMode.SHIZUKU          -> launchViaShizukuDirect()
+                    StartupMode.SHIZUKU -> launchViaShizukuDirect()
                     StartupMode.SHIZUKU_TERMINAL -> launchViaShizukuTerminal()
-                    StartupMode.ROOT             -> launchViaRoot()
+                    StartupMode.ROOT -> launchViaRoot()
                 }
                 activeLauncher = launcher
                 mainService = IMainService.Stub.asInterface(binder)
-                mainService!!.doPrivilegedThing()
+                val uid = mainService!!.getUid()
 
                 _state.value = StartupState(
                     status = StartupStatus.RUNNING,
-                    selectedMode = mode
+                    selectedMode = mode,
+                    serverUid = uid
                 )
             }.onFailure { e ->
-                // 被 cancel() 取消时不更新为 ERROR，cancel() 自己负责重置
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 activeLauncher?.closeQuietly()
                 activeLauncher = null
@@ -63,7 +63,7 @@ class ProcessLauncher(private val context: Context) {
                 _state.value = StartupState(
                     status = StartupStatus.ERROR,
                     selectedMode = mode,
-                    errorMessage = e.message ?: "未知错误"
+                    errorMessage = e.message
                 )
             }
         }
@@ -75,7 +75,7 @@ class ProcessLauncher(private val context: Context) {
         activeLauncher?.closeQuietly()
         activeLauncher = null
         mainService = null
-        _state.value = StartupState() // 回到初始 IDLE，selectedMode = null
+        _state.value = StartupState()
     }
 
     fun stop() {
