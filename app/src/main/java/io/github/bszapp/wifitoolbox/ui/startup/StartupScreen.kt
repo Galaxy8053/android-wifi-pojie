@@ -15,15 +15,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.github.bszapp.wifitoolbox.contract.LaunchMode
-import io.github.bszapp.wifitoolbox.contract.ToolboxStatus.*
+import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
+import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus.*
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
-    val allModes = listOf(LaunchMode.SHIZUKU, LaunchMode.SHIZUKU_TERMINAL, LaunchMode.ROOT)
+    val allModes = listOf(StartupMode.SHIZUKU, StartupMode.SHIZUKU_TERMINAL, StartupMode.ROOT)
 
     val contentMaxWidth = 480.dp
 
@@ -90,7 +90,7 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                             LoadingIndicator(
                                 modifier = Modifier
                                     .size(100.dp)
-                                    .padding(bottom = 16.dp)
+                                    .padding(bottom = 8.dp)
                             )
                             Text(
                                 text = "载入中",
@@ -182,9 +182,9 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                     ) {
                         Icon(
                             imageVector = when (mode) {
-                                LaunchMode.SHIZUKU -> Icons.TwoTone.Bolt
-                                LaunchMode.SHIZUKU_TERMINAL -> Icons.TwoTone.Terminal
-                                LaunchMode.ROOT -> Icons.TwoTone.Shield
+                                StartupMode.SHIZUKU -> Icons.TwoTone.Bolt
+                                StartupMode.SHIZUKU_TERMINAL -> Icons.TwoTone.Terminal
+                                StartupMode.ROOT -> Icons.TwoTone.Shield
                             },
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
@@ -199,9 +199,9 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                         ) {
                             Text(
                                 text = when (mode) {
-                                    LaunchMode.SHIZUKU -> "Shizuku"
-                                    LaunchMode.SHIZUKU_TERMINAL -> "Shizuku Terminal"
-                                    LaunchMode.ROOT -> "Root"
+                                    StartupMode.SHIZUKU -> "Shizuku"
+                                    StartupMode.SHIZUKU_TERMINAL -> "Shizuku Terminal"
+                                    StartupMode.ROOT -> "Root"
                                 },
                                 fontWeight = FontWeight.SemiBold,
                                 style = MaterialTheme.typography.titleMedium,
@@ -210,9 +210,9 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
 
                             Text(
                                 text = when (mode) {
-                                    LaunchMode.SHIZUKU -> "需要额外安装并启动Shizuku，有无root均支持，启动速度最快"
-                                    LaunchMode.SHIZUKU_TERMINAL -> "如果上一种方式无法启动，可尝试此方法，启动速度较慢"
-                                    LaunchMode.ROOT -> "适合已root的设备，不需要额外安装应用"
+                                    StartupMode.SHIZUKU -> "需要额外安装并启动Shizuku，有无root均支持，启动速度最快"
+                                    StartupMode.SHIZUKU_TERMINAL -> "如果上一种方式无法启动，可尝试此方法，启动速度较慢"
+                                    StartupMode.ROOT -> "适合已root的设备，不需要额外安装应用"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant

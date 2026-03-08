@@ -17,14 +17,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.PaletteStyle
-import io.github.bszapp.wifitoolbox.contract.ToolboxControllerProvider
-import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
+import io.github.bszapp.wifitoolbox.contract.AppControllerProvider
+import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus
 import io.github.bszapp.wifitoolbox.ui.startup.StartupScreen
 import io.github.bszapp.wifitoolbox.uidefault.DefaultUI
 
 class MainActivity : ComponentActivity() {
 
-    private val controller by lazy { ToolboxControllerProvider.get() }
+    private val controller by lazy { AppControllerProvider.get() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-                    AnimatedContent(targetState = state.status == ToolboxStatus.RUNNING) { isRunning ->
+                    AnimatedContent(targetState = state.status == StartupStatus.RUNNING) { isRunning ->
                         if (isRunning) {
                             DefaultUI()
                         } else {

@@ -2,9 +2,9 @@ package io.github.bszapp.wifitoolbox.launcher
 
 import android.content.Context
 import android.os.IBinder
-import io.github.bszapp.wifitoolbox.contract.LaunchMode
-import io.github.bszapp.wifitoolbox.contract.ToolboxState
-import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
+import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
+import io.github.bszapp.wifitoolbox.contract.startup.StartupState
+import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus
 import io.github.bszapp.wifitoolbox.services.mainservice.IMainService
 import io.github.bszapp.wifitoolbox.services.mainservice.MainService
 import kotlinx.coroutines.CoroutineScope
@@ -21,18 +21,18 @@ class ProcessLauncher(private val context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var launchJob: Job? = null
 
-    private val _state = MutableStateFlow(ToolboxState())
-    val state: StateFlow<ToolboxState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(StartupState())
+    val state: StateFlow<StartupState> = _state.asStateFlow()
 
     private var activeLauncher: AutoCloseable? = null
     var mainService: IMainService? = null
         private set
 
-    fun launch(mode: LaunchMode) {
+    fun launch(mode: StartupMode) {
         launchJob?.cancel()
         launchJob = scope.launch {
-            _state.value = ToolboxState(
-                status = ToolboxStatus.LAUNCHING,
+            _state.value = StartupState(
+                status = StartupStatus.LAUNCHING,
                 selectedMode = mode
             )
 
@@ -42,16 +42,16 @@ class ProcessLauncher(private val context: Context) {
 
             runCatching {
                 val (launcher, binder) = when (mode) {
-                    LaunchMode.SHIZUKU          -> launchViaShizukuDirect()
-                    LaunchMode.SHIZUKU_TERMINAL -> launchViaShizukuTerminal()
-                    LaunchMode.ROOT             -> launchViaRoot()
+                    StartupMode.SHIZUKU          -> launchViaShizukuDirect()
+                    StartupMode.SHIZUKU_TERMINAL -> launchViaShizukuTerminal()
+                    StartupMode.ROOT             -> launchViaRoot()
                 }
                 activeLauncher = launcher
                 mainService = IMainService.Stub.asInterface(binder)
                 mainService!!.doPrivilegedThing()
 
-                _state.value = ToolboxState(
-                    status = ToolboxStatus.RUNNING,
+                _state.value = StartupState(
+                    status = StartupStatus.RUNNING,
                     selectedMode = mode
                 )
             }.onFailure { e ->
@@ -60,8 +60,8 @@ class ProcessLauncher(private val context: Context) {
                 activeLauncher?.closeQuietly()
                 activeLauncher = null
                 mainService = null
-                _state.value = ToolboxState(
-                    status = ToolboxStatus.ERROR,
+                _state.value = StartupState(
+                    status = StartupStatus.ERROR,
                     selectedMode = mode,
                     errorMessage = e.message ?: "未知错误"
                 )
@@ -75,7 +75,7 @@ class ProcessLauncher(private val context: Context) {
         activeLauncher?.closeQuietly()
         activeLauncher = null
         mainService = null
-        _state.value = ToolboxState() // 回到初始 IDLE，selectedMode = null
+        _state.value = StartupState() // 回到初始 IDLE，selectedMode = null
     }
 
     fun stop() {
@@ -84,7 +84,7 @@ class ProcessLauncher(private val context: Context) {
         val launcherToClose = activeLauncher
         activeLauncher = null
         mainService = null
-        _state.value = ToolboxState()
+        _state.value = StartupState()
 
         Thread { launcherToClose?.runCatching { close() } }.start()
     }

@@ -20,25 +20,16 @@ import java.lang.reflect.Method
 import kotlin.coroutines.resume
 
 internal class ShizukuProcessLauncher(private val context: Context) : AutoCloseable {
-
-    // 公共权限检查
-    fun checkPermission() {
-        if (!Shizuku.pingBinder()) throw Exception("Shizuku 未运行，请先启动 Shizuku")
-        if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED)
-            throw Exception("未获得 Shizuku 授权")
-    }
-
     suspend fun ensurePermission() {
         if (!Shizuku.pingBinder())
-            throw Exception("Shizuku 未运行，请先启动 Shizuku")
+            throw Exception("Shizuku未运行，请安装并启动Shizuku服务")
 
         if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) return
 
-        // 检查是否已被永久拒绝（需要去设置页手动开启）
         if (Shizuku.shouldShowRequestPermissionRationale())
-            throw Exception("Shizuku 授权已被永久拒绝，请在 Shizuku 应用内手动授权")
+            throw Exception("Shizuku授权已被永久拒绝，请手动授权")
 
-        // 请求权限，挂起等待结果
+        // 请求权限
         val granted = suspendCancellableCoroutine { cont ->
             val requestCode = 1001
 
@@ -59,7 +50,7 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
         }
 
         if (!granted)
-            throw Exception("Shizuku 授权已被拒绝")
+            throw Exception("Shizuku授权被拒绝")
     }
 
     // SHIZUKU
@@ -123,7 +114,7 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
         }
         withContext(Dispatchers.IO) {
             if (proc.init(context)) proc
-            else throw Exception("Shizuku Terminal 进程启动失败")
+            else throw Exception("Shizuku Terminal进程启动失败")
         }
     }
 

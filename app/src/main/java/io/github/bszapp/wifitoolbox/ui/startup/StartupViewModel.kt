@@ -2,18 +2,18 @@ package io.github.bszapp.wifitoolbox.ui.startup
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import io.github.bszapp.wifitoolbox.contract.IToolboxController
-import io.github.bszapp.wifitoolbox.contract.LaunchMode
-import io.github.bszapp.wifitoolbox.contract.ToolboxControllerProvider
-import io.github.bszapp.wifitoolbox.contract.ToolboxState
+import io.github.bszapp.wifitoolbox.contract.IAppController
+import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
+import io.github.bszapp.wifitoolbox.contract.AppControllerProvider
+import io.github.bszapp.wifitoolbox.contract.startup.StartupState
 import kotlinx.coroutines.flow.StateFlow
 
 class StartupViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val controller: IToolboxController = ToolboxControllerProvider.get()
+    private val controller: IAppController = AppControllerProvider.get()
 
-    val state: StateFlow<ToolboxState> = controller.state
+    val state: StateFlow<StartupState> = controller.state
 
-    fun launch(mode: LaunchMode) = controller.launch(mode)
+    fun launch(mode: StartupMode) = controller.launch(mode)
     fun cancel() = controller.cancel()
 }
