@@ -6,6 +6,7 @@ import io.github.bszapp.wifitoolbox.contract.IToolboxController
 import io.github.bszapp.wifitoolbox.contract.LaunchMode
 import io.github.bszapp.wifitoolbox.contract.ToolboxControllerProvider
 import io.github.bszapp.wifitoolbox.contract.ToolboxState
+import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
 import kotlinx.coroutines.flow.StateFlow
 
 class AuthViewModel(app: Application) : AndroidViewModel(app) {
@@ -14,6 +15,10 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     val state: StateFlow<ToolboxState> = controller.state
 
-    fun launch(mode: LaunchMode) = controller.launch(mode)
+    fun launch(mode: LaunchMode) {
+        if (this.state.value.status == ToolboxStatus.IDLE) {
+            controller.launch(mode)
+        }
+    }
     fun cancel() = controller.cancel()
 }
