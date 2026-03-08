@@ -1,5 +1,7 @@
 [versions]
 agp = "9.0.1"
+androidappprocess = "1.4.3"
+api = "13.1.5"
 coreKtx = "1.17.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -15,8 +17,10 @@ runtime = "1.10.4"
 material3 = "1.4.0"
 
 [libraries]
+androidappprocess = { module = "io.github.iamr0s:AndroidAppProcess", version.ref = "androidappprocess" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+api = { module = "dev.rikka.shizuku:api", version.ref = "api" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -35,6 +39,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
+provider = { module = "dev.rikka.shizuku:provider", version.ref = "api" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

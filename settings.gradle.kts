@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 rootProject.name = "WifiToolbox"
 include(":app")
 include(":defaultUI")
+include(":services:mainservice")
