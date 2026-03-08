@@ -17,6 +17,5 @@ class DefaultViewModel(app: Application) : AndroidViewModel(app) {
     val state: StateFlow<ToolboxState> = controller.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, controller.state.value)
 
-    // DefaultViewModel 不暴露 launch/stop
-    // 那是 MainActivity 的事
+    fun stop() = controller.stop()
 }

@@ -30,7 +30,6 @@ class MainActivity : ComponentActivity() {
         controller.state
             .onEach { state ->
                 setContent {
-                    // 动态主题包裹，抄自旧代码
                     val context = LocalContext.current
                     val isDark = isSystemInDarkTheme()
                     val seedColor = remember {
@@ -49,8 +48,7 @@ class MainActivity : ComponentActivity() {
                             ToolboxStatus.RUNNING -> DefaultUI()
                             else -> AuthUI(
                                 state = state,
-                                onShizuku = { controller.launchShizuku() },
-                                onRoot = { controller.launchRoot() }
+                                onLaunch = { controller.launch(it) }
                             )
                         }
                     }

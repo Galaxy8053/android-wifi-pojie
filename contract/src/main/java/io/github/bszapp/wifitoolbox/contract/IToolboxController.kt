@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface IToolboxController {
     val state: StateFlow<ToolboxState>
-    suspend fun launchShizuku()
-    suspend fun launchRoot()
+    fun launch(mode: LaunchMode)
     fun stop()
 }

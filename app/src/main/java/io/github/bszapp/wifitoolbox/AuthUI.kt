@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.bszapp.wifitoolbox.contract.LaunchMode
 import io.github.bszapp.wifitoolbox.contract.ToolboxState
 import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
 import kotlinx.coroutines.launch
@@ -13,10 +14,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun AuthUI(
     state: ToolboxState,
-    onShizuku: suspend () -> Unit,
-    onRoot: suspend () -> Unit
+    onLaunch: (LaunchMode) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     val busy = state.status == ToolboxStatus.LAUNCHING
 
     val statusColor = when (state.status) {
@@ -49,7 +48,7 @@ fun AuthUI(
             Spacer(Modifier.height(48.dp))
 
             Button(
-                onClick = { scope.launch { onShizuku() } },
+                onClick = { onLaunch(LaunchMode.SHIZUKU) },
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth()
             ) { Text("通过 Shizuku 启动") }
@@ -57,7 +56,15 @@ fun AuthUI(
             Spacer(Modifier.height(12.dp))
 
             Button(
-                onClick = { scope.launch { onRoot() } },
+                onClick = { onLaunch(LaunchMode.SHIZUKU_TERMINAL) },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("通过 Shizuku Terminal 启动") }
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = { onLaunch(LaunchMode.ROOT) },
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth()
             ) { Text("通过 Root 启动") }

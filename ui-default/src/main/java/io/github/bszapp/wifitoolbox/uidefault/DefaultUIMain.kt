@@ -23,13 +23,16 @@ fun DefaultUI(viewModel: DefaultViewModel = viewModel()) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 这里只放服务运行中的正式功能 UI
             Text(
                 text = state.message,
                 style = MaterialTheme.typography.titleMedium
             )
 
-            // 未来在这里扩展 Wi-Fi 功能等
+            Spacer(Modifier.height(24.dp))
+
+            Button(onClick = { viewModel.stop() }) {
+                Text("停止服务")
+            }
         }
     }
 }
