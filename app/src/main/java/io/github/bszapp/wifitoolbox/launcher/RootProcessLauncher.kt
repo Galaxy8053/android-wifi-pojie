@@ -16,7 +16,7 @@ internal class RootProcessLauncher(private val context: Context) : AutoCloseable
         }
         withContext(Dispatchers.IO) {
             if (proc.init(context)) proc
-            else throw Exception("Root 授权失败，请确认已安装 Magisk 或 KernelSU")
+            else throw Exception("su命令执行失败，请确认设备已经root，然后在管理器授权本应用")
         }
     }
 

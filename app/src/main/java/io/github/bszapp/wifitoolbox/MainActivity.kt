@@ -1,5 +1,6 @@
 package io.github.bszapp.wifitoolbox
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,14 +8,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.PaletteStyle
 import io.github.bszapp.wifitoolbox.contract.ToolboxControllerProvider
 import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
+import io.github.bszapp.wifitoolbox.ui.startup.StartupScreen
 import io.github.bszapp.wifitoolbox.uidefault.DefaultUI
 
 class MainActivity : ComponentActivity() {
@@ -44,11 +49,14 @@ class MainActivity : ComponentActivity() {
                 style = PaletteStyle.TonalSpot,
                 animate = true
             ) {
-                AnimatedContent(targetState = state.status == ToolboxStatus.RUNNING) { isRunning ->
-                    if (isRunning) {
-                        DefaultUI()
-                    } else {
-                        AuthScreen()
+                @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+                Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
+                    AnimatedContent(targetState = state.status == ToolboxStatus.RUNNING) { isRunning ->
+                        if (isRunning) {
+                            DefaultUI()
+                        } else {
+                            StartupScreen()
+                        }
                     }
                 }
             }

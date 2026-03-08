@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox
+package io.github.bszapp.wifitoolbox.ui.startup
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,10 +19,13 @@ import io.github.bszapp.wifitoolbox.contract.LaunchMode
 import io.github.bszapp.wifitoolbox.contract.ToolboxStatus.*
 
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
+fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
     val allModes = listOf(LaunchMode.SHIZUKU, LaunchMode.SHIZUKU_TERMINAL, LaunchMode.ROOT)
+
+    val contentMaxWidth = 480.dp
 
     val displayList = when (state.status) {
         IDLE -> allModes
@@ -48,7 +51,9 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                 when (state.status) {
                     IDLE -> {
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Icon(
@@ -57,7 +62,7 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                                 modifier = Modifier
                                     .size(120.dp)
                                     .padding(bottom = 16.dp),
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = "工作模式",
@@ -77,20 +82,20 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
 
                     LAUNCHING -> {
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Icon(
-                                imageVector = Icons.TwoTone.AccessTime,
-                                contentDescription = "Done",
+                            LoadingIndicator(
                                 modifier = Modifier
-                                    .size(120.dp)
-                                    .padding(bottom = 16.dp),
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                    .size(100.dp)
+                                    .padding(bottom = 16.dp)
                             )
                             Text(
                                 text = "载入中",
                                 style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(bottom = 8.dp),
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center
@@ -115,21 +120,16 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                                 modifier = Modifier
                                     .size(120.dp)
                                     .padding(bottom = 8.dp),
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                            Text(
-                                text = "完成",
-                                style = MaterialTheme.typography.headlineMedium,
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
 
                     ERROR -> {
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Icon(
@@ -143,6 +143,7 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                             Text(
                                 text = "启动失败",
                                 style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(bottom = 8.dp),
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center
@@ -168,12 +169,14 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .widthIn(max = contentMaxWidth)
+                        .wrapContentWidth(Alignment.CenterHorizontally)
                         .padding(vertical = 4.dp)
                         .animateItem()
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .widthIn(max = contentMaxWidth)
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -226,72 +229,57 @@ fun AuthScreen(viewModel: AuthViewModel = viewModel()) {
                 }
             }
 
-            // 启动中操作
-            if (state.status == LAUNCHING) {
+            // 操作按钮
+            if (state.status == ERROR || state.status == LAUNCHING) {
                 item {
-                    Button(
-                        onClick = { viewModel.cancel() },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ),
-                        contentPadding = PaddingValues(vertical = 16.dp),
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .animateItem()
+                            .animateItem(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "取消",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Row(
+                            modifier = Modifier
+                                .widthIn(max = contentMaxWidth)
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.cancel() },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                ),
+                                contentPadding = PaddingValues(vertical = 16.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = if (state.status == ERROR) "上一步" else "取消",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            if (state.status == ERROR) {
+                                Button(
+                                    onClick = { state.selectedMode?.let { viewModel.launch(it) } },
+                                    shape = RoundedCornerShape(16.dp),
+                                    contentPadding = PaddingValues(vertical = 16.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        "重试",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            // 启动失败操作
-            if (state.status == ERROR) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .animateItem(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { viewModel.cancel() },
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            ),
-                            contentPadding = PaddingValues(vertical = 16.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                "上一步",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Button(
-                            onClick = { state.selectedMode?.let { viewModel.launch(it) } },
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(vertical = 16.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                "重试",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                }
-            }
             item {
                 Spacer(Modifier.padding(vertical = 8.dp))
             }

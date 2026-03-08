@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox
+package io.github.bszapp.wifitoolbox.ui.startup
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -6,10 +6,9 @@ import io.github.bszapp.wifitoolbox.contract.IToolboxController
 import io.github.bszapp.wifitoolbox.contract.LaunchMode
 import io.github.bszapp.wifitoolbox.contract.ToolboxControllerProvider
 import io.github.bszapp.wifitoolbox.contract.ToolboxState
-import io.github.bszapp.wifitoolbox.contract.ToolboxStatus
 import kotlinx.coroutines.flow.StateFlow
 
-class AuthViewModel(app: Application) : AndroidViewModel(app) {
+class StartupViewModel(app: Application) : AndroidViewModel(app) {
 
     private val controller: IToolboxController = ToolboxControllerProvider.get()
 

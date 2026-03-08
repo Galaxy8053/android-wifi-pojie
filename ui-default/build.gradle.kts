@@ -40,7 +40,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.material3)
     implementation(libs.material.kolor)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
