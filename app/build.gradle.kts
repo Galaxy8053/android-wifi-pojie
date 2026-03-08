@@ -41,6 +41,7 @@ android {
 
 dependencies {
     implementation(project(":defaultUI"))
+    implementation(project(":core"))
     implementation(project(":services:mainservice"))
 
     implementation(libs.androidx.core.ktx)

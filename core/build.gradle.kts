@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.bszapp.wifitoolbox.services.mainservice"
+    namespace = "io.github.bszapp.wifitoolbox.core"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -15,10 +15,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildFeatures {
-        aidl = true
     }
 
     buildTypes {
@@ -37,9 +33,15 @@ android {
 }
 
 dependencies {
+    implementation(project(":services:mainservice"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+
+    implementation(libs.api)
+    implementation(libs.androidappprocess)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
