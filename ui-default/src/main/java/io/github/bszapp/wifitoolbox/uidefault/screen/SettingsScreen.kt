@@ -1,19 +1,21 @@
 package io.github.bszapp.wifitoolbox.uidefault.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +31,15 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
     val mode by viewModel.startup.mode.collectAsStateWithLifecycle()
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
+    val isActive = uid != null
+    val containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer
+    else MaterialTheme.colorScheme.errorContainer
+    val contentColor = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer
+    else MaterialTheme.colorScheme.onErrorContainer
+    val icon = if (isActive) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline
+    val title = if (isActive) "服务运行中" else "未激活"
+    val subtitle = if (isActive) "MODE:$mode  UID:$uid" else "点击选择工作模式"
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -52,109 +63,48 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // 设备信息卡片
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(containerColor)
+                    .clickable { viewModel.startup.stop() }
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Text(
-                        text = "服务状态",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = contentColor,
                     )
-                    InfoRow(
-                        label = "服务UID",
-                        value = uid.toString(),
-                        icon = Icons.Outlined.Fingerprint
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    InfoRow(
-                        label = "启动方式",
-                        value = mode.toString(),
-                        icon = Icons.Outlined.Tune
-                    )
-                }
-            }
-
-            // 服务控制卡片
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        text = "服务控制",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Button(
-                        onClick = { viewModel.startup.stop() },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        ),
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        Icon(
-                            Icons.Outlined.SwapHoriz,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = contentColor,
                         )
-                        Spacer(Modifier.width(8.dp))
-                        Text("重新选择模式", fontWeight = FontWeight.Medium)
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor.copy(alpha = 0.7f),
+                        )
                     }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = contentColor.copy(alpha = 0.7f),
+                    )
                 }
             }
-        }
-    }
-}
-
-// ── 通用信息行 ─────────────────────────────────────────────────
-@Composable
-private fun InfoRow(label: String, value: String, icon: ImageVector) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
         }
     }
 }

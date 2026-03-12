@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
@@ -29,7 +30,6 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
         if (Shizuku.shouldShowRequestPermissionRationale())
             throw Exception("Shizuku授权已被永久拒绝，请手动授权")
 
-        // 请求权限
         val granted = suspendCancellableCoroutine { cont ->
             val requestCode = 1001
 
@@ -53,7 +53,6 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
             throw Exception("Shizuku授权被拒绝")
     }
 
-    // SHIZUKU
     private var directArgs: Shizuku.UserServiceArgs? = null
     private var directConnection: ServiceConnection? = null
 
@@ -87,7 +86,6 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
         }
     }
 
-    // SHIZUKU_TERMINAL
     private fun shizukuNewProcess(
         cmd: Array<String>, env: Array<String>?, dir: String?
     ): ShizukuRemoteProcess {
@@ -112,7 +110,7 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
                 return shizukuNewProcess(cmd, env, params.directory)
             }
         }
-        withContext(Dispatchers.IO) {
+        runInterruptible(Dispatchers.IO) {
             if (proc.init(context)) proc
             else throw Exception("Shizuku Terminal进程启动失败")
         }
@@ -123,7 +121,6 @@ internal class ShizukuProcessLauncher(private val context: Context) : AutoClosea
         return terminalProcessLoader.get().serviceBinder(ComponentName(context, className))
     }
 
-    // 关闭服务
     override fun close() = runBlocking {
         runCatching {
             directArgs?.let { args ->

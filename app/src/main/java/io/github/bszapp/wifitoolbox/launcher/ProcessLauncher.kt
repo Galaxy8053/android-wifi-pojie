@@ -2,7 +2,7 @@ package io.github.bszapp.wifitoolbox.launcher
 
 import android.content.Context
 import android.os.IBinder
-import io.github.bszapp.wifitoolbox.contract.startup.RunningException
+import android.util.Log
 import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
 import io.github.bszapp.wifitoolbox.contract.startup.StartupState
 import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus
@@ -12,10 +12,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 class ProcessLauncher(private val context: Context) {
 
@@ -41,6 +44,12 @@ class ProcessLauncher(private val context: Context) {
     }
 
     fun launch(mode: StartupMode) {
+        val modeName = when (mode) {
+            StartupMode.SHIZUKU -> "Shizuku"
+            StartupMode.SHIZUKU_TERMINAL -> "Shizuku Terminal"
+            StartupMode.ROOT -> "Root"
+        }
+        Log.d("ProcessLauncher", "开始以 $modeName 模式启动服务")
         launchJob?.cancel()
         launchJob = scope.launch {
             _state.value = StartupState(
@@ -51,43 +60,53 @@ class ProcessLauncher(private val context: Context) {
             cleanupActive()
 
             runCatching {
-                val (launcher, binder) = when (mode) {
-                    StartupMode.SHIZUKU -> launchViaShizukuDirect()
-                    StartupMode.SHIZUKU_TERMINAL -> launchViaShizukuTerminal()
-                    StartupMode.ROOT -> launchViaRoot()
-                }
-                activeLauncher = launcher
-                activeBinder = binder
-                mainService = IMainService.Stub.asInterface(binder)
-                val uid = mainService!!.getUid()
+                withTimeout(5_000L) {
+                    val (launcher, binder) = when (mode) {
+                        StartupMode.SHIZUKU -> launchViaShizukuDirect()
+                        StartupMode.SHIZUKU_TERMINAL -> launchViaShizukuTerminal()
+                        StartupMode.ROOT -> launchViaRoot()
+                    }
+                    activeLauncher = launcher
+                    activeBinder = binder
+                    mainService = IMainService.Stub.asInterface(binder)
+                    val uid = mainService!!.getUid()
 
-                val recipient = IBinder.DeathRecipient {
-                    scope.launch(Dispatchers.Main) {
-                        if (_state.value.status == StartupStatus.RUNNING) {
-                            cleanupActive()
-                            _state.value = StartupState(
-                                status = StartupStatus.ERROR,
-                                selectedMode = mode,
-                                errorException = RunningException("服务进程已崩溃或被终止")
-                            )
+                    val recipient = IBinder.DeathRecipient {
+                        Log.e("ProcessLauncher", "$modeName 服务进程崩溃或被终止")
+                        scope.launch(Dispatchers.Main) {
+                            if (_state.value.status == StartupStatus.RUNNING) {
+                                cleanupActive()
+                                _state.value = StartupState(
+                                    status = StartupStatus.ERROR,
+                                    selectedMode = mode,
+                                    errorException = Exception("服务进程已崩溃或被终止")
+                                )
+                            }
                         }
                     }
-                }
-                binder.linkToDeath(recipient, 0)
-                deathRecipient = recipient
+                    binder.linkToDeath(recipient, 0)
+                    deathRecipient = recipient
 
-                _state.value = StartupState(
-                    status = StartupStatus.RUNNING,
-                    selectedMode = mode,
-                    serverUid = uid
-                )
+                    _state.value = StartupState(
+                        status = StartupStatus.RUNNING,
+                        selectedMode = mode,
+                        serverUid = uid
+                    )
+                    Log.d("ProcessLauncher", "$modeName 服务启动成功，uid=$uid")
+                }
             }.onFailure { e ->
-                if (e is kotlinx.coroutines.CancellationException) return@launch
+                if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) return@launch
+                if (!isActive) return@launch
                 cleanupActive()
+                val errorException = when (e) {
+                    is TimeoutCancellationException -> Exception("等待服务连接超时，su模式请以root或者system身份运行")
+                    else -> e as? Exception ?: Exception(e.message)
+                }
+                Log.e("ProcessLauncher", "$modeName 服务启动失败：${errorException.message}")
                 _state.value = StartupState(
                     status = StartupStatus.ERROR,
                     selectedMode = mode,
-                    errorException = e as? Exception ?: Exception(e.message)
+                    errorException = errorException
                 )
             }
         }
@@ -111,6 +130,7 @@ class ProcessLauncher(private val context: Context) {
         mainService = null
         _state.value = StartupState()
 
+        Log.d("ProcessLauncher", "停止服务")
         Thread { launcherToClose?.runCatching { close() } }.start()
     }
 
