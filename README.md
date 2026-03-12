@@ -1,23 +1,5 @@
 > 最近学业很忙，没时间更新，预计要过几个月（2026/01/30）
-另外求助有没有懂的，要加一个功能，如下：
-> ```sh
-> # github项目： https://github.com/kimocoder/OneShot
-> # 脚本从此项目下载，放到sh同目录
-> # 然后在termux执行下面sh脚本：
-> 
-> pkg update
-> pkg install tsu -y
-> pkg install python -y
-> pkg install root-repo -y
-> pkg install python wpa-supplicant -y
-> pip install wcwidth
-> 
-> tsu -s "python oneshot.py -i wlan0 -K"
-> # 然后就可以输入编号，执行漏洞攻击了
-> # 还有其他用法参考此项目的说明文档
-> ```
-> 怎么打包进应用里，就像Stryker一样，有会的请在意见反馈或者发议题
-
+> 看起来最新的版本又写成屎山了，太散了可维护性差，下个版本加上跑pin的，继续重构！（2026/03/12）
 # wifi工具箱
 
 [![Stars](https://img.shields.io/github/stars/bszapp/android-wifi-pojie?style=flat-square&logo=github&color=blue)](https://github.com/bszapp/android-wifi-pojie/stargazers) [![Total Downloads](https://img.shields.io/github/downloads/bszapp/android-wifi-pojie/total?style=flat-square&logo=github&color=orange)](https://github.com/bszapp/android-wifi-pojie/releases)
