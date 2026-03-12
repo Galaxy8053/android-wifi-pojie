@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.bszapp.wifitoolbox.contract.startup.RunningException
 import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
 import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus.*
 
@@ -133,7 +134,7 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Icon(
-                                imageVector = Icons.TwoTone.ErrorOutline,
+                                imageVector = if (state.errorException is RunningException) Icons.TwoTone.BugReport else Icons.TwoTone.ErrorOutline,
                                 contentDescription = "Error",
                                 modifier = Modifier
                                     .size(120.dp)
@@ -141,7 +142,7 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                             )
                             Text(
-                                text = "启动失败",
+                                text = if (state.errorException is RunningException) "崩溃啦" else "启动失败",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(bottom = 8.dp),
@@ -149,7 +150,7 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                text = state.errorMessage.toString(),
+                                text = state.errorException?.message.toString(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(bottom = 8.dp),
                                 textAlign = TextAlign.Center

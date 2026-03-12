@@ -2,6 +2,7 @@ package io.github.bszapp.wifitoolbox.launcher
 
 import android.content.Context
 import android.os.IBinder
+import io.github.bszapp.wifitoolbox.contract.startup.RunningException
 import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
 import io.github.bszapp.wifitoolbox.contract.startup.StartupState
 import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus
@@ -25,8 +26,19 @@ class ProcessLauncher(private val context: Context) {
     val state: StateFlow<StartupState> = _state.asStateFlow()
 
     private var activeLauncher: AutoCloseable? = null
+    private var activeBinder: IBinder? = null
+    private var deathRecipient: IBinder.DeathRecipient? = null
     var mainService: IMainService? = null
         private set
+
+    private fun cleanupActive() {
+        deathRecipient?.let { activeBinder?.unlinkToDeath(it, 0) }
+        deathRecipient = null
+        activeBinder = null
+        activeLauncher?.closeQuietly()
+        activeLauncher = null
+        mainService = null
+    }
 
     fun launch(mode: StartupMode) {
         launchJob?.cancel()
@@ -36,9 +48,7 @@ class ProcessLauncher(private val context: Context) {
                 selectedMode = mode
             )
 
-            activeLauncher?.closeQuietly()
-            activeLauncher = null
-            mainService = null
+            cleanupActive()
 
             runCatching {
                 val (launcher, binder) = when (mode) {
@@ -47,8 +57,24 @@ class ProcessLauncher(private val context: Context) {
                     StartupMode.ROOT -> launchViaRoot()
                 }
                 activeLauncher = launcher
+                activeBinder = binder
                 mainService = IMainService.Stub.asInterface(binder)
                 val uid = mainService!!.getUid()
+
+                val recipient = IBinder.DeathRecipient {
+                    scope.launch(Dispatchers.Main) {
+                        if (_state.value.status == StartupStatus.RUNNING) {
+                            cleanupActive()
+                            _state.value = StartupState(
+                                status = StartupStatus.ERROR,
+                                selectedMode = mode,
+                                errorException = RunningException("服务进程已崩溃或被终止")
+                            )
+                        }
+                    }
+                }
+                binder.linkToDeath(recipient, 0)
+                deathRecipient = recipient
 
                 _state.value = StartupState(
                     status = StartupStatus.RUNNING,
@@ -57,13 +83,11 @@ class ProcessLauncher(private val context: Context) {
                 )
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
-                activeLauncher?.closeQuietly()
-                activeLauncher = null
-                mainService = null
+                cleanupActive()
                 _state.value = StartupState(
                     status = StartupStatus.ERROR,
                     selectedMode = mode,
-                    errorMessage = e.message
+                    errorException = e as? Exception ?: Exception(e.message)
                 )
             }
         }
@@ -72,9 +96,7 @@ class ProcessLauncher(private val context: Context) {
     fun cancel() {
         launchJob?.cancel()
         launchJob = null
-        activeLauncher?.closeQuietly()
-        activeLauncher = null
-        mainService = null
+        cleanupActive()
         _state.value = StartupState()
     }
 
@@ -82,6 +104,9 @@ class ProcessLauncher(private val context: Context) {
         launchJob?.cancel()
         launchJob = null
         val launcherToClose = activeLauncher
+        deathRecipient?.let { activeBinder?.unlinkToDeath(it, 0) }
+        deathRecipient = null
+        activeBinder = null
         activeLauncher = null
         mainService = null
         _state.value = StartupState()
