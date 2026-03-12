@@ -1,7 +1,10 @@
 package io.github.bszapp.wifitoolbox.services.mainservice;
 
+import android.net.wifi.ScanResult;
+
 interface IMainService {
     boolean isAlive();
     int getUid();
-    String doPrivilegedThing();
+    boolean startScan();
+    List<ScanResult> getScanResults();
 }

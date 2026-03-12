@@ -9,7 +9,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.runInterruptible
-import kotlin.coroutines.coroutineContext
 
 internal class RootProcessLauncher(private val context: Context) : AutoCloseable {
 
