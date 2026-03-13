@@ -21,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,17 +34,12 @@ class ToolboxApp : Application(), IAppController {
     private val _isExiting = MutableStateFlow(false)
     override val isExiting: StateFlow<Boolean> = _isExiting.asStateFlow()
 
-    private val _scanResultsAvailable = MutableSharedFlow<Boolean>(
-        replay = 0,
-        extraBufferCapacity = 1
-    )
-
+    // 广播接收器继续注册，保留以备后续功能扩展，但不再传给 WifiListController
     private val scanReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == WifiManager.SCAN_RESULTS_AVAILABLE_ACTION) {
                 val updated = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false)
-                Log.d("ToolboxApp", "收到扫描广播，结果是否更新：$updated")
-                _scanResultsAvailable.tryEmit(updated)
+                Log.d(TAG, "收到扫描广播，EXTRA_RESULTS_UPDATED=$updated（当前未使用）")
             }
         }
     }
@@ -65,11 +59,11 @@ class ToolboxApp : Application(), IAppController {
             }
         }
     }
+
     override val wifiList: IWifiListController by lazy {
         WifiListController(
             scope = appScope,
-            getService = { processLauncher.mainService },
-            scanResultsAvailable = _scanResultsAvailable
+            getService = { processLauncher.mainService }
         )
     }
 
@@ -83,10 +77,11 @@ class ToolboxApp : Application(), IAppController {
             IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
         )
 
+        // 服务首次进入 RUNNING 状态时自动触发一次扫描
         appScope.launch {
             startup.state.collect { state ->
                 if (state.status == StartupStatus.RUNNING) {
-                    Log.d("ToolboxApp", "首次启动扫描wifi")
+                    Log.d(TAG, "服务已就绪，触发首次自动扫描")
                     wifiList.startScan()
                 }
             }
@@ -97,5 +92,9 @@ class ToolboxApp : Application(), IAppController {
         super.onTerminate()
         unregisterReceiver(scanReceiver)
         appScope.cancel()
+    }
+
+    companion object {
+        private const val TAG = "ToolboxApp"
     }
 }
