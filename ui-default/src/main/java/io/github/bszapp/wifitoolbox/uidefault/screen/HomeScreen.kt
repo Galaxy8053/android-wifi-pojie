@@ -34,7 +34,8 @@ import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(vm: DefaultViewModel = viewModel()) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val scanStatus by vm.wifiList.status.collectAsStateWithLifecycle()
     val scanResults by vm.wifiList.results.collectAsStateWithLifecycle()
     val errorMsg by vm.wifiList.errorMessage.collectAsStateWithLifecycle()
@@ -155,7 +156,6 @@ private fun ScanCard(
             ) {
                 Icon(
                     imageVector = when (status) {
-                        ScanStatus.ERROR -> Icons.Rounded.WifiOff
                         else -> Icons.Outlined.WifiFind
                     },
                     contentDescription = null,
@@ -170,33 +170,23 @@ private fun ScanCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = when (status) {
-                        ScanStatus.IDLE -> "准备扫描"
                         ScanStatus.SCANNING -> "正在扫描..."
                         ScanStatus.FINISH -> "扫描完成，共 $resultCount 个网络"
-                        ScanStatus.ERROR -> "扫描失败"
+                        ScanStatus.ERROR_UNKNOWN -> "扫描失败"
+                        else -> "else"
                     },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                if (status == ScanStatus.ERROR && errorMsg != null) {
-                    Text(
-                        text = errorMsg,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        maxLines = 2,
-                    )
-                } else {
-                    Text(
-                        text = when (status) {
-                            ScanStatus.IDLE -> "点击右侧按钮开始"
-                            ScanStatus.SCANNING -> "持续采集 3 秒，请稍候"
-                            ScanStatus.FINISH -> "点击右侧可重新扫描"
-                            ScanStatus.ERROR -> "请检查服务是否运行"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    text = when (status) {
+                        ScanStatus.SCANNING -> "正在扫描中，请稍候"
+                        ScanStatus.FINISH -> "点击右侧可重新扫描"
+                        else -> "else"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             Spacer(Modifier.width(8.dp))
@@ -329,7 +319,10 @@ private fun ApDetailSheet(ap: ScanResult) {
 
         DetailRow(label = "BSSID", value = ap.BSSID ?: "未知")
         DetailRow(label = "信号强度", value = "${ap.level} dBm")
-        DetailRow(label = "频率", value = "${ap.frequency} MHz (${if (ap.frequency < 3000) "2.4GHz" else "5GHz"})")
+        DetailRow(
+            label = "频率",
+            value = "${ap.frequency} MHz (${if (ap.frequency < 3000) "2.4GHz" else "5GHz"})"
+        )
         DetailRow(label = "信道宽度", value = ap.channelWidth.toChannelWidthLabel())
         @Suppress("DEPRECATION")
         DetailRow(label = "加密方式", value = ap.capabilities ?: "未知")
@@ -384,7 +377,7 @@ private fun EmptyState(status: ScanStatus, modifier: Modifier = Modifier) {
         Text(
             text = when (status) {
                 ScanStatus.SCANNING -> "扫描中，结果将在此显示..."
-                ScanStatus.ERROR -> "扫描失败，请重试"
+                ScanStatus.ERROR_UNKNOWN -> "扫描失败，请重试"
                 else -> "点击「扫描」获取附近 WiFi"
             },
             style = MaterialTheme.typography.bodyLarge,

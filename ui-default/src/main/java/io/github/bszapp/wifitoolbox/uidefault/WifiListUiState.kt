@@ -12,11 +12,11 @@ class WifiListUiState(private val controller: IAppController, scope: CoroutineSc
 
     val status = controller.wifiList.state
         .map { it.status }
-        .stateIn(scope, SharingStarted.Eagerly, ScanStatus.IDLE)
+        .stateIn(scope, SharingStarted.Eagerly, ScanStatus.SCANNING)
 
     val results = controller.wifiList.state
         .map { it.scanResults }
-        .stateIn(scope, SharingStarted.Eagerly, emptyList<ScanResult>())
+        .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     val errorMessage = controller.wifiList.state
         .map { it.errorException?.message }

@@ -16,16 +16,17 @@ class MainService : IMainService.Stub() {
     private val sdk = android.os.Build.VERSION.SDK_INT
 
 
-    private val packageName = "com.android.shell"
-
-    private fun asInterface(className: String, name: String): Any {
-        val binder = Class.forName("android.os.ServiceManager")
-            .getMethod("getService", String::class.java).invoke(null, name) as IBinder
-        return Class.forName("$className\$Stub")
-            .getMethod("asInterface", IBinder::class.java).invoke(null, binder)!!
+    private val packageName = when (getUid()) {
+        0, 1000 -> "android"
+        else -> "com.android.shell"
     }
 
-    private fun getWifiService(): Any = asInterface("android.net.wifi.IWifiManager", "wifi")
+    private fun getWifiService(): Any {
+        val binder = Class.forName("android.os.ServiceManager")
+            .getMethod("getService", String::class.java).invoke(null, "wifi") as IBinder
+        return Class.forName("android.net.wifi.IWifiManager\$Stub")
+            .getMethod("asInterface", IBinder::class.java).invoke(null, binder)!!
+    }
 
     override fun startScan(): Boolean {
         return try {
