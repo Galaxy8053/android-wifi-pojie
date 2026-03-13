@@ -17,7 +17,6 @@ class MainService : IMainService.Stub() {
 
     private val sdk = android.os.Build.VERSION.SDK_INT
 
-
     private val packageName = when (getUid()) {
         0, 1000 -> "android"
         else -> "com.android.shell"
@@ -31,39 +30,69 @@ class MainService : IMainService.Stub() {
     }
 
     override fun startScan(): Boolean {
+        Log.d(TAG, "startScan() called | SDK=$sdk | uid=${getUid()} | package=$packageName")
         return try {
             val wifiService = getWifiService()
             val clazz = wifiService::class.java
             val methodName = "startScan"
             val stringClass = String::class.java
 
-            when {
-                sdk >= 30 -> clazz.getMethod(methodName, stringClass, stringClass)
-                    .invoke(wifiService, null, null)
+            Log.d(TAG, "WifiService obtained: ${clazz.name}")
 
-                sdk >= 28 -> clazz.getMethod(methodName, stringClass)
-                    .invoke(wifiService, null)
+            when {
+                // API 30-36: boolean startScan(String packageName, String featureId)
+                // featureId 可为 null，但 packageName 必须有值
+                sdk >= 30 -> {
+                    Log.d(TAG, "Branch: SDK>=30 → startScan(String, String) with ($packageName, null)")
+                    clazz.getMethod(methodName, stringClass, stringClass)
+                        .invoke(wifiService, packageName, null)
+                    Log.d(TAG, "startScan($packageName, null) invoked successfully")
+                }
+
+                // API 28-29: boolean startScan(String packageName)
+                // packageName 必须有值
+                sdk >= 28 -> {
+                    Log.d(TAG, "Branch: SDK>=28 → startScan(String) with ($packageName)")
+                    clazz.getMethod(methodName, stringClass)
+                        .invoke(wifiService, packageName)
+                    Log.d(TAG, "startScan($packageName) invoked successfully")
+                }
 
                 else -> {
                     val scanSettingsClass = Class.forName("android.net.wifi.ScanSettings")
-                    when {
-                        sdk >= 26 -> clazz.getMethod(
-                            methodName,
-                            scanSettingsClass,
-                            WorkSource::class.java,
-                            stringClass
-                        ).invoke(wifiService, null, null, null)
+                    Log.d(TAG, "ScanSettings class loaded: ${scanSettingsClass.name}")
 
-                        else -> clazz.getMethod(
-                            methodName,
-                            scanSettingsClass,
-                            WorkSource::class.java
-                        ).invoke(wifiService, null, null)
+                    when {
+                        // API 26-27: void startScan(ScanSettings, WorkSource, String packageName)
+                        sdk >= 26 -> {
+                            Log.d(TAG, "Branch: SDK>=26 → startScan(ScanSettings, WorkSource, String) with (null, null, $packageName)")
+                            clazz.getMethod(
+                                methodName,
+                                scanSettingsClass,
+                                WorkSource::class.java,
+                                stringClass
+                            ).invoke(wifiService, null, null, packageName)
+                            Log.d(TAG, "startScan(null, null, $packageName) invoked successfully")
+                        }
+
+                        // API 24-25: void startScan(ScanSettings, WorkSource)
+                        else -> {
+                            Log.d(TAG, "Branch: SDK<26 → startScan(ScanSettings, WorkSource) with (null, null)")
+                            clazz.getMethod(
+                                methodName,
+                                scanSettingsClass,
+                                WorkSource::class.java
+                            ).invoke(wifiService, null, null)
+                            Log.d(TAG, "startScan(null, null) invoked successfully")
+                        }
                     }
                 }
             }
+            Log.d(TAG, "startScan() completed successfully → returning true")
             true
         } catch (e: Exception) {
+            Log.e(TAG, "startScan() failed: ${e::class.java.simpleName}: ${e.message}")
+            Log.e(TAG, "Stack trace:", e)
             e.printStackTrace()
             false
         }
@@ -76,20 +105,45 @@ class MainService : IMainService.Stub() {
             val methodName = "getScanResults"
             val stringClass = String::class.java
 
-            val result = if (sdk >= 30)
-                clazz.getMethod(methodName, stringClass, stringClass)
-                    .invoke(wifiService, packageName, null)
-            else
-                clazz.getMethod(methodName, stringClass)
-                    .invoke(wifiService, packageName)
+            when {
+                // API 35-36: ParceledListSlice getScanResults(String, String)
+                // 返回值是 ParceledListSlice，需调用 .getList() 取出 List<ScanResult>
+                sdk >= 35 -> {
+                    val result = clazz.getMethod(methodName, stringClass, stringClass)
+                        .invoke(wifiService, packageName, null)
+                        ?: return emptyList()
+                    @Suppress("UNCHECKED_CAST")
+                    result.javaClass.getMethod("getList").invoke(result) as? List<ScanResult>
+                        ?: emptyList()
+                }
 
-            if (result == null) return emptyList()
+                // API 30-34: List<ScanResult> getScanResults(String, String)
+                // 返回值已经是 List<ScanResult>，直接转型，不能调 .getList()
+                sdk >= 30 -> {
+                    val result = clazz.getMethod(methodName, stringClass, stringClass)
+                        .invoke(wifiService, packageName, null)
+                        ?: return emptyList()
+                    @Suppress("UNCHECKED_CAST")
+                    result as? List<ScanResult> ?: emptyList()
+                }
 
-            @Suppress("UNCHECKED_CAST")
-            result.javaClass.getMethod("getList").invoke(result) as? List<ScanResult> ?: emptyList()
+                // API 24-29: List<ScanResult> getScanResults(String)
+                // 单参数，返回值直接是 List<ScanResult>
+                else -> {
+                    val result = clazz.getMethod(methodName, stringClass)
+                        .invoke(wifiService, packageName)
+                        ?: return emptyList()
+                    @Suppress("UNCHECKED_CAST")
+                    result as? List<ScanResult> ?: emptyList()
+                }
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    companion object {
+        private const val TAG = "ToolboxMainService"
     }
 }

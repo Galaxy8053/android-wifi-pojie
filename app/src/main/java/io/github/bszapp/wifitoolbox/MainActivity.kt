@@ -3,7 +3,6 @@ package io.github.bszapp.wifitoolbox
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.os.Process
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,7 +21,6 @@ import io.github.bszapp.wifitoolbox.contract.AppControllerProvider
 import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus
 import io.github.bszapp.wifitoolbox.ui.startup.StartupScreen
 import io.github.bszapp.wifitoolbox.uidefault.DefaultUI
-import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
