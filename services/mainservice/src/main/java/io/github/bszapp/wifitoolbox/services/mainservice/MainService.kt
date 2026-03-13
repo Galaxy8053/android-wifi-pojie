@@ -2,6 +2,7 @@ package io.github.bszapp.wifitoolbox.services.mainservice
 
 import android.annotation.SuppressLint
 import android.net.wifi.ScanResult
+import android.os.Build
 import android.os.IBinder
 import android.os.WorkSource
 import android.util.Log
@@ -15,7 +16,7 @@ class MainService : IMainService.Stub() {
     override fun getUidStr(): String =
         Runtime.getRuntime().exec("id").inputStream.bufferedReader().readText().trim()
 
-    private val sdk = android.os.Build.VERSION.SDK_INT
+    private val sdk = Build.VERSION.SDK_INT
 
     private val packageName = when (getUid()) {
         0, 1000 -> "android"

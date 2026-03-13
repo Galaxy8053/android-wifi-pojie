@@ -1,28 +1,33 @@
 package io.github.bszapp.wifitoolbox.uidefault.screen
 
+import android.os.Build
 import android.net.wifi.ScanResult
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
@@ -31,68 +36,136 @@ import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(vm: DefaultViewModel = viewModel()) {
-    val scrollBehavior =
-        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scanStatus by vm.wifiList.status.collectAsStateWithLifecycle()
     val scanResults by vm.wifiList.results.collectAsStateWithLifecycle()
     val errorMsg by vm.wifiList.errorMessage.collectAsStateWithLifecycle()
 
-    var selectedAp by remember { mutableStateOf<ScanResult?>(null) }
+    val isScanning = scanStatus == ScanStatus.SCANNING
+
+    var selectedAp by rememberSaveable { mutableStateOf<ScanResult?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 刷新按钮图标旋转动画
+    val rotation by rememberInfiniteTransition(label = "scan_rotate").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)),
+        label = "rotate"
+    )
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
-                        "WiFi 扫描",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        "连接",
                         fontWeight = FontWeight.Bold,
                     )
+                },
+                actions = {
+                    IconButton(
+                        onClick = { vm.wifiList.startScan() },
+                        enabled = !isScanning,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Refresh,
+                            contentDescription = "扫描",
+                            modifier = if (isScanning) Modifier.rotate(rotation) else Modifier,
+                            tint = if (isScanning)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(
+                    top = innerPadding.calculateTopPadding(),
+                    start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                    end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                ),
         ) {
-            // 扫描按钮区域
-            ScanCard(
-                status = scanStatus,
-                resultCount = scanResults.size,
-                errorMsg = errorMsg,
-                onScanClick = { vm.wifiList.startScan() },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
-            // WiFi 列表
-            if (scanResults.isEmpty()) {
-                EmptyState(
-                    status = scanStatus,
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+            Column(modifier = Modifier.fillMaxSize()) {
+                // 扫描状态提示卡（仅在有错误或首次加载前展示简短状态）
+                AnimatedVisibility(
+                    visible = scanStatus == ScanStatus.ERROR_UNKNOWN
                 ) {
-                    items(
-                        items = scanResults.sortedByDescending { it.level },
-                        key = { it.BSSID ?: it.hashCode().toString() }
-                    ) { ap ->
-                        WifiItem(
-                            ap = ap,
-                            onClick = { selectedAp = ap }
-                        )
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.WifiOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = "扫描失败，请重试",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        }
                     }
-                    item { Spacer(Modifier.height(8.dp)) }
                 }
+
+                // WiFi 列表
+                if (scanResults.isEmpty()) {
+                    EmptyState(
+                        status = scanStatus,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(
+                            items = scanResults.sortedByDescending { it.level },
+                            key = { it.BSSID ?: it.hashCode().toString() },
+                        ) { ap ->
+                            WifiItem(
+                                ap = ap,
+                                onClick = { selectedAp = ap },
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
+                        item { Spacer(Modifier.height(8.dp)) }
+                    }
+                }
+            }
+
+            // 悬浮进度条：扫描中时显示在列表顶部
+            AnimatedVisibility(
+                visible = isScanning,
+                modifier = Modifier.align(Alignment.TopCenter),
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(300)),
+            ) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                )
             }
         }
 
@@ -101,7 +174,16 @@ fun HomeScreen(vm: DefaultViewModel = viewModel()) {
             ModalBottomSheet(
                 onDismissRequest = { selectedAp = null },
                 sheetState = sheetState,
+                contentWindowInsets = { WindowInsets(0) },
             ) {
+                val view = LocalView.current
+                DisposableEffect(Unit) {
+                    val window = (view.parent as? DialogWindowProvider)?.window
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        window?.isNavigationBarContrastEnforced = false
+                    }
+                    onDispose { }
+                }
                 ApDetailSheet(ap = selectedAp!!)
             }
         }
@@ -109,107 +191,20 @@ fun HomeScreen(vm: DefaultViewModel = viewModel()) {
 }
 
 @Composable
-private fun ScanCard(
-    status: ScanStatus,
-    resultCount: Int,
-    errorMsg: String?,
-    onScanClick: () -> Unit,
+private fun WifiItem(
+    ap: ScanResult,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isScanning = status == ScanStatus.SCANNING
-    val rotation by rememberInfiniteTransition(label = "scan_rotate").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(1200, easing = LinearEasing)),
-        label = "rotate"
-    )
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isScanning)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
-        shape = RoundedCornerShape(20.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // 状态图标
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isScanning) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceContainerHighest
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = when (status) {
-                        else -> Icons.Outlined.WifiFind
-                    },
-                    contentDescription = null,
-                    tint = if (isScanning) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = if (isScanning) Modifier.rotate(rotation) else Modifier,
-                )
-            }
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = when (status) {
-                        ScanStatus.SCANNING -> "正在扫描..."
-                        ScanStatus.FINISH -> "扫描完成，共 $resultCount 个网络"
-                        ScanStatus.ERROR_UNKNOWN -> "扫描失败"
-                        else -> "else"
-                    },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = when (status) {
-                        ScanStatus.SCANNING -> "正在扫描中，请稍候"
-                        ScanStatus.FINISH -> "点击右侧可重新扫描"
-                        else -> "else"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Spacer(Modifier.width(8.dp))
-
-            FilledTonalButton(
-                onClick = onScanClick,
-                enabled = !isScanning,
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text(if (isScanning) "扫描中" else "扫描")
-            }
-        }
-    }
-}
-
-@Composable
-private fun WifiItem(ap: ScanResult, onClick: () -> Unit) {
     val signalLevel = WifiSignalLevel.from(ap.level)
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Row(
@@ -279,7 +274,6 @@ private fun ApDetailSheet(ap: ScanResult) {
             .padding(horizontal = 24.dp)
             .padding(bottom = 40.dp),
     ) {
-        // 标题行
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
@@ -318,7 +312,7 @@ private fun ApDetailSheet(ap: ScanResult) {
         DetailRow(label = "信号强度", value = "${ap.level} dBm")
         DetailRow(
             label = "频率",
-            value = "${ap.frequency} MHz (${if (ap.frequency < 3000) "2.4GHz" else "5GHz"})"
+            value = "${ap.frequency} MHz (${if (ap.frequency < 3000) "2.4GHz" else "5GHz"})",
         )
         DetailRow(label = "信道宽度", value = ap.channelWidth.toChannelWidthLabel())
         @Suppress("DEPRECATION")
@@ -375,7 +369,7 @@ private fun EmptyState(status: ScanStatus, modifier: Modifier = Modifier) {
             text = when (status) {
                 ScanStatus.SCANNING -> "扫描中，结果将在此显示..."
                 ScanStatus.ERROR_UNKNOWN -> "扫描失败，请重试"
-                else -> "点击「扫描」获取附近 WiFi"
+                else -> "点击右上角「刷新」获取附近 WiFi"
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.outline,
