@@ -5,6 +5,7 @@ import android.net.wifi.ScanResult;
 interface IMainService {
     boolean isAlive();
     int getUid();
+    String getUidStr();
     boolean startScan();
     List<ScanResult> getScanResults();
 }

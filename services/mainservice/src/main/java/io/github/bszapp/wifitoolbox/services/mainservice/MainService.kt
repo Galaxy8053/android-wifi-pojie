@@ -12,6 +12,8 @@ import androidx.annotation.Keep
 class MainService : IMainService.Stub() {
     override fun isAlive() = true
     override fun getUid(): Int = android.os.Process.myUid()
+    override fun getUidStr(): String =
+        Runtime.getRuntime().exec("id").inputStream.bufferedReader().readText().trim()
 
     private val sdk = android.os.Build.VERSION.SDK_INT
 
@@ -76,7 +78,7 @@ class MainService : IMainService.Stub() {
 
             val result = if (sdk >= 30)
                 clazz.getMethod(methodName, stringClass, stringClass)
-                    .invoke(wifiService, packageName, null)  // 传包名，featureId 给 null 即可
+                    .invoke(wifiService, packageName, null)
             else
                 clazz.getMethod(methodName, stringClass)
                     .invoke(wifiService, packageName)

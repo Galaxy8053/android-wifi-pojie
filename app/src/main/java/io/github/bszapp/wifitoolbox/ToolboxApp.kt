@@ -1,5 +1,6 @@
 package io.github.bszapp.wifitoolbox
 
+import android.os.Process
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -19,15 +20,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ToolboxApp : Application(), IAppController {
 
     private lateinit var processLauncher: ProcessLauncher
 
-    // 由 App 统一管理的协程作用域
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val _isExiting = MutableStateFlow(false)
+    override val isExiting: StateFlow<Boolean> = _isExiting.asStateFlow()
 
     private val _scanResultsAvailable = MutableSharedFlow<Boolean>(
         replay = 0,
@@ -48,9 +54,17 @@ class ToolboxApp : Application(), IAppController {
         override val state get() = processLauncher.state
         override fun launch(mode: StartupMode) = processLauncher.launch(mode)
         override fun cancel() = processLauncher.cancel()
-        override fun stop() = processLauncher.stop()
+        override fun stop(exit: Boolean) {
+            processLauncher.stop()
+            if (exit) {
+                appScope.launch {
+                    delay(200)
+                    Process.killProcess(Process.myPid())
+                }
+                _isExiting.value = true
+            }
+        }
     }
-
     override val wifiList: IWifiListController by lazy {
         WifiListController(
             scope = appScope,
@@ -72,7 +86,7 @@ class ToolboxApp : Application(), IAppController {
         appScope.launch {
             startup.state.collect { state ->
                 if (state.status == StartupStatus.RUNNING) {
-                    Log.d("ToolboxApp", "首次启动扫描 WiFi")
+                    Log.d("ToolboxApp", "首次启动扫描wifi")
                     wifiList.startScan()
                 }
             }

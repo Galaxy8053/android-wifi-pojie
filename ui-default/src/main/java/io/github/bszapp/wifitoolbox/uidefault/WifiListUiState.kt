@@ -1,6 +1,5 @@
 package io.github.bszapp.wifitoolbox.uidefault
 
-import android.net.wifi.ScanResult
 import io.github.bszapp.wifitoolbox.contract.IAppController
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
 import kotlinx.coroutines.CoroutineScope

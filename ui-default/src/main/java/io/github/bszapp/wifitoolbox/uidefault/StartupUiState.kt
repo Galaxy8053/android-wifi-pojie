@@ -9,12 +9,15 @@ import kotlinx.coroutines.flow.stateIn
 class StartupUiState(private val controller: IAppController, scope: CoroutineScope) {
 
     val uid = controller.startup.state
-        .map { it.serverUid }
+        .map { it.serviceUid }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+    val uidStr = controller.startup.state
+        .map { it.serviceUidStr }
         .stateIn(scope, SharingStarted.Eagerly, null)
 
     val mode = controller.startup.state
         .map { it.selectedMode }
         .stateIn(scope, SharingStarted.Eagerly, null)
 
-    fun stop() = controller.startup.stop()
+    fun stop(exit: Boolean) = controller.startup.stop(exit)
 }

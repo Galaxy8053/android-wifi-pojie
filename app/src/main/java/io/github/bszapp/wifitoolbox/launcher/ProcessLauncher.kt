@@ -70,6 +70,7 @@ class ProcessLauncher(private val context: Context) {
                     activeBinder = binder
                     mainService = IMainService.Stub.asInterface(binder)
                     val uid = mainService!!.getUid()
+                    val uidStr = mainService!!.getUidStr()
 
                     val recipient = IBinder.DeathRecipient {
                         Log.e("ProcessLauncher", "$modeName 服务进程崩溃或被终止")
@@ -90,9 +91,10 @@ class ProcessLauncher(private val context: Context) {
                     _state.value = StartupState(
                         status = StartupStatus.RUNNING,
                         selectedMode = mode,
-                        serverUid = uid
+                        serviceUid = uid,
+                        serviceUidStr = uidStr
                     )
-                    Log.d("ProcessLauncher", "$modeName 服务启动成功，uid=$uid")
+                    Log.d("ProcessLauncher", "$modeName 服务启动成功，uid=$uid uidStr=$uidStr")
                 }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) return@launch

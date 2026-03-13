@@ -4,5 +4,6 @@ data class StartupState(
     val status: StartupStatus = StartupStatus.IDLE,
     val selectedMode: StartupMode? = null,
     val errorException: Exception? = null,
-    val serverUid: Int? = null
+    val serviceUid: Int? = null,
+    val serviceUidStr: String? = null
 )

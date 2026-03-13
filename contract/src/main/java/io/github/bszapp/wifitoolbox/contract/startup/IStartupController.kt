@@ -6,5 +6,5 @@ interface IStartupController {
     val state: StateFlow<StartupState>
     fun launch(mode: StartupMode)
     fun cancel()
-    fun stop()
+    fun stop(exit: Boolean)
 }

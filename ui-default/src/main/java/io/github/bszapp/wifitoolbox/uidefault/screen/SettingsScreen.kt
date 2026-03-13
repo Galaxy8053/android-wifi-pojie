@@ -11,8 +11,8 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
+import io.github.bszapp.wifitoolbox.uidefault.settings.ServiceStatusDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +33,9 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    val uidStr by viewModel.startup.uidStr.collectAsStateWithLifecycle()
+
     val isActive = uid != null
     val containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer
     else MaterialTheme.colorScheme.errorContainer
@@ -40,6 +44,21 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
     val icon = if (isActive) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline
     val title = if (isActive) "服务运行中" else "未激活"
     val subtitle = if (isActive) "MODE:$mode  UID:$uid" else "点击选择工作模式"
+
+    if (showDialog) {
+        ServiceStatusDialog(
+            uidStr = uidStr ?: "获取失败",
+            onDismiss = { showDialog = false },
+            onExit = {
+                showDialog = false
+                viewModel.startup.stop(true)
+            },
+            onReselect = {
+                showDialog = false
+                viewModel.startup.stop(false)
+            }
+        )
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -69,7 +88,10 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(containerColor)
-                    .clickable { viewModel.startup.stop() }
+                    .clickable {
+                        if (isActive) showDialog = true
+                        else viewModel.startup.stop(false)
+                    }
                     .padding(horizontal = 20.dp, vertical = 20.dp),
             ) {
                 Row(
