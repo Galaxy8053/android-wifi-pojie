@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.twotone.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.contract.startup.RunningException
 import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
 import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus.*
+import io.github.bszapp.wifitoolbox.uidefault.component.SplicedGroupItem
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -41,7 +41,7 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                 .padding(innerPadding)
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
         ) {
             item {
                 Spacer(Modifier.padding(vertical = 8.dp))
@@ -61,7 +61,7 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
                                 imageVector = Icons.TwoTone.Construction,
                                 contentDescription = "Done",
                                 modifier = Modifier
-                                    .size(120.dp)
+                                     .size(120.dp)
                                     .padding(bottom = 16.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -161,73 +161,32 @@ fun StartupScreen(viewModel: StartupViewModel = viewModel()) {
             }
 
             // 工作模式选项
+            // 工作模式选项
             items(displayList, key = { it.name }) { mode ->
-                Card(
+                val index = displayList.indexOf(mode)
+
+                SplicedGroupItem(
+                    title = when (mode) {
+                        StartupMode.SHIZUKU -> "Shizuku"
+                        StartupMode.SHIZUKU_TERMINAL -> "Shizuku Terminal"
+                        StartupMode.ROOT -> "Root"
+                    },
+                    description = when (mode) {
+                        StartupMode.SHIZUKU -> "需要额外安装并启动Shizuku，有无root均支持，启动速度最快"
+                        StartupMode.SHIZUKU_TERMINAL -> "如果上一种方式无法启动，可尝试此方法，启动速度较慢"
+                        StartupMode.ROOT -> "适合已root的设备，不需要额外安装应用"
+                    },
+                    icon = when (mode) {
+                        StartupMode.SHIZUKU -> Icons.TwoTone.Bolt
+                        StartupMode.SHIZUKU_TERMINAL -> Icons.TwoTone.Terminal
+                        StartupMode.ROOT -> Icons.TwoTone.Shield
+                    },
+                    showArrow = state.status == IDLE,
+                    isFirst = index == 0,
+                    isEnd = index == displayList.size - 1,
                     onClick = { if (state.status == IDLE) viewModel.launch(mode) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = contentMaxWidth)
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                        .padding(vertical = 4.dp)
-                        .animateItem()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .widthIn(max = contentMaxWidth)
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = when (mode) {
-                                StartupMode.SHIZUKU -> Icons.TwoTone.Bolt
-                                StartupMode.SHIZUKU_TERMINAL -> Icons.TwoTone.Terminal
-                                StartupMode.ROOT -> Icons.TwoTone.Shield
-                            },
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = when (mode) {
-                                    StartupMode.SHIZUKU -> "Shizuku"
-                                    StartupMode.SHIZUKU_TERMINAL -> "Shizuku Terminal"
-                                    StartupMode.ROOT -> "Root"
-                                },
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Text(
-                                text = when (mode) {
-                                    StartupMode.SHIZUKU -> "需要额外安装并启动Shizuku，有无root均支持，启动速度最快"
-                                    StartupMode.SHIZUKU_TERMINAL -> "如果上一种方式无法启动，可尝试此方法，启动速度较慢"
-                                    StartupMode.ROOT -> "适合已root的设备，不需要额外安装应用"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (state.status == IDLE) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
+                    modifier = Modifier.animateItem()
+                )
             }
 
             // 操作按钮
