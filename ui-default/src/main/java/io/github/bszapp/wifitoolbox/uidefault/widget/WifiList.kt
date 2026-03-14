@@ -29,13 +29,14 @@ import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WifiList(
+    modifier: Modifier = Modifier,
     vm: DefaultViewModel = viewModel(),
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val scanResults by vm.wifiList.results.collectAsStateWithLifecycle()
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

@@ -2,6 +2,7 @@ package io.github.bszapp.wifitoolbox.services.mainservice
 
 import android.annotation.SuppressLint
 import android.net.wifi.ScanResult
+import android.os.Process
 import android.os.Build
 import android.os.IBinder
 import android.os.WorkSource
@@ -142,6 +143,22 @@ class MainService : IMainService.Stub() {
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    override fun watchApp(token: IBinder) {
+        token.linkToDeath(
+            {
+                Log.d(TAG, "App 进程已死，MainService 自杀")
+                Process.killProcess(Process.myPid())
+            },
+            0
+        )
+        Log.d(TAG, "已注册 App 存活监听，App pid 监控中")
+    }
+
+    override fun shutdown() {
+        Log.d(TAG, "收到 shutdown 指令，MainService 退出")
+        Process.killProcess(Process.myPid())
     }
 
     companion object {

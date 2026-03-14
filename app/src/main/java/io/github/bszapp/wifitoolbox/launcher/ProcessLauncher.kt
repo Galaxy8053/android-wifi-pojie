@@ -1,8 +1,10 @@
 package io.github.bszapp.wifitoolbox.launcher
 
 import android.content.Context
+import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import io.github.bszapp.wifitoolbox.contract.startup.RunningException
 import io.github.bszapp.wifitoolbox.contract.startup.StartupMode
 import io.github.bszapp.wifitoolbox.contract.startup.StartupState
 import io.github.bszapp.wifitoolbox.contract.startup.StartupStatus
@@ -72,6 +74,8 @@ class ProcessLauncher(private val context: Context) {
                     val uid = mainService!!.getUid()
                     val uidStr = mainService!!.getUidStr()
 
+                    mainService!!.watchApp(Binder())
+
                     val recipient = IBinder.DeathRecipient {
                         Log.e("ProcessLauncher", "$modeName 服务进程崩溃或被终止")
                         scope.launch(Dispatchers.Main) {
@@ -80,7 +84,7 @@ class ProcessLauncher(private val context: Context) {
                                 _state.value = StartupState(
                                     status = StartupStatus.ERROR,
                                     selectedMode = mode,
-                                    errorException = Exception("服务进程已崩溃或被终止")
+                                    errorException = RunningException("服务进程被强制停止")
                                 )
                             }
                         }
@@ -124,9 +128,13 @@ class ProcessLauncher(private val context: Context) {
     fun stop() {
         launchJob?.cancel()
         launchJob = null
-        val launcherToClose = activeLauncher
+
         deathRecipient?.let { activeBinder?.unlinkToDeath(it, 0) }
         deathRecipient = null
+
+        runCatching { mainService?.shutdown() }
+
+        val launcherToClose = activeLauncher
         activeBinder = null
         activeLauncher = null
         mainService = null

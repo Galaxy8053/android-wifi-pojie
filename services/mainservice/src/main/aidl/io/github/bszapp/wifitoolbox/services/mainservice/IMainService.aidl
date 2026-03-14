@@ -8,4 +8,6 @@ interface IMainService {
     String getUidStr();
     boolean startScan();
     List<ScanResult> getScanResults();
+    void watchApp(IBinder token);
+    void shutdown();
 }
