@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,6 +25,7 @@ import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
 import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
 import io.github.bszapp.wifitoolbox.uidefault.widget.PullDownScaffold
 import io.github.bszapp.wifitoolbox.uidefault.widget.WifiList
+import io.github.bszapp.wifitoolbox.uidefault.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -71,8 +74,11 @@ fun HomeScreen(vm: DefaultViewModel = viewModel()) {
                             navigationIcon = {
                                 IconButton(onClick = onToggle) {
                                     Icon(
-                                        imageVector = if (isExpanded) Icons.Rounded.KeyboardDoubleArrowUp
-                                        else Icons.Rounded.Menu,
+                                        painter = if (isExpanded) {
+                                            painterResource(id = R.drawable.top_panel_close_24)
+                                        } else {
+                                            rememberVectorPainter(Icons.Rounded.Menu)
+                                        },
                                         contentDescription = if (isExpanded) "收起" else "展开",
                                     )
                                 }
@@ -124,7 +130,11 @@ fun HomeScreen(vm: DefaultViewModel = viewModel()) {
                         .fillMaxSize()
                         .padding(start = startPadding, end = endPadding),
                 ) {
-                    WifiList(Modifier, vm, listState)
+                    WifiList(
+                        modifier = Modifier,
+                        vm = vm,
+                        listState = listState,
+                    )
 
                     AnimatedVisibility(
                         visible = !isListAtTop,
@@ -140,7 +150,9 @@ fun HomeScreen(vm: DefaultViewModel = viewModel()) {
                     ) {
                         Box(modifier = Modifier.padding(end = 24.dp, bottom = 24.dp)) {
                             TooltipBox(
-                                positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                                positionProvider = rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
                                 tooltip = { PlainTooltip { Text("回到顶部") } },
                                 state = rememberTooltipState(),
                             ) {

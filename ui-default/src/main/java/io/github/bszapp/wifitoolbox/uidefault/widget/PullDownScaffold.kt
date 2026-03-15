@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
 private val MaxCornerRadius = 36.dp
 private const val OpenVelocityThreshold = 1200f
 private const val CloseVelocityThreshold = 800f
@@ -62,13 +63,13 @@ fun PullDownScaffold(
     val columnHeightDp = maxSheetOffset + navBarHeight
     val columnHeightPx = with(density) { columnHeightDp.toPx() }
 
-    val isExpanded = rememberSaveable { mutableStateOf(false) }
+    val snapTarget = rememberSaveable { mutableStateOf(false) }
     val rawOffset = remember { mutableFloatStateOf(0f) }
     val snapAnim = remember { Animatable(0f) }
     val isSnapping = remember { mutableStateOf(false) }
 
     LaunchedEffect(maxOffsetPx) {
-        val target = if (isExpanded.value) maxOffsetPx else 0f
+        val target = if (snapTarget.value) maxOffsetPx else 0f
         rawOffset.floatValue = target
         snapAnim.snapTo(target)
     }
@@ -80,9 +81,11 @@ fun PullDownScaffold(
         derivedStateOf { (displayOffset / maxOffsetPx).coerceIn(0f, 1f) }
     }
 
+    val isExpanded by remember { derivedStateOf { progress > PositionSnapThreshold } }
+
     fun snap(targetOpen: Boolean) {
         if (isSnapping.value) return
-        isExpanded.value = targetOpen
+        snapTarget.value = targetOpen
         isSnapping.value = true
         scope.launch {
             snapAnim.snapTo(rawOffset.floatValue)
@@ -103,7 +106,6 @@ fun PullDownScaffold(
                     return Offset.Zero
                 val prev = rawOffset.floatValue
                 rawOffset.floatValue = (prev + available.y).coerceAtLeast(0f)
-                if (rawOffset.floatValue == 0f) isExpanded.value = false
                 return Offset(0f, rawOffset.floatValue - prev)
             }
 
@@ -116,7 +118,6 @@ fun PullDownScaffold(
                 val effectiveY = if (source == NestedScrollSource.SideEffect) 0f else available.y
                 val prev = rawOffset.floatValue
                 rawOffset.floatValue = (prev + effectiveY).coerceAtMost(maxOffsetPx)
-                if (rawOffset.floatValue == maxOffsetPx) isExpanded.value = true
                 return Offset(0f, rawOffset.floatValue - prev)
             }
 
@@ -200,8 +201,8 @@ fun PullDownScaffold(
                 .nestedScroll(nestedScrollConnection),
         ) {
             content(
-                isExpanded.value,
-                { snap(!isExpanded.value) },
+                isExpanded,
+                { snap(!snapTarget.value) },
                 nestedScrollConnection,
                 topBarDragModifier,
             )
