@@ -5,7 +5,6 @@ package io.github.bszapp.wifitoolbox.uidefault.widget
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,45 +27,25 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Inbox
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.SplitButtonDefaults
-import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,8 +56,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -92,6 +69,8 @@ import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonGroupWithMenu
 import io.github.bszapp.wifitoolbox.uidefault.component.MenuGroupConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.MenuItemConfig
+import io.github.bszapp.wifitoolbox.uidefault.component.TagItem
+import io.github.bszapp.wifitoolbox.uidefault.component.TagStyle
 import io.github.bszapp.wifitoolbox.uidefault.component.WifiIcon
 
 private enum class ListUiState { LOADING, EMPTY, CONTENT }
@@ -104,7 +83,6 @@ data class MergedWifiGroup(
     val networks: List<ScanResult>
 ) {
     val strongest: ScanResult get() = networks.first()
-    val weakest: ScanResult get() = networks.last()
     val isMerged: Boolean get() = networks.size > 1
 
     val displaySsid: String
@@ -112,9 +90,7 @@ data class MergedWifiGroup(
             ?.takeIf { it.isNotEmpty() }
             ?: "<隐藏的网络>"
 
-    val signalDisplay: String
-        get() = if (isMerged) "${strongest.level}dBm ~ ${weakest.level}dBm"
-        else "${strongest.level}dBm"
+    val signalDisplay: String get() = "${strongest.level}dBm"
 }
 
 // ── 顶层 Composable ───────────────────────────────────────────────────────────
@@ -242,7 +218,6 @@ private fun WifiGroupCard(
 ) {
     val levelIndex = if (group.strongest.level == 0) 0
     else WifiManager.calculateSignalLevel(group.strongest.level, 5)
-    var expanded by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -254,7 +229,9 @@ private fun WifiGroupCard(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp)
         ) {
             WifiIcon(
                 modifier = Modifier.size(28.dp),
@@ -272,24 +249,23 @@ private fun WifiGroupCard(
                         text = group.displaySsid,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
+                        overflow = TextOverflow.Visible,
+                        softWrap = true,
                     )
                     if (group.isMerged) {
                         Spacer(Modifier.width(4.dp))
-                        MergedBadge(count = group.networks.size)
+                        TagItem(
+                            text = group.networks.size.toString(),
+                            icon = Icons.Default.Layers,
+                            style = TagStyle.Tertiary
+                        )
                     }
                 }
 
                 Spacer(Modifier.height(2.dp))
 
                 Text(
-                    text = group.strongest.BSSID,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    lineHeight = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = group.signalDisplay,
+                    text = "${group.signalDisplay}\n${group.strongest.BSSID}",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
                     lineHeight = 16.sp,
@@ -343,35 +319,6 @@ private fun WifiGroupCard(
                 menuGroups = menuGroups,
             )
 
-        }
-    }
-}
-
-// ── 合并角标 ──────────────────────────────────────────────────────────────────
-
-@Composable
-private fun MergedBadge(count: Int) {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.padding(horizontal = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Layers,
-                contentDescription = "合并网络",
-                modifier = Modifier.size(11.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = "$count",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
         }
     }
 }
