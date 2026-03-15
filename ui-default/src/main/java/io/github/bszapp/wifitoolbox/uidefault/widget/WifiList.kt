@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,11 +27,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Inbox
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -62,6 +71,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,6 +88,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
 import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
+import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonConfig
+import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonGroupWithMenu
+import io.github.bszapp.wifitoolbox.uidefault.component.MenuGroupConfig
+import io.github.bszapp.wifitoolbox.uidefault.component.MenuItemConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.WifiIcon
 
 private enum class ListUiState { LOADING, EMPTY, CONTENT }
@@ -115,7 +129,7 @@ fun WifiList(
     val scanResults by vm.wifiList.results.collectAsStateWithLifecycle()
     val scanStatus by vm.wifiList.status.collectAsStateWithLifecycle()
     val isScanning = scanStatus == ScanStatus.SCANNING
-    var selectedGroup by remember { mutableStateOf<MergedWifiGroup?>(null) }
+    var selectedGroup by rememberSaveable { mutableStateOf<MergedWifiGroup?>(null) }
 
     // 每次 scanResults 变化时重建分组
     val groups = remember(scanResults) { buildGroups(scanResults) }
@@ -250,21 +264,17 @@ private fun WifiGroupCard(
             Spacer(Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         text = group.displaySsid,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
                     )
                     if (group.isMerged) {
+                        Spacer(Modifier.width(4.dp))
                         MergedBadge(count = group.networks.size)
                     }
                 }
@@ -287,25 +297,52 @@ private fun WifiGroupCard(
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(12.dp))
 
-            TooltipBox(
-                positionProvider =
-                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("连接") } },
-                state = rememberTooltipState(),
-            ) {
-                IconButton(
-                    onClick = { /* doSomething() */ },
-                    shapes = IconButtonDefaults.shapes()
-                ) {
-                    Icon(
-                        Icons.Filled.Link,
-                        contentDescription = "连接",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            var favoriteChecked by remember { mutableStateOf(false) }
+
+            val menuGroups = listOf(
+                MenuGroupConfig(
+                    icon = null,
+                    title = null,
+                    items = listOf(
+                        MenuItemConfig(
+                            title = "新窗口打开",
+                            icon = Icons.Outlined.OpenInNew,
+                            onCheckedChange = { /* TODO */ },
+                        ),
+                    ),
+                ),
+                MenuGroupConfig(
+                    icon = Icons.Outlined.Tune,
+                    title = "选项",
+                    items = listOf(
+                        MenuItemConfig(
+                            title = "分享",
+                            icon = Icons.Outlined.Share,
+                            checkedIcon = Icons.Filled.Share,
+                            onCheckedChange = { /* TODO */ },
+                        ),
+                        MenuItemConfig(
+                            title = "收藏",
+                            icon = Icons.Outlined.FavoriteBorder,
+                            checkedIcon = Icons.Filled.Favorite,
+                            checked = favoriteChecked,
+                            onCheckedChange = { favoriteChecked = it },
+                        ),
+                    ),
+                ),
+            )
+
+            ActionButtonGroupWithMenu(
+                buttonConfig = ActionButtonConfig(
+                    icon = Icons.Outlined.Link,
+                    text = "连接",
+                    onClick = { /* TODO */ },
+                ),
+                menuGroups = menuGroups,
+            )
+
         }
     }
 }
@@ -317,7 +354,7 @@ private fun MergedBadge(count: Int) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = MaterialTheme.shapes.small,
-        modifier = Modifier.padding(start = 8.dp)
+        modifier = Modifier.padding(horizontal = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),

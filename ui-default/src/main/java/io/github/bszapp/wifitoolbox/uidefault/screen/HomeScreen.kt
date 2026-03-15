@@ -72,23 +72,43 @@ fun HomeScreen(vm: DefaultViewModel = viewModel()) {
                         TopAppBar(
                             title = { Text("连接", fontWeight = FontWeight.Bold) },
                             navigationIcon = {
-                                IconButton(onClick = onToggle) {
-                                    Icon(
-                                        painter = if (isExpanded) {
-                                            painterResource(id = R.drawable.top_panel_close_24)
-                                        } else {
-                                            rememberVectorPainter(Icons.Rounded.Menu)
-                                        },
-                                        contentDescription = if (isExpanded) "收起" else "展开",
-                                    )
+                                TooltipBox(
+                                    positionProvider = rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Below
+                                    ),
+                                    tooltip = { PlainTooltip { Text(if (isExpanded) "收起" else "展开") } },
+                                    state = rememberTooltipState(),
+                                ) {
+                                    IconButton(
+                                        onClick = onToggle,
+                                        shapes = IconButtonDefaults.shapes()
+                                    ) {
+                                        Icon(
+                                            painter = if (isExpanded) {
+                                                painterResource(id = R.drawable.top_panel_close_24)
+                                            } else {
+                                                rememberVectorPainter(Icons.Rounded.Menu)
+                                            },
+                                            contentDescription = if (isExpanded) "收起" else "展开",
+                                        )
+                                    }
                                 }
                             },
                             actions = {
-                                IconButton(
-                                    onClick = { vm.wifiList.startScan() },
-                                    enabled = !isScanning,
+                                TooltipBox(
+                                    positionProvider = rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Below
+                                    ),
+                                    tooltip = { PlainTooltip { Text("刷新") } },
+                                    state = rememberTooltipState(),
                                 ) {
-                                    Icon(Icons.TwoTone.Refresh, contentDescription = null)
+                                    IconButton(
+                                        onClick = { vm.wifiList.startScan() },
+                                        shapes = IconButtonDefaults.shapes(),
+                                        enabled = !isScanning,
+                                    ) {
+                                        Icon(Icons.TwoTone.Refresh, contentDescription = null)
+                                    }
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
