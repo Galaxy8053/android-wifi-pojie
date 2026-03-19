@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox.uidefault
+package io.github.bszapp.wifitoolbox.uidefault.model
 
 import io.github.bszapp.wifitoolbox.contract.IAppController
 import kotlinx.coroutines.CoroutineScope
@@ -10,6 +10,10 @@ class StartupUiState(private val controller: IAppController, scope: CoroutineSco
 
     val uid = controller.startup.state
         .map { it.serviceUid }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
+    val pid = controller.startup.state
+        .map { it.servicePid }
         .stateIn(scope, SharingStarted.Eagerly, null)
     val uidStr = controller.startup.state
         .map { it.serviceUidStr }

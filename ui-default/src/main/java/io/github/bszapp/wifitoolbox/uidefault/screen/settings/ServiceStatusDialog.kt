@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox.uidefault.settings
+package io.github.bszapp.wifitoolbox.uidefault.screen.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

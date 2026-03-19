@@ -73,6 +73,7 @@ class ProcessLauncher(private val context: Context) {
                     mainService = IMainService.Stub.asInterface(binder)
                     val uid = mainService!!.getUid()
                     val uidStr = mainService!!.getUidStr()
+                    val pid = mainService!!.getPid()
 
                     mainService!!.watchApp(Binder())
 
@@ -96,7 +97,8 @@ class ProcessLauncher(private val context: Context) {
                         status = StartupStatus.RUNNING,
                         selectedMode = mode,
                         serviceUid = uid,
-                        serviceUidStr = uidStr
+                        serviceUidStr = uidStr,
+                        servicePid = pid
                     )
                     Log.d("ProcessLauncher", "$modeName 服务启动成功，uid=$uid uidStr=$uidStr")
                 }

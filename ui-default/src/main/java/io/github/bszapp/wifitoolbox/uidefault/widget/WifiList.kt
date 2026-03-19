@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.OpenInNew
@@ -43,7 +42,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -64,7 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
-import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
+import io.github.bszapp.wifitoolbox.uidefault.model.DefaultViewModel
 import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonGroupWithMenu
 import io.github.bszapp.wifitoolbox.uidefault.component.MenuGroupConfig
@@ -72,28 +70,14 @@ import io.github.bszapp.wifitoolbox.uidefault.component.MenuItemConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.TagItem
 import io.github.bszapp.wifitoolbox.uidefault.component.TagStyle
 import io.github.bszapp.wifitoolbox.uidefault.component.WifiIcon
+import io.github.bszapp.wifitoolbox.uidefault.model.MergedWifiGroup
+import android.net.wifi.WifiConfiguration
+import android.net.wifi.WifiEnterpriseConfig
+import android.os.Build
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 private enum class ListUiState { LOADING, EMPTY, CONTENT }
-
-/**
- * 逻辑 Wi-Fi 分组：同 SSID 的多个 [ScanResult] 合并为一组。
- * 隐藏网络（SSID 为空）统一归为一组。
- */
-data class MergedWifiGroup(
-    val networks: List<ScanResult>
-) {
-    val strongest: ScanResult get() = networks.first()
-    val isMerged: Boolean get() = networks.size > 1
-
-    val displaySsid: String
-        get() = strongest.SSID
-            ?.takeIf { it.isNotEmpty() }
-            ?: "<隐藏的网络>"
-
-    val signalDisplay: String get() = "${strongest.level}dBm"
-}
-
-// ── 顶层 Composable ───────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -103,12 +87,15 @@ fun WifiList(
     listState: LazyListState = rememberLazyListState()
 ) {
     val scanResults by vm.wifiList.results.collectAsStateWithLifecycle()
+    val savedWifiList by vm.wifiList.savedWifiList.collectAsStateWithLifecycle()
     val scanStatus by vm.wifiList.status.collectAsStateWithLifecycle()
     val isScanning = scanStatus == ScanStatus.SCANNING
     var selectedGroup by rememberSaveable { mutableStateOf<MergedWifiGroup?>(null) }
 
     // 每次 scanResults 变化时重建分组
-    val groups = remember(scanResults) { buildGroups(scanResults) }
+    val groups = remember(scanResults, savedWifiList) {
+        MergedWifiGroup.buildFrom(scanResults, savedWifiList)
+    }
 
     // 决定当前应显示哪种状态
     val uiState: ListUiState = when {
@@ -189,24 +176,6 @@ fun WifiList(
     }
 }
 
-// ── 分组辅助函数 ───────────────────────────────────────────────────────────────
-
-private fun buildGroups(results: List<ScanResult>): List<MergedWifiGroup> {
-    val visible = results.filter { !it.SSID.isNullOrEmpty() }
-    val hidden = results.filter { it.SSID.isNullOrEmpty() }
-
-    val mergedVisible = visible
-        .groupBy { it.SSID!! }
-        .values
-        .map { group -> MergedWifiGroup(group.sortedByDescending { it.level }) }
-
-    val mergedHidden = if (hidden.isNotEmpty()) {
-        listOf(MergedWifiGroup(hidden.sortedByDescending { it.level }))
-    } else emptyList()
-
-    return (mergedVisible + mergedHidden).sortedByDescending { it.strongest.level }
-}
-
 // ── 单个 Wi-Fi 卡片 ───────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -252,13 +221,23 @@ private fun WifiGroupCard(
                         overflow = TextOverflow.Visible,
                         softWrap = true,
                     )
-                    if (group.isMerged) {
+
+                    val hasTags = group.networks.size > 1 || group.savedWifiList.isNotEmpty()
+                    if (hasTags) {
                         Spacer(Modifier.width(4.dp))
-                        TagItem(
-                            text = group.networks.size.toString(),
-                            icon = Icons.Default.Layers,
-                            style = TagStyle.Tertiary
-                        )
+                        if (group.networks.size > 1) {
+                            TagItem(
+                                text = group.networks.size.toString(),
+                                icon = Icons.Default.Layers,
+                                style = TagStyle.Tertiary
+                            )
+                        }
+                        if (group.savedWifiList.isNotEmpty()) {
+                            TagItem(
+                                text = "已保存",
+                                style = TagStyle.Primary
+                            )
+                        }
                     }
                 }
 
@@ -339,6 +318,7 @@ private fun WifiDetailSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 32.dp)
         ) {
@@ -362,10 +342,168 @@ private fun WifiDetailSheet(
                     HorizontalDivider(thickness = 0.5.dp)
                 }
             }
+
+            if (group.savedWifiList.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "已保存的配置 (${group.savedWifiList.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                group.savedWifiList.forEachIndexed { index, config ->
+                    SavedWifiConfigRow(config = config)
+                    if (index < group.savedWifiList.lastIndex) {
+                        HorizontalDivider(thickness = 0.5.dp)
+                    }
+                }
+            }
         }
     }
 }
 
+@Suppress("DEPRECATION")
+@Composable
+private fun SavedWifiConfigRow(config: WifiConfiguration) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        // 标题行
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = config.SSID?.trim('"') ?: "<未知>",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "ID: ${config.networkId}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // 密码
+        if (!config.preSharedKey.isNullOrEmpty()) {
+            SavedInfoRow("密码", config.preSharedKey!!.trim('"'))
+        }
+
+        // WEP 密钥
+        config.wepKeys?.forEachIndexed { i, key ->
+            if (!key.isNullOrEmpty()) {
+                SavedInfoRow("WEP Key $i", key)
+            }
+        }
+
+        // BSSID
+        if (!config.BSSID.isNullOrEmpty()) {
+            SavedInfoRow("BSSID", config.BSSID!!)
+        }
+
+        // 安全类型 / KeyMgmt
+        val keyMgmtBits = buildList {
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)) add("NONE")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)) add("WPA_PSK")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP)) add("WPA_EAP")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X)) add("IEEE8021X")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA2_PSK)) add("WPA2_PSK")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) add("SAE(WPA3)")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) add("OWE")
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) add("SUITE_B_192")
+        }
+        if (keyMgmtBits.isNotEmpty()) {
+            SavedInfoRow("认证方式", keyMgmtBits.joinToString(" / "))
+        }
+
+        // 协议
+        val protocols = buildList {
+            if (config.allowedProtocols.get(WifiConfiguration.Protocol.WPA)) add("WPA")
+            if (config.allowedProtocols.get(WifiConfiguration.Protocol.RSN)) add("RSN(WPA2/3)")
+        }
+        if (protocols.isNotEmpty()) {
+            SavedInfoRow("协议", protocols.joinToString(" / "))
+        }
+
+        // 成对加密
+        val pairwise = buildList {
+            if (config.allowedPairwiseCiphers.get(WifiConfiguration.PairwiseCipher.TKIP)) add("TKIP")
+            if (config.allowedPairwiseCiphers.get(WifiConfiguration.PairwiseCipher.CCMP)) add("CCMP(AES)")
+            if (config.allowedPairwiseCiphers.get(WifiConfiguration.PairwiseCipher.GCMP_256)) add("GCMP-256")
+        }
+        if (pairwise.isNotEmpty()) {
+            SavedInfoRow("单播加密", pairwise.joinToString(" / "))
+        }
+
+        // 组播加密
+        val group = buildList {
+            if (config.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.TKIP)) add("TKIP")
+            if (config.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.CCMP)) add("CCMP")
+            if (config.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP40)) add("WEP40")
+            if (config.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP104)) add("WEP104")
+            if (config.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.GCMP_256)) add("GCMP-256")
+        }
+        if (group.isNotEmpty()) {
+            SavedInfoRow("组播加密", group.joinToString(" / "))
+        }
+
+        // 隐藏网络
+        SavedInfoRow("隐藏网络", if (config.hiddenSSID) "是" else "否")
+
+        // MAC 随机化
+        val macMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when (config.macRandomizationSetting) {
+                WifiConfiguration.RANDOMIZATION_NONE -> "关闭 (使用出厂MAC)"
+                WifiConfiguration.RANDOMIZATION_PERSISTENT -> "持久随机"
+                WifiConfiguration.RANDOMIZATION_NON_PERSISTENT -> "每次随机"
+                WifiConfiguration.RANDOMIZATION_AUTO -> "自动"
+                else -> "未知(${config.macRandomizationSetting})"
+            }
+        } else {
+            TODO("VERSION.SDK_INT < TIRAMISU")
+        }
+        SavedInfoRow("MAC 随机化", macMode)
+
+        // 随机 MAC 地址
+        SavedInfoRow("随机 MAC", config.randomizedMacAddress.toString())
+    }
+}
+
+@Composable
+private fun SavedInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 1.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(0.38f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(0.62f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End
+        )
+    }
+}
 // ── 单条 AP 详情行 ─────────────────────────────────────────────────────────────
 
 @Composable

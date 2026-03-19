@@ -24,12 +24,15 @@ class MainService : IMainService.Stub() {
     override fun getUid(): Int = Process.myUid()
     override fun getUidStr(): String =
         Runtime.getRuntime().exec("id").inputStream.bufferedReader().readText().trim()
+    override fun getPid(): Int = Process.myPid()
 
     private val sdk = Build.VERSION.SDK_INT
 
     private val watcherBound = AtomicBoolean(false)
 
     init {
+        killOlderInstances()
+
         val scheduler = Executors.newSingleThreadScheduledExecutor()
         scheduler.schedule({
             if (!watcherBound.get()) {
@@ -38,6 +41,63 @@ class MainService : IMainService.Stub() {
             }
             scheduler.shutdown()
         }, 10, TimeUnit.SECONDS)
+    }
+
+    /**
+     * 扫描 /proc，找到与当前进程同名、且 PID < myPid 的所有旧实例，逐一 kill。
+     * 依赖 /proc/<pid>/cmdline，不需要额外权限（同 UID 可读，root/system 全部可读）。
+     */
+    private fun killOlderInstances() {
+        val myPid = Process.myPid()
+
+        // 读取自身进程名（cmdline 以 \0 分隔参数，取第一段即进程名）
+        val myProcessName = try {
+            java.io.File("/proc/self/cmdline")
+                .readBytes()
+                .takeWhile { it != 0.toByte() }
+                .toByteArray()
+                .toString(Charsets.UTF_8)
+                .trim()
+        } catch (e: Exception) {
+            Log.e(TAG, "读取自身进程名失败: ${e.message}")
+            return
+        }
+
+        if (myProcessName.isEmpty()) {
+            Log.w(TAG, "自身进程名为空，跳过旧实例清理")
+            return
+        }
+
+        Log.d(TAG, "自身进程名=$myProcessName  pid=$myPid，开始扫描旧实例…")
+
+        val procDir = java.io.File("/proc")
+        val entries = procDir.listFiles() ?: run {
+            Log.w(TAG, "/proc 不可读，跳过旧实例清理")
+            return
+        }
+
+        for (pidDir in entries) {
+            val pid = pidDir.name.toIntOrNull() ?: continue   // 只处理纯数字目录
+            if (pid >= myPid) continue                         // 只杀比自己旧（PID 更小）的
+
+            try {
+                val processName = java.io.File(pidDir, "cmdline")
+                    .readBytes()
+                    .takeWhile { it != 0.toByte() }
+                    .toByteArray()
+                    .toString(Charsets.UTF_8)
+                    .trim()
+
+                if (processName == myProcessName) {
+                    Log.w(TAG, "发现旧实例 pid=$pid (< $myPid)，执行 kill")
+                    Process.killProcess(pid)
+                }
+            } catch (_: Exception) {
+                // 进程已消失或无权读取，忽略
+            }
+        }
+
+        Log.d(TAG, "旧实例扫描完成")
     }
 
     private val packageName = when (getUid()) {
@@ -167,6 +227,7 @@ class MainService : IMainService.Stub() {
             emptyList()
         }
     }
+
     @SuppressLint("NewApi")
     @Suppress("DEPRECATION", "UNCHECKED_CAST")
     override fun getSavedWifiList(): ByteArray {
@@ -254,7 +315,7 @@ class MainService : IMainService.Stub() {
                 else -> raw.javaClass.getMethod("getList").invoke(raw) as List<WifiConfiguration>
             }
             list.distinctBy { it.networkId }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }

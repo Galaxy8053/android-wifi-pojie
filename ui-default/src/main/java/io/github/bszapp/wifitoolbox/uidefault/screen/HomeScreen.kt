@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
-import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
+import io.github.bszapp.wifitoolbox.uidefault.model.DefaultViewModel
 import io.github.bszapp.wifitoolbox.uidefault.widget.PullDownScaffold
 import io.github.bszapp.wifitoolbox.uidefault.widget.WifiList
 import io.github.bszapp.wifitoolbox.uidefault.R

@@ -22,13 +22,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.github.bszapp.wifitoolbox.uidefault.DefaultViewModel
-import io.github.bszapp.wifitoolbox.uidefault.settings.ServiceStatusDialog
+import io.github.bszapp.wifitoolbox.uidefault.model.DefaultViewModel
+import io.github.bszapp.wifitoolbox.uidefault.screen.settings.ServiceStatusDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
     val uid by viewModel.startup.uid.collectAsStateWithLifecycle()
+    val pid by viewModel.startup.pid.collectAsStateWithLifecycle()
     val mode by viewModel.startup.mode.collectAsStateWithLifecycle()
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
@@ -43,7 +44,7 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
     else MaterialTheme.colorScheme.onErrorContainer
     val icon = if (isActive) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline
     val title = if (isActive) "服务运行中" else "未激活"
-    val subtitle = if (isActive) "MODE:$mode  UID:$uid" else "点击选择工作模式"
+    val subtitle = if (isActive) "MODE:$mode  UID:$uid PID:$pid" else "点击选择工作模式"
 
     if (showDialog) {
         ServiceStatusDialog(

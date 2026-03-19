@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox.uidefault
+package io.github.bszapp.wifitoolbox.uidefault.model
 
 import io.github.bszapp.wifitoolbox.contract.IAppController
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus

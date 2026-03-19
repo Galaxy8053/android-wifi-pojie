@@ -1,4 +1,4 @@
-package io.github.bszapp.wifitoolbox.uidefault
+package io.github.bszapp.wifitoolbox.uidefault.model
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
