@@ -82,6 +82,7 @@ class ToolboxApp : Application(), IAppController {
             startup.state.collect { state ->
                 if (state.status == StartupStatus.RUNNING) {
                     Log.d(TAG, "服务已就绪，触发首次自动扫描")
+                    wifiList.refreshSavedWifiList()
                     wifiList.startScan()
                 }
             }

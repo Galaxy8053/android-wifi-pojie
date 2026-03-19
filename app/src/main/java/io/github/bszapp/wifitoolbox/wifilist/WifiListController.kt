@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.net.wifi.WifiConfiguration
+import android.os.Parcel
+import android.os.Parcelable
 
 class WifiListController(
     private val scope: CoroutineScope,
@@ -27,6 +30,9 @@ class WifiListController(
 
     private val _state = MutableStateFlow(ScanState())
     override val state: StateFlow<ScanState> = _state.asStateFlow()
+
+    private val _savedWifiList = MutableStateFlow<List<WifiConfiguration>>(emptyList())
+    override val savedWifiList: StateFlow<List<WifiConfiguration>> = _savedWifiList.asStateFlow()
 
     private var previousResults: Map<String, ScanResult> = emptyMap()
 
@@ -117,6 +123,25 @@ class WifiListController(
         val disappeared = previousResults.keys - newMap.keys
         appeared.forEach { Log.d(TAG, "新增 AP: ${newMap[it]?.SSID} [$it]") }
         disappeared.forEach { Log.d(TAG, "消失 AP: ${previousResults[it]?.SSID} [$it]") }
+    }
+
+    @Suppress("DEPRECATION", "UNCHECKED_CAST")
+    override fun refreshSavedWifiList() {
+        val service = getService() ?: return
+        val bytes = service.getSavedWifiList()
+        if (bytes.isEmpty()) return
+        val parcel = Parcel.obtain()
+        try {
+            parcel.unmarshall(bytes, 0, bytes.size)
+            parcel.setDataPosition(0)
+            val creator = WifiConfiguration::class.java
+                .getField("CREATOR").get(null) as Parcelable.Creator<WifiConfiguration>
+            _savedWifiList.value = parcel.createTypedArrayList(creator) ?: emptyList()
+        } catch (e: Exception) {
+            Log.e(TAG, "refreshSavedWifiList() 失败: ${e.message}", e)
+        } finally {
+            parcel.recycle()
+        }
     }
 
     companion object {

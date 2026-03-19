@@ -231,7 +231,7 @@ private fun WifiGroupCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp)
+                .padding(vertical = 4.dp)
         ) {
             WifiIcon(
                 modifier = Modifier.size(28.dp),
@@ -265,9 +265,8 @@ private fun WifiGroupCard(
                 Spacer(Modifier.height(2.dp))
 
                 Text(
-                    text = "${group.signalDisplay}\n${group.strongest.BSSID}",
+                    text = group.signalDisplay,
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
                     lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

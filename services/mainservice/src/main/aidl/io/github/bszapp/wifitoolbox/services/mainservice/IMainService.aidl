@@ -8,6 +8,7 @@ interface IMainService {
     String getUidStr();
     boolean startScan();
     List<ScanResult> getScanResults();
+    byte[] getSavedWifiList();
     void watchApp(IBinder token);
     void shutdown();
 }
