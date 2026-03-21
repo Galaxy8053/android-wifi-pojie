@@ -110,7 +110,7 @@ data class ActionButtonConfig(
  * @param title 分组标题文字，为 null 时整个标题区域不渲染
  */
 data class MenuGroupConfig(
-    val icon: ImageVector?,
+    val icon: ImageVector?=null,
     val title: String?,
     val items: List<MenuItemConfig>,
 )

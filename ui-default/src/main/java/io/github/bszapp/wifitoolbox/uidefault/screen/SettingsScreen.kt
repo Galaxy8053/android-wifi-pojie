@@ -44,7 +44,7 @@ fun SettingsScreen(viewModel: DefaultViewModel = viewModel()) {
     else MaterialTheme.colorScheme.onErrorContainer
     val icon = if (isActive) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline
     val title = if (isActive) "服务运行中" else "未激活"
-    val subtitle = if (isActive) "MODE:$mode  UID:$uid PID:$pid" else "点击选择工作模式"
+    val subtitle = if (isActive) "$mode  UID:$uid  PID:$pid" else "点击选择工作模式"
 
     if (showDialog) {
         ServiceStatusDialog(
