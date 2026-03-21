@@ -23,6 +23,7 @@ class WifiListUiState(private val controller: IAppController, scope: CoroutineSc
         .stateIn(scope, SharingStarted.Eagerly, null)
 
     fun startScan() = controller.wifiList.startScan()
+    fun setWifiEnabled(enabled: Boolean) = controller.wifiList.setWifiEnabled(enabled)
 
     val savedWifiList = controller.wifiList.savedWifiList
 

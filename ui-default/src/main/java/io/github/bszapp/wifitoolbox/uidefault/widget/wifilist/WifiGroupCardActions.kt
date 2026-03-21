@@ -10,6 +10,10 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import io.github.bszapp.wifitoolbox.contract.wifilist.WifiConfigPatch
@@ -28,6 +32,8 @@ fun WifiGroupCardActions(
     onConnectWithConfig: (WifiConfiguration) -> Unit = {},
     onUpdateConfig: (networkId: Int, patch: WifiConfigPatch) -> Unit = { _, _ -> },
 ) {
+    var menuExpanded by rememberSaveable { mutableStateOf(false) }
+
     val supportsAutoJoin = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
     val menuGroups = buildList {
@@ -39,7 +45,10 @@ fun WifiGroupCardActions(
                     MenuItemConfig(
                         title = "详细信息",
                         icon = Icons.Outlined.Info,
-                        onCheckedChange = { onOpenDetail() },
+                        onCheckedChange = {
+                            menuExpanded = false
+                            onOpenDetail()
+                        },
                     )
                 )
             )
@@ -63,14 +72,20 @@ fun WifiGroupCardActions(
                             MenuItemConfig(
                                 title = "使用此配置连接",
                                 icon = Icons.Outlined.PlayArrow,
-                                onCheckedChange = { onConnectWithConfig(config) },
+                                onCheckedChange = {
+                                    menuExpanded = false
+                                    onConnectWithConfig(config)
+                                },
                             )
                         )
                         add(
                             MenuItemConfig(
                                 title = "管理此配置",
                                 icon = Icons.Outlined.EditNote,
-                                onCheckedChange = { /* TODO */ },
+                                onCheckedChange = {
+                                    menuExpanded = false
+                                    /* TODO */
+                                },
                             )
                         )
                         if (supportsAutoJoin) {
@@ -116,6 +131,8 @@ fun WifiGroupCardActions(
             onClick = onConnect,
         ),
         menuGroups = menuGroups,
+        menuExpanded = menuExpanded,
+        onMenuExpandedChange = { menuExpanded = it },
     )
 }
 

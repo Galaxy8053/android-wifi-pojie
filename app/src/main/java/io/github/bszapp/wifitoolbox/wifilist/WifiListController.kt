@@ -37,7 +37,23 @@ class WifiListController(
 
     private var previousResults: Map<String, ScanResult> = emptyMap()
 
+    private var isWifiEnabled = true
+
+    fun updateWifiEnabled(enabled: Boolean) {
+        isWifiEnabled = enabled
+        if (!enabled) {
+            scanJob?.cancel()
+            scanJob = null
+        }
+    }
+
     override fun startScan() {
+        if (!isWifiEnabled) {
+            Log.w(TAG, "startScan() 失败：wifi未开启")
+            _state.value = ScanState(status = ScanStatus.ERROR_NOT_ENABLED)
+            return
+        }
+
         val service = getService() ?: run {
             Log.e(TAG, "startScan() 失败：服务未运行（getService() 返回 null）")
             _state.value = ScanState(
@@ -56,7 +72,6 @@ class WifiListController(
                 Log.d(TAG, "service.startScan() 返回 $startResult，开始时间：$startTime")
 
                 if (!startResult) {
-                    // 启动失败：直接拉取缓存结果，标记完成
                     Log.w(TAG, "startScan() 返回 false，拉取缓存结果直接完成")
                     val cached = service.getScanResults()
                     diffAndLog(cached)
@@ -69,7 +84,6 @@ class WifiListController(
                     return@launch
                 }
 
-                // 启动成功：先标记 SCANNING，等待 0.5 秒让扫描开始积累结果
                 _state.value = ScanState(
                     status = ScanStatus.SCANNING,
                     startResult = true,
@@ -77,8 +91,6 @@ class WifiListController(
                 )
                 delay(500L)
 
-                // 循环拉取，每 0.25 秒一次，共持续 3 秒（从 startScan 调用起计）
-                // 即最多拉取约 10 次（3000 - 500 = 2500ms，每 250ms 一次）
                 while (System.currentTimeMillis() - startTime < 3_000L) {
                     val results = service.getScanResults()
                     diffAndLog(results)
@@ -93,7 +105,6 @@ class WifiListController(
                     delay(250L)
                 }
 
-                // 3 秒结束，最后拉取一次作为最终结果
                 val finalResults = service.getScanResults()
                 diffAndLog(finalResults)
                 previousResults = finalResults.associateBy { it.BSSID }
@@ -115,7 +126,7 @@ class WifiListController(
                 )
             }
         }
-        refreshSavedWifiList()//顺手的事嘛
+        refreshSavedWifiList()
     }
 
     private fun diffAndLog(newList: List<ScanResult>) {
@@ -156,9 +167,15 @@ class WifiListController(
             } finally {
                 parcel.recycle()
             }
-
             val success = service.updateWifiConfig(networkId, bytes)
             if (success) refreshSavedWifiList()
+        }
+    }
+
+    override fun setWifiEnabled(enabled: Boolean) {
+        val service = getService() ?: return
+        scope.launch(Dispatchers.IO) {
+            service.setWifiEnabled(enabled)
         }
     }
 

@@ -34,15 +34,7 @@ class ToolboxApp : Application(), IAppController {
     private val _isExiting = MutableStateFlow(false)
     override val isExiting: StateFlow<Boolean> = _isExiting.asStateFlow()
 
-    // 广播接收器继续注册，保留以备后续功能扩展，但不再传给 WifiListController
-    private val scanReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == WifiManager.SCAN_RESULTS_AVAILABLE_ACTION) {
-                val updated = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false)
-                Log.d(TAG, "收到扫描广播，EXTRA_RESULTS_UPDATED=$updated（当前未使用）")
-            }
-        }
-    }
+    private var wifiStateReceiver: BroadcastReceiver? = null
 
     override val startup = object : IStartupController {
         override val state get() = processLauncher.state
@@ -72,17 +64,40 @@ class ToolboxApp : Application(), IAppController {
         processLauncher = ProcessLauncher(this)
         AppControllerProvider.register(this)
 
-        registerReceiver(
-            scanReceiver,
-            IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
-        )
-
-        // 服务首次进入 RUNNING 状态时自动触发一次扫描
         appScope.launch {
             startup.state.collect { state ->
                 if (state.status == StartupStatus.RUNNING) {
-                    Log.d(TAG, "服务已就绪，触发首次自动扫描")
+                    val receiver = object : BroadcastReceiver() {
+                        override fun onReceive(context: Context, intent: Intent) {
+                            if (intent.action != WifiManager.WIFI_STATE_CHANGED_ACTION) return
+                            val extra = intent.getIntExtra(
+                                WifiManager.EXTRA_WIFI_STATE,
+                                WifiManager.WIFI_STATE_UNKNOWN
+                            )
+                            // 只处理终态，ENABLING/DISABLING 忽略
+                            if (extra != WifiManager.WIFI_STATE_ENABLED &&
+                                extra != WifiManager.WIFI_STATE_DISABLED) return
+                            // 不信任广播数据，问服务确认实际状态
+                            val enabled = processLauncher.mainService?.isWifiEnabled() ?: return
+                            Log.d(TAG, "Wi-Fi 状态变化: $enabled")
+                            (wifiList as WifiListController).updateWifiEnabled(enabled)
+                            wifiList.startScan()
+                        }
+                    }
+                    registerReceiver(receiver, IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION))
+                    wifiStateReceiver = receiver
+
+                    // 先同步一次真实状态，再决定要不要扫描
+                    val enabled = processLauncher.mainService?.isWifiEnabled() ?: false
+                    Log.d(TAG, "服务就绪，Wi-Fi 当前状态: $enabled")
+                    (wifiList as WifiListController).updateWifiEnabled(enabled)
                     wifiList.startScan()
+                } else {
+                    wifiStateReceiver?.let {
+                        unregisterReceiver(it)
+                        wifiStateReceiver = null
+                        Log.d(TAG, "服务停止，注销 Wi-Fi 广播")
+                    }
                 }
             }
         }
@@ -90,7 +105,10 @@ class ToolboxApp : Application(), IAppController {
 
     override fun onTerminate() {
         super.onTerminate()
-        unregisterReceiver(scanReceiver)
+        wifiStateReceiver?.let {
+            unregisterReceiver(it)
+            wifiStateReceiver = null
+        }
         appScope.cancel()
     }
 

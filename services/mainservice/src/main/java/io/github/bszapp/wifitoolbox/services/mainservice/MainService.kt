@@ -17,6 +17,9 @@ import io.github.bszapp.wifitoolbox.contract.wifilist.WifiConfigPatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import android.os.RemoteCallbackList
+import android.net.wifi.WifiManager
+
 
 @Keep
 @SuppressLint("PrivateApi")
@@ -27,6 +30,9 @@ class MainService : IMainService.Stub() {
     override fun getUidStr(): String =
         Runtime.getRuntime().exec("id").inputStream.bufferedReader().readText().trim()
     override fun getPid(): Int = Process.myPid()
+
+    private val callbacks = RemoteCallbackList<IMainServiceCallback>()
+    private var lastWifiEnabled: Boolean? = null
 
     private val sdk = Build.VERSION.SDK_INT
 
@@ -392,6 +398,43 @@ class MainService : IMainService.Stub() {
     override fun shutdown() {
         Log.d(TAG, "收到 shutdown 指令，MainService 退出")
         Process.killProcess(Process.myPid())
+    }
+
+    override fun isWifiEnabled(): Boolean {
+        return try {
+            val wifiService = getWifiService()
+            val state = wifiService::class.java
+                .getMethod("getWifiEnabledState")
+                .invoke(wifiService) as Int
+            state == WifiManager.WIFI_STATE_ENABLED || state == WifiManager.WIFI_STATE_ENABLING
+        } catch (e: Exception) {
+            Log.e(TAG, "isWifiEnabled() 失败: ${e.message}")
+            false
+        }
+    }
+
+    override fun setWifiEnabled(enabled: Boolean) {
+        try {
+            val wifiService = getWifiService()
+            val clazz = wifiService::class.java
+            when {
+                sdk >= 29 -> clazz.getMethod("setWifiEnabled", String::class.java, Boolean::class.java)
+                    .invoke(wifiService, packageName, enabled)
+                else -> clazz.getMethod("setWifiEnabled", Boolean::class.java)
+                    .invoke(wifiService, enabled)
+            }
+            Log.d(TAG, "enableWifi() 成功")
+        } catch (e: Exception) {
+            Log.e(TAG, "enableWifi() 失败: ${e.message}")
+        }
+    }
+
+    override fun registerCallback(cb: IMainServiceCallback) {
+        callbacks.register(cb)
+    }
+
+    override fun unregisterCallback(cb: IMainServiceCallback) {
+        callbacks.unregister(cb)
     }
 
     companion object {

@@ -132,9 +132,9 @@ fun ActionButtonGroupWithMenu(
     buttonConfig: ActionButtonConfig,
     menuGroups: List<MenuGroupConfig>,
     modifier: Modifier = Modifier,
+    menuExpanded: Boolean = false,
+    onMenuExpandedChange: (Boolean) -> Unit = {},
 ) {
-    var moreSelected by remember { mutableStateOf(false) }
-    var menuExpanded by remember { mutableStateOf(false) }
     val groupInteractionSource = remember { MutableInteractionSource() }
 
     Row(
@@ -170,11 +170,8 @@ fun ActionButtonGroupWithMenu(
                 state = rememberTooltipState(),
             ) {
                 ToggleButton(
-                    checked = moreSelected,
-                    onCheckedChange = {
-                        moreSelected = it
-                        menuExpanded = it
-                    },
+                    checked = menuExpanded,
+                    onCheckedChange = onMenuExpandedChange,
                     shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     colors = ToggleButtonDefaults.toggleButtonColors(
                         checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -197,8 +194,7 @@ fun ActionButtonGroupWithMenu(
             DropdownMenuPopup(
                 expanded = menuExpanded,
                 onDismissRequest = {
-                    menuExpanded = false
-                    moreSelected = false
+                    onMenuExpandedChange(false)
                 },
             ) {
                 val groupCount = menuGroups.size
