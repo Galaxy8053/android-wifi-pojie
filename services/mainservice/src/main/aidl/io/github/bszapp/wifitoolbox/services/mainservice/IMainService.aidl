@@ -10,6 +10,7 @@ interface IMainService {
     boolean startScan();
     List<ScanResult> getScanResults();
     byte[] getSavedWifiList();
+    boolean updateWifiConfig(int networkId, in byte[] patchBytes);
     void watchApp(IBinder token);
     void shutdown();
 }

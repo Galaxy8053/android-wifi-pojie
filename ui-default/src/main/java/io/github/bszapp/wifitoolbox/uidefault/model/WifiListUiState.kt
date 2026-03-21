@@ -2,6 +2,7 @@ package io.github.bszapp.wifitoolbox.uidefault.model
 
 import io.github.bszapp.wifitoolbox.contract.IAppController
 import io.github.bszapp.wifitoolbox.contract.wifilist.ScanStatus
+import io.github.bszapp.wifitoolbox.contract.wifilist.WifiConfigPatch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -24,4 +25,7 @@ class WifiListUiState(private val controller: IAppController, scope: CoroutineSc
     fun startScan() = controller.wifiList.startScan()
 
     val savedWifiList = controller.wifiList.savedWifiList
+
+    fun updateWifiConfig(networkId: Int, patch: WifiConfigPatch) =
+        controller.wifiList.updateWifiConfig(networkId, patch)
 }

@@ -12,18 +12,21 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import io.github.bszapp.wifitoolbox.contract.wifilist.WifiConfigPatch
 import io.github.bszapp.wifitoolbox.uidefault.R
 import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.ActionButtonGroupWithMenu
 import io.github.bszapp.wifitoolbox.uidefault.component.MenuGroupConfig
 import io.github.bszapp.wifitoolbox.uidefault.component.MenuItemConfig
 import io.github.bszapp.wifitoolbox.uidefault.model.MergedWifiGroup
+
 @Composable
 fun WifiGroupCardActions(
     group: MergedWifiGroup,
     onConnect: () -> Unit = {},
     onOpenDetail: () -> Unit = {},
     onConnectWithConfig: (WifiConfiguration) -> Unit = {},
+    onUpdateConfig: (networkId: Int, patch: WifiConfigPatch) -> Unit = { _, _ -> },
 ) {
     val supportsAutoJoin = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
@@ -56,30 +59,50 @@ fun WifiGroupCardActions(
                 MenuGroupConfig(
                     title = "已保存的配置#${config.networkId}",
                     items = buildList {
-                        add(MenuItemConfig(
-                            title = "使用此配置连接",
-                            icon = Icons.Outlined.PlayArrow,
-                            onCheckedChange = { onConnectWithConfig(config) },
-                        ))
-                        add(MenuItemConfig(
-                            title = "管理此配置",
-                            icon = Icons.Outlined.EditNote,
-                            onCheckedChange = { /* TODO */ },
-                        ))
+                        add(
+                            MenuItemConfig(
+                                title = "使用此配置连接",
+                                icon = Icons.Outlined.PlayArrow,
+                                onCheckedChange = { onConnectWithConfig(config) },
+                            )
+                        )
+                        add(
+                            MenuItemConfig(
+                                title = "管理此配置",
+                                icon = Icons.Outlined.EditNote,
+                                onCheckedChange = { /* TODO */ },
+                            )
+                        )
                         if (supportsAutoJoin) {
-                            add(MenuItemConfig(
-                                title = "自动连接",
-                                icon = Icons.Outlined.AutoFixHigh,
-                                checked = isAutoJoin,
-                                onCheckedChange = {},
-                            ))
+                            // 自动连接
+                            add(
+                                MenuItemConfig(
+                                    title = "自动连接",
+                                    icon = Icons.Outlined.AutoFixHigh,
+                                    checked = isAutoJoin,
+                                    onCheckedChange = { newVal ->
+                                        onUpdateConfig(
+                                            config.networkId,
+                                            WifiConfigPatch(autoJoin = newVal)
+                                        )
+                                    },
+                                )
+                            )
                         }
-                        add(MenuItemConfig(
-                            title = "启用配置",
-                            icon = ImageVector.vectorResource(R.drawable.enable_24),
-                            checked = isEnabled,
-                            onCheckedChange = {},
-                        ))
+                        // 启用配置
+                        add(
+                            MenuItemConfig(
+                                title = "启用配置",
+                                icon = ImageVector.vectorResource(R.drawable.enable_24),
+                                checked = isEnabled,
+                                onCheckedChange = { newVal ->
+                                    onUpdateConfig(
+                                        config.networkId,
+                                        WifiConfigPatch(enabled = newVal)
+                                    )
+                                },
+                            )
+                        )
                     }
                 )
             )
@@ -96,12 +119,11 @@ fun WifiGroupCardActions(
     )
 }
 
-// 工具函数，放在文件顶部或单独 util 文件
 @RequiresApi(Build.VERSION_CODES.R)
 private fun WifiConfiguration.getAllowAutojoin(): Boolean = try {
     WifiConfiguration::class.java
         .getField("allowAutojoin")
         .getBoolean(this)
 } catch (_: Exception) {
-    true // 读取失败时保守默认为 true
+    true
 }

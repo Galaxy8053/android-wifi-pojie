@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import android.net.wifi.WifiConfiguration
 import android.os.Parcel
 import android.os.Parcelable
+import io.github.bszapp.wifitoolbox.contract.wifilist.WifiConfigPatch
 
 class WifiListController(
     private val scope: CoroutineScope,
@@ -114,6 +115,7 @@ class WifiListController(
                 )
             }
         }
+        refreshSavedWifiList()//顺手的事嘛
     }
 
     private fun diffAndLog(newList: List<ScanResult>) {
@@ -141,6 +143,22 @@ class WifiListController(
             Log.e(TAG, "refreshSavedWifiList() 失败: ${e.message}", e)
         } finally {
             parcel.recycle()
+        }
+    }
+
+    override fun updateWifiConfig(networkId: Int, patch: WifiConfigPatch) {
+        val service = getService() ?: return
+        scope.launch(Dispatchers.IO) {
+            val parcel = Parcel.obtain()
+            val bytes = try {
+                parcel.writeParcelable(patch, 0)
+                parcel.marshall()
+            } finally {
+                parcel.recycle()
+            }
+
+            val success = service.updateWifiConfig(networkId, bytes)
+            if (success) refreshSavedWifiList()
         }
     }
 

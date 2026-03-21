@@ -140,6 +140,7 @@ fun WifiList(
                             key = { _, item -> item.strongest.BSSID ?: item.hashCode() }
                         ) { index, group ->
                             WifiGroupCard(
+                                vm = vm,
                                 group = group,
                                 modifier = Modifier.animateItem(),
                                 onClick = { selectedIndex = index }
@@ -164,6 +165,7 @@ fun WifiList(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun WifiGroupCard(
+    vm: DefaultViewModel,
     group: MergedWifiGroup,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
@@ -240,6 +242,9 @@ private fun WifiGroupCard(
                 onConnect = { /* TODO */ },
                 onOpenDetail = { onClick() },   // 或者单独触发详情 sheet
                 onConnectWithConfig = { /* TODO */ },
+                onUpdateConfig = { networkId, patch ->
+                    vm.wifiList.updateWifiConfig(networkId, patch)
+                },
             )
 
         }

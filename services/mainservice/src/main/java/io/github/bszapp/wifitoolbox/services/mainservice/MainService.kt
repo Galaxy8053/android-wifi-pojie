@@ -13,12 +13,14 @@ import android.os.Parcelable
 import android.os.WorkSource
 import android.util.Log
 import androidx.annotation.Keep
+import io.github.bszapp.wifitoolbox.contract.wifilist.WifiConfigPatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Keep
 @SuppressLint("PrivateApi")
+@Suppress("DEPRECATION")
 class MainService : IMainService.Stub() {
     override fun isAlive() = true
     override fun getUid(): Int = Process.myUid()
@@ -317,6 +319,59 @@ class MainService : IMainService.Stub() {
             list.distinctBy { it.networkId }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    override fun updateWifiConfig(networkId: Int, patchBytes: ByteArray): Boolean {
+        return try {
+            // 反序列化：和 WifiListController.refreshSavedWifiList() 还原 WifiConfiguration 的方式完全一样
+            val parcel = Parcel.obtain()
+            val patch = try {
+                parcel.unmarshall(patchBytes, 0, patchBytes.size)
+                parcel.setDataPosition(0)
+                parcel.readParcelable<WifiConfigPatch>(WifiConfigPatch::class.java.classLoader)!!
+            } finally {
+                parcel.recycle()
+            }
+
+            val wifiService = getWifiService()
+            val clazz = wifiService::class.java
+
+            patch.enabled?.let { enable ->
+                if (enable) {
+                    if (sdk >= 29)
+                        clazz.getMethod("enableNetwork", Int::class.java, Boolean::class.java, String::class.java)
+                            .invoke(wifiService, networkId, false, packageName)
+                    else
+                        clazz.getMethod("enableNetwork", Int::class.java, Boolean::class.java)
+                            .invoke(wifiService, networkId, false)
+                } else {
+                    if (sdk >= 29)
+                        clazz.getMethod("disableNetwork", Int::class.java, String::class.java)
+                            .invoke(wifiService, networkId, packageName)
+                    else
+                        clazz.getMethod("disableNetwork", Int::class.java)
+                            .invoke(wifiService, networkId)
+                }
+            }
+
+            patch.autoJoin?.let { autoJoin ->
+                if (sdk >= 30) {
+                    clazz.getMethod("allowAutojoin", Int::class.java, Boolean::class.java)
+                        .invoke(wifiService, networkId, autoJoin)
+                } else {
+                    val config = getSavedWifiListInternal()
+                        .firstOrNull { it.networkId == networkId } ?: return@let
+                    WifiConfiguration::class.java.getField("allowAutojoin").setBoolean(config, autoJoin)
+                    clazz.getMethod("updateNetwork", WifiConfiguration::class.java)
+                        .invoke(wifiService, config)
+                }
+            }
+
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "updateWifiConfig failed: ${e.message}", e)
+            false
         }
     }
 

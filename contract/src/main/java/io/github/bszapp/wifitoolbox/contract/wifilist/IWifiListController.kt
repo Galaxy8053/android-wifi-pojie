@@ -8,4 +8,5 @@ interface IWifiListController {
     val savedWifiList: StateFlow<List<WifiConfiguration>>
     fun startScan()
     fun refreshSavedWifiList()
+    fun updateWifiConfig(networkId: Int, patch: WifiConfigPatch)
 }
